@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bhashini Voice Translator — Drishti</title>
+<title>Voice Translator — Drishti</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -159,16 +159,11 @@
 <body>
 
 <header>
-  <h1>🎙 Bhashini Voice Translator</h1>
-  <p>Speak in any Indian language — hear the reply in another</p>
+  <h1>🎙 Voice Translator — Drishti</h1>
+  <p id="providerTag">Speak in any Indian language — hear the reply in another</p>
 </header>
 
-<div id="credWarning" class="hidden">
-  ⚠️ Bhashini credentials not configured.<br>
-  Register at <a href="https://bhashini.gov.in/ulca" target="_blank">bhashini.gov.in/ulca</a>
-  → My Profile → generate API key → paste into <code>.env</code> as
-  <code>BHASHINI_USER_ID</code> and <code>BHASHINI_API_KEY</code>.
-</div>
+<div id="credWarning" class="hidden"></div>
 
 <!-- Language + settings -->
 <div class="card">
@@ -378,7 +373,7 @@ translateBtn.onclick = async () => {
     return;
   }
 
-  setStatus("Calling Bhashini pipeline (ASR → Translate → TTS)…");
+  setStatus("Calling translation pipeline (ASR → Translate → TTS)…");
 
   const gender = document.querySelector('input[name="gender"]:checked').value;
 
@@ -427,11 +422,26 @@ function setStatus(msg, isError = false) {
 }
 
 // ── Health check on load ─────────────────────────────────────────────────────
+const PROVIDER_INFO = {
+  sarvam:   { label: "Sarvam AI",  signup: "https://dashboard.sarvam.ai",     envKey: "SARVAM_API_KEY" },
+  bhashini: { label: "Bhashini",   signup: "https://bhashini.gov.in/ulca",    envKey: "BHASHINI_USER_ID + BHASHINI_API_KEY" },
+};
+
 (async () => {
   try {
     const h = await fetch("/api/health").then(r => r.json());
+    const info = PROVIDER_INFO[h.provider] || PROVIDER_INFO.bhashini;
+
+    document.getElementById("providerTag").textContent =
+      `Powered by ${info.label} · Speak in any Indian language — hear the reply in another`;
+
     if (!h.credentials_set) {
-      document.getElementById("credWarning").classList.remove("hidden");
+      const warn = document.getElementById("credWarning");
+      warn.innerHTML =
+        `⚠️ ${info.label} credentials not configured.<br>` +
+        `Sign up at <a href="${info.signup}" target="_blank">${info.signup}</a> ` +
+        `and set <code>${info.envKey}</code> in <code>.env</code>.`;
+      warn.classList.remove("hidden");
       translateBtn.disabled = true;
       translateBtn.textContent = "Configure credentials first";
     }

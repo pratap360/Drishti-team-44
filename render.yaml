@@ -1,0 +1,32 @@
+services:
+  - type: web
+    name: drishti-api
+    env: python
+    plan: free
+    region: singapore
+    buildCommand: pip install -r requirements-server.txt
+    startCommand: uvicorn server:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    autoDeploy: true
+
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+
+      - key: BHASHINI_PIPELINE_ID
+        value: 64392f96daac500b55c543cd
+
+      - key: DRISHTI_MODEL
+        value: claude-haiku-4-5-20251001
+
+      - key: SARVAM_API_KEY
+        sync: false
+
+      - key: ANTHROPIC_API_KEY
+        sync: false
+
+      - key: BHASHINI_USER_ID
+        sync: false
+
+      - key: BHASHINI_API_KEY
+        sync: false

@@ -1,0 +1,10 @@
+# Keep Vercel from scanning these directories for Python entrypoints.
+# Only api/*.py should be treated as serverless functions.
+archive/
+DRISHTI-Kumbh-Finder/
+data/
+supabase/
+__pycache__/
+*.pyc
+*.db
+*.wav
