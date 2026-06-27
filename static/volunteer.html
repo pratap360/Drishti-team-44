@@ -323,6 +323,53 @@ header h1 { font-size: 18px; font-weight: 700; }
   margin-top: 16px;
 }
 
+/* Login overlay */
+.login-overlay {
+  display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  z-index: 1000; align-items: center; justify-content: center;
+}
+.login-overlay.show { display: flex; }
+.login-card {
+  background: white; border-radius: 20px; padding: 32px 28px;
+  width: 100%; max-width: 360px; margin: 20px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+}
+.login-card h2 {
+  text-align: center; font-size: 22px; color: var(--primary-dark);
+  margin-bottom: 6px;
+}
+.login-card .login-sub {
+  text-align: center; font-size: 13px; color: var(--text-sec);
+  margin-bottom: 24px;
+}
+.login-card .form-field { margin-bottom: 14px; }
+.login-error {
+  background: #ffebee; color: var(--danger); border-radius: 8px;
+  padding: 10px 14px; font-size: 13px; margin-bottom: 14px; display: none;
+}
+.login-error.show { display: block; }
+
+/* Logout button */
+.logout-btn {
+  background: rgba(255,255,255,0.15); border: none; color: white;
+  font-size: 18px; padding: 6px 10px; border-radius: 8px;
+  cursor: pointer; margin-left: 6px; line-height: 1;
+  transition: background 0.2s;
+}
+.logout-btn:active { background: rgba(255,255,255,0.35); }
+
+/* GPS button */
+.location-row { display: flex; gap: 8px; align-items: stretch; }
+.location-row input { flex: 1; }
+.gps-btn {
+  padding: 0 14px; background: var(--primary); color: white;
+  border: none; border-radius: 10px; font-size: 14px; cursor: pointer;
+  white-space: nowrap; flex-shrink: 0; font-weight: 600;
+  transition: background 0.2s;
+}
+.gps-btn:active { background: var(--primary-dark); }
+
 /* Scanner */
 .scanner-area {
   width: 100%; aspect-ratio: 1; border-radius: 12px; overflow: hidden;
@@ -338,6 +385,26 @@ header h1 { font-size: 18px; font-weight: 700; }
 </head>
 <body>
 
+<!-- LOGIN OVERLAY -->
+<div class="login-overlay show" id="login-overlay">
+  <div class="login-card">
+    <h2>&#x1f6e1;&#xfe0f; Kumbh Reunite</h2>
+    <div class="login-sub">Volunteer Field App — Sign in to continue</div>
+    <div class="login-error" id="login-error"></div>
+    <div class="form-field">
+      <label style="display:block;font-size:13px;font-weight:600;color:var(--text-sec);margin-bottom:6px">Username</label>
+      <input type="text" id="login-username" placeholder="Volunteer username" autocomplete="username"
+             style="width:100%;padding:14px;border:2px solid var(--border);border-radius:10px;font-size:16px;outline:none">
+    </div>
+    <div class="form-field">
+      <label style="display:block;font-size:13px;font-weight:600;color:var(--text-sec);margin-bottom:6px">Password</label>
+      <input type="password" id="login-password" placeholder="Password" autocomplete="current-password"
+             style="width:100%;padding:14px;border:2px solid var(--border);border-radius:10px;font-size:16px;outline:none">
+    </div>
+    <button class="btn btn-primary" id="login-btn" onclick="doLogin()" style="margin-top:8px">Sign In</button>
+  </div>
+</div>
+
 <div id="offline-bar" class="offline-bar">&#x26a0;&#xfe0f; Offline — Reports saved locally, will sync when connected</div>
 <div id="sync-bar" class="sync-bar" onclick="syncPendingReports()">&#x1f504; Tap to sync pending reports</div>
 
@@ -348,6 +415,7 @@ header h1 { font-size: 18px; font-weight: 700; }
   </div>
   <div class="header-right">
     <button class="lang-toggle" id="langToggleBtn" onclick="toggleLang()">हिं</button>
+    <button class="logout-btn" onclick="doLogout()" title="Logout">&#x23cf;&#xfe0f;</button>
     <a href="/" class="back-btn" id="hdr-exit">Exit</a>
   </div>
 </header>
@@ -464,7 +532,10 @@ header h1 { font-size: 18px; font-weight: 700; }
       </div>
       <div class="form-field">
         <label id="lbl-location">Where Found</label>
-        <input type="text" id="v-location" placeholder="Location / landmark">
+        <div class="location-row">
+          <input type="text" id="v-location" placeholder="Location / landmark">
+          <button type="button" class="gps-btn" onclick="fillGPS()" id="btn-gps">&#x1f4cd; GPS</button>
+        </div>
       </div>
       <div class="form-field">
         <label id="lbl-center">Your Center</label>
@@ -766,6 +837,42 @@ const lang = {
     navigate: 'Navigate',
     highRiskZones: 'High-Risk Zones',
     highRiskSub: 'Crowd chokepoints — people most likely to separate here',
+
+    // nearby (dynamic)
+    nearbyPolice: 'Police Stations',
+    nearbyHighRisk: 'High-Risk Zones',
+    nearbyChokeDesc: 'Crowd chokepoints — people most likely to separate here',
+    nearbyNavigate: 'Navigate',
+    nearbyOfflineMsg: 'Location data unavailable offline',
+
+    // QR / share (dynamic)
+    qrNoReport: 'No recent report to share. Report a found person first.',
+    qrNoReportShort: 'No report to share',
+    qrPerson: 'Person:',
+    qrImported: 'Report Imported & Synced',
+    qrRegistered: 'Registered in the central database',
+    qrSavedLocal: 'Saved Locally',
+    qrSavedOfflineSub: 'saved offline. Will sync when connected.',
+    qrInvalid: 'Invalid QR code — not a Kumbh Reunite share code.',
+    qrCameraDenied: 'Camera access denied. You can also receive data by asking the sender to read out the details.',
+
+    // sync (dynamic)
+    syncQueued: 'queued offline',
+    syncTapGreen: 'Tap the green bar above to sync now.',
+    syncAutoSync: 'Will auto-sync when connectivity returns.',
+    syncStillOfflineMsg: 'Still offline. Cannot sync yet.',
+    syncNoPendingMsg: 'No pending reports to sync.',
+    syncCompletePrefix: 'Synced',
+    syncCompleteOf: 'of',
+    syncCompletesuffix: 'reports to the server.',
+
+    // login
+    loginTitle: 'Kumbh Reunite',
+    loginSub: 'Volunteer Field App — Sign in to continue',
+    loginUserLabel: 'Username',
+    loginPassLabel: 'Password',
+    loginBtn: 'Sign In',
+    loginError: 'Invalid credentials. Please try again.',
   },
   hi: {
     langToggle: 'मरा',
@@ -904,6 +1011,42 @@ const lang = {
     navigate: 'मार्ग',
     highRiskZones: 'उच्च जोखिम क्षेत्र',
     highRiskSub: 'भीड़ वाले संकरे स्थान — यहां बिछड़ने की संभावना सबसे अधिक',
+
+    // nearby (dynamic)
+    nearbyPolice: 'पुलिस स्टेशन',
+    nearbyHighRisk: 'उच्च जोखिम क्षेत्र',
+    nearbyChokeDesc: 'भीड़ वाले संकरे स्थान — यहां बिछड़ने की संभावना सबसे अधिक',
+    nearbyNavigate: 'मार्ग',
+    nearbyOfflineMsg: 'ऑफलाइन में स्थान डेटा उपलब्ध नहीं',
+
+    // QR / share (dynamic)
+    qrNoReport: 'शेयर करने के लिए कोई हालिया रिपोर्ट नहीं। पहले किसी मिले व्यक्ति की रिपोर्ट करें।',
+    qrNoReportShort: 'शेयर करने के लिए कोई रिपोर्ट नहीं',
+    qrPerson: 'व्यक्ति:',
+    qrImported: 'रिपोर्ट आयात और सिंक हुई',
+    qrRegistered: 'केंद्रीय डेटाबेस में दर्ज',
+    qrSavedLocal: 'स्थानीय रूप से सहेजा गया',
+    qrSavedOfflineSub: 'ऑफलाइन सहेजा गया। कनेक्ट होने पर सिंक होगा।',
+    qrInvalid: 'अमान्य QR कोड — यह कुम्भ रीयूनाइट का शेयर कोड नहीं है।',
+    qrCameraDenied: 'कैमरा अनुमति अस्वीकृत। प्रेषक से विवरण पढ़वाकर भी डेटा प्राप्त किया जा सकता है।',
+
+    // sync (dynamic)
+    syncQueued: 'ऑफलाइन कतार में',
+    syncTapGreen: 'अभी सिंक करने के लिए हरी पट्टी पर टैप करें।',
+    syncAutoSync: 'कनेक्टिविटी मिलने पर स्वतः सिंक होगी।',
+    syncStillOfflineMsg: 'अभी भी ऑफलाइन। सिंक नहीं हो सकता।',
+    syncNoPendingMsg: 'सिंक करने के लिए कोई लंबित रिपोर्ट नहीं।',
+    syncCompletePrefix: 'सिंक हुईं',
+    syncCompleteOf: 'में से',
+    syncCompletesuffix: 'रिपोर्ट सर्वर पर।',
+
+    // login
+    loginTitle: 'कुम्भ रीयूनाइट',
+    loginSub: 'स्वयंसेवक फील्ड ऐप — जारी रखने के लिए साइन इन करें',
+    loginUserLabel: 'उपयोगकर्ता नाम',
+    loginPassLabel: 'पासवर्ड',
+    loginBtn: 'साइन इन करें',
+    loginError: 'अमान्य क्रेडेंशियल। कृपया पुनः प्रयास करें।',
   },
   mr: {
     langToggle: 'EN',
@@ -1042,6 +1185,42 @@ const lang = {
     navigate: 'मार्ग दाखवा',
     highRiskZones: 'उच्च-जोखीम क्षेत्र',
     highRiskSub: 'गर्दीचे संकुचित ठिकाणे — येथे सर्वाधिक बिछडण्याची शक्यता',
+
+    // nearby (dynamic)
+    nearbyPolice: 'पोलीस ठाणी',
+    nearbyHighRisk: 'उच्च-जोखीम क्षेत्र',
+    nearbyChokeDesc: 'गर्दीचे संकुचित ठिकाणे — येथे सर्वाधिक बिछडण्याची शक्यता',
+    nearbyNavigate: 'मार्ग दाखवा',
+    nearbyOfflineMsg: 'ऑफलाइनमध्ये स्थान डेटा उपलब्ध नाही',
+
+    // QR / share (dynamic)
+    qrNoReport: 'शेअर करण्यासाठी कोणतीही अलीकडील नोंद नाही. आधी सापडलेल्या व्यक्तीची नोंद करा.',
+    qrNoReportShort: 'शेअर करण्यासाठी कोणतीही नोंद नाही',
+    qrPerson: 'व्यक्ती:',
+    qrImported: 'नोंद आयात आणि सिंक झाली',
+    qrRegistered: 'केंद्रीय डेटाबेसमध्ये नोंदवले',
+    qrSavedLocal: 'स्थानिक पातळीवर सेव्ह झाले',
+    qrSavedOfflineSub: 'ऑफलाइन सेव्ह झाले. कनेक्ट झाल्यावर सिंक होईल.',
+    qrInvalid: 'अवैध QR कोड — हा कुंभ रियुनाइट शेअर कोड नाही.',
+    qrCameraDenied: 'कॅमेरा परवानगी नाकारली. प्रेषकाकडून तपशील वाचून घेऊनही डेटा मिळवता येतो.',
+
+    // sync (dynamic)
+    syncQueued: 'ऑफलाइन रांगेत',
+    syncTapGreen: 'आत्ता सिंक करण्यासाठी हिरव्या पट्टीवर टॅप करा.',
+    syncAutoSync: 'कनेक्टिव्हिटी मिळाल्यावर आपोआप सिंक होईल.',
+    syncStillOfflineMsg: 'अजूनही ऑफलाइन. सिंक करणे शक्य नाही.',
+    syncNoPendingMsg: 'सिंक करण्यासाठी कोणत्याही प्रलंबित तक्रारी नाहीत.',
+    syncCompletePrefix: 'सिंक झाल्या',
+    syncCompleteOf: 'पैकी',
+    syncCompletesuffix: 'तक्रारी सर्व्हरवर.',
+
+    // login
+    loginTitle: 'कुंभ रियुनाइट',
+    loginSub: 'स्वयंसेवक फील्ड अॅप — सुरू ठेवण्यासाठी साइन इन करा',
+    loginUserLabel: 'वापरकर्ता नाव',
+    loginPassLabel: 'पासवर्ड',
+    loginBtn: 'साइन इन करा',
+    loginError: 'अवैध क्रेडेन्शियल. कृपया पुन्हा प्रयत्न करा.',
   }
 };
 
@@ -1473,12 +1652,12 @@ async function loadNearby() {
 
     document.getElementById('nearby-police').innerHTML = `
       <div class="card">
-        <h3 style="margin-bottom:12px">&#x1f6a8; Police Stations (${d.police_stations.length})</h3>
+        <h3 style="margin-bottom:12px">&#x1f6a8; ${t('nearbyPolice')} (${d.police_stations.length})</h3>
         ${d.police_stations.map(p => `
           <div class="nearby-item">
             <span>${p.station_name}</span>
             <a href="https://maps.google.com/?q=${p.latitude},${p.longitude}" target="_blank"
-               style="color:var(--primary);text-decoration:none;font-size:13px">${t('navigate')}</a>
+               style="color:var(--primary);text-decoration:none;font-size:13px">${t('nearbyNavigate')}</a>
           </div>
         `).join('')}
       </div>`;
@@ -1486,8 +1665,8 @@ async function loadNearby() {
     const chokes = d.chokepoints.filter(c => c.category.includes('choke') || c.category.includes('pressure'));
     document.getElementById('nearby-chokepoints').innerHTML = `
       <div class="card">
-        <h3 style="margin-bottom:4px">&#x26a0;&#xfe0f; ${t('highRiskZones')} (${chokes.length})</h3>
-        <div class="subtitle">${t('highRiskSub')}</div>
+        <h3 style="margin-bottom:4px">&#x26a0;&#xfe0f; ${t('nearbyHighRisk')} (${chokes.length})</h3>
+        <div class="subtitle">${t('nearbyChokeDesc')}</div>
         ${chokes.map(c => `
           <div class="nearby-item">
             <span>${c.location_name}</span>
@@ -1496,7 +1675,7 @@ async function loadNearby() {
         `).join('')}
       </div>`;
   } catch(e) {
-    document.getElementById('nearby-police').innerHTML = `<div class="empty-state"><p>${t('nearbyOffline')}</p></div>`;
+    document.getElementById('nearby-police').innerHTML = `<div class="empty-state"><p>${t('nearbyOfflineMsg')}</p></div>`;
   }
 }
 
@@ -1531,7 +1710,7 @@ function generateQRForData(data, container) {
   };
   const jsonStr = JSON.stringify(shareData);
 
-  container.innerHTML = '<div class="qr-container"><div id="qr-canvas"></div><p style="margin-top:12px;font-size:12px;color:var(--text-sec)">Person: <strong>' +
+  container.innerHTML = '<div class="qr-container"><div id="qr-canvas"></div><p style="margin-top:12px;font-size:12px;color:var(--text-sec)">' + t('qrPerson') + ' <strong>' +
     (data.person_name || t('nameUnknown')) + '</strong><br>' + (data.gender || '') + ' &middot; ' + (data.age_band || '') + '</p></div>';
 
   if (typeof QRCode !== 'undefined') {
@@ -1578,7 +1757,7 @@ function startQRScanner() {
       const resultEl = document.getElementById('scan-result');
       resultEl.innerHTML = `
         <div class="card" style="background:#ffebee">
-          <p style="font-size:13px;color:var(--danger)">${t('cameraError')}</p>
+          <p style="font-size:13px;color:var(--danger)">${t('qrCameraDenied')}</p>
         </div>`;
     });
 }
@@ -1613,24 +1792,24 @@ async function handleScannedQR(rawData) {
       resultEl.innerHTML = `
         <div class="success-msg">
           <div class="icon">&#x2705;</div>
-          <h3>${t('importedSynced')}</h3>
+          <h3>${t('qrImported')}</h3>
           <p><strong>${report.person_name || t('nameUnknown')}</strong> — ${report.gender} &middot; ${report.age_band}<br>
-          ${t('registeredInDB')}${result.id})</p>
+          ${t('qrRegistered')} (ID: ${result.id})</p>
         </div>`;
     } else {
       await addToPendingQueue(report);
       resultEl.innerHTML = `
         <div class="success-msg" style="background:#fff3e0">
           <div class="icon">&#x1f4be;</div>
-          <h3>${t('savedLocallyTitle')}</h3>
-          <p><strong>${report.person_name || t('nameUnknown')}</strong> ${t('savedLocallySub')}</p>
+          <h3>${t('qrSavedLocal')}</h3>
+          <p><strong>${report.person_name || t('nameUnknown')}</strong> ${t('qrSavedOfflineSub')}</p>
         </div>`;
       updatePendingBanner();
     }
   } catch(e) {
     document.getElementById('scan-result').innerHTML = `
       <div class="card" style="background:#ffebee">
-        <p style="font-size:13px;color:var(--danger)">${t('invalidQR')}</p>
+        <p style="font-size:13px;color:var(--danger)">${t('qrInvalid')}</p>
       </div>`;
   }
 }
@@ -1644,8 +1823,8 @@ async function updatePendingBanner() {
     if (pending.length > 0) {
       banner.innerHTML = `
         <div class="pending-queue">
-          <h4>&#x1f4e6; ${pending.length} ${t('pendingQueueLabel')}</h4>
-          <p>${navigator.onLine ? t('pendingOnlineHint') : t('pendingOfflineHint')}</p>
+          <h4>&#x1f4e6; ${pending.length} ${t('syncQueued')}</h4>
+          <p>${navigator.onLine ? t('syncTapGreen') : t('syncAutoSync')}</p>
         </div>`;
       if (navigator.onLine) {
         syncBar.classList.add('show');
@@ -1660,10 +1839,10 @@ async function updatePendingBanner() {
 }
 
 async function syncPendingReports() {
-  if (!navigator.onLine) { alert(t('syncStillOffline')); return; }
+  if (!navigator.onLine) { alert(t('syncStillOfflineMsg')); return; }
   try {
     const pending = await getPendingReports();
-    if (pending.length === 0) { alert(t('syncNoPending')); return; }
+    if (pending.length === 0) { alert(t('syncNoPendingMsg')); return; }
 
     let synced = 0;
     for (const report of pending) {
@@ -1676,12 +1855,115 @@ async function syncPendingReports() {
     }
 
     await clearPendingReports();
-    alert(`${synced} / ${pending.length} ${t('syncDone')}`);
+    alert(`${t('syncCompletePrefix')} ${synced} ${t('syncCompleteOf')} ${pending.length} ${t('syncCompletesuffix')}`);
     updatePendingBanner();
     loadVolStats();
   } catch(e) {
     alert(t('syncFailed'));
   }
+}
+
+// ========== Auth ==========
+async function checkAuth() {
+  try {
+    const res = await fetch('/api/me');
+    if (res.status === 401) { showLoginOverlay(); return; }
+    const d = await res.json();
+    if (d.role !== 'volunteer') { showLoginOverlay(); return; }
+    hideLoginOverlay();
+  } catch(e) {
+    // If offline and no auth check possible, allow through (service worker may serve cached app)
+    hideLoginOverlay();
+  }
+}
+
+function showLoginOverlay() {
+  document.getElementById('login-overlay').classList.add('show');
+}
+
+function hideLoginOverlay() {
+  document.getElementById('login-overlay').classList.remove('show');
+}
+
+async function doLogin() {
+  const username = document.getElementById('login-username').value.trim();
+  const password = document.getElementById('login-password').value;
+  const errEl = document.getElementById('login-error');
+  const btn = document.getElementById('login-btn');
+
+  if (!username || !password) {
+    errEl.textContent = t('loginError');
+    errEl.classList.add('show');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = '...';
+  errEl.classList.remove('show');
+
+  try {
+    const res = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password, role: 'volunteer' })
+    });
+    if (res.ok) {
+      hideLoginOverlay();
+      loadVolStats();
+      loadVolFilters();
+      openOfflineDB().then(() => updatePendingBanner());
+    } else {
+      errEl.textContent = t('loginError');
+      errEl.classList.add('show');
+    }
+  } catch(e) {
+    errEl.textContent = t('loginError');
+    errEl.classList.add('show');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = t('loginBtn');
+  }
+}
+
+async function doLogout() {
+  try {
+    await fetch('/api/logout', { method: 'POST' });
+  } catch(e) {}
+  window.location.href = '/';
+}
+
+// Allow Enter key in login form
+document.getElementById('login-password').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doLogin();
+});
+document.getElementById('login-username').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doLogin();
+});
+
+// ========== GPS Geolocation ==========
+function fillGPS() {
+  const btn = document.getElementById('btn-gps');
+  if (!navigator.geolocation) {
+    alert('Geolocation is not supported by your browser.');
+    return;
+  }
+  btn.textContent = '⏳';
+  btn.disabled = true;
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      const lat = pos.coords.latitude.toFixed(4);
+      const lng = pos.coords.longitude.toFixed(4);
+      document.getElementById('v-location').value = `Lat: ${lat}, Lng: ${lng}`;
+      btn.textContent = '📍 GPS';
+      btn.disabled = false;
+    },
+    err => {
+      alert('Could not get location: ' + err.message);
+      btn.textContent = '📍 GPS';
+      btn.disabled = false;
+    },
+    { enableHighAccuracy: true, timeout: 10000 }
+  );
 }
 
 // ========== Service Worker for offline caching ==========
@@ -1704,11 +1986,11 @@ window.addEventListener('offline', () => {
 
 applyLang();
 
-openOfflineDB().then(() => {
-  updatePendingBanner();
+checkAuth().then(() => {
+  openOfflineDB().then(() => updatePendingBanner());
+  loadVolStats();
+  loadVolFilters();
 });
-loadVolStats();
-loadVolFilters();
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>

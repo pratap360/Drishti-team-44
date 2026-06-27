@@ -378,6 +378,51 @@ header {
 
 canvas { display: block; }
 
+/* ───── LOGIN OVERLAY ───── */
+.login-overlay {
+  display: none; position: fixed; inset: 0; z-index: 500;
+  background: linear-gradient(135deg, #c62828, #e53935);
+  align-items: center; justify-content: center; padding: 24px;
+}
+.login-overlay.show { display: flex; }
+.login-card {
+  background: white; border-radius: 20px; padding: 32px 24px;
+  width: 100%; max-width: 360px; box-shadow: 0 8px 40px rgba(0,0,0,0.3);
+  text-align: center;
+}
+.login-card .login-icon { font-size: 48px; margin-bottom: 12px; }
+.login-card h2 { font-size: 22px; font-weight: 800; color: #c62828; margin-bottom: 4px; }
+.login-card .login-sub { font-size: 13px; color: var(--text-sec); margin-bottom: 24px; }
+.login-card .form-field { text-align: left; }
+.login-card .form-field label { color: var(--text-sec); }
+.login-card .form-field input { font-size: 16px; }
+.btn-login { background: #c62828; color: white; }
+.btn-login:hover { background: #b71c1c; }
+.login-error {
+  background: #ffebee; color: #c62828; border-radius: 8px;
+  padding: 10px 14px; font-size: 13px; font-weight: 600;
+  margin-bottom: 12px; display: none;
+}
+.login-error.show { display: block; }
+.btn-guest {
+  background: none; border: 2px solid #c62828; color: #c62828;
+  border-radius: 12px; padding: 12px; font-size: 14px; font-weight: 600;
+  cursor: pointer; width: 100%; margin-top: 10px; transition: all 0.2s;
+}
+.btn-guest:hover { background: #ffebee; }
+
+/* ───── LOGOUT BUTTON ───── */
+.header-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.logout-btn {
+  background: rgba(255,255,255,0.15); border: none; color: white;
+  font-size: 18px; width: 34px; height: 34px; border-radius: 50%;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: background 0.2s; flex-shrink: 0;
+}
+.logout-btn:hover { background: rgba(255,255,255,0.3); }
+.logout-btn { display: none; }
+.logout-btn.visible { display: flex; }
+
 /* ───── LOADING ───── */
 .loading-spinner {
   width: 36px; height: 36px; border: 3px solid var(--border);
@@ -400,7 +445,10 @@ canvas { display: block; }
     <h1 id="hdr-title">Kumbh Reunite</h1>
     <div class="sub" id="hdr-sub">Family Portal</div>
   </div>
-  <button class="lang-toggle" id="langToggleBtn">हिं</button>
+  <div class="header-actions">
+    <button class="lang-toggle" id="langToggleBtn">हिं</button>
+    <button class="logout-btn" id="logoutBtn" title="Logout">🚪</button>
+  </div>
 </header>
 
 <!-- ===== PAGES ===== -->
@@ -808,6 +856,26 @@ canvas { display: block; }
       </button>
       <button class="btn" style="background:#f5f5f5;color:var(--text);" onclick="closeContactModal()" id="modal-cancel">Cancel</button>
     </div>
+  </div>
+</div>
+
+<!-- ===== LOGIN OVERLAY ===== -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-card">
+    <div class="login-icon">🙏</div>
+    <h2>Kumbh Reunite</h2>
+    <div class="login-sub">Family Portal — Please sign in to continue</div>
+    <div class="login-error" id="loginError"></div>
+    <div class="form-field">
+      <label for="loginUsername">Username</label>
+      <input type="text" id="loginUsername" placeholder="Username" autocomplete="username">
+    </div>
+    <div class="form-field" style="margin-bottom:20px;">
+      <label for="loginPassword">Password</label>
+      <input type="password" id="loginPassword" placeholder="Password" autocomplete="current-password">
+    </div>
+    <button class="btn btn-login" id="loginBtn" onclick="doLogin()">🔐 Sign In</button>
+    <button class="btn-guest" onclick="doGuest()">👁 Continue as Guest</button>
   </div>
 </div>
 
@@ -1562,7 +1630,8 @@ async function loadFoundPersons() {
       empty.style.display = 'block';
       count.textContent = '';
     } else {
-      count.textContent = persons.length + (currentLang === 'hi' ? ' मिले हुए व्यक्ति' : ' found persons');
+      const suffix = currentLang === 'hi' ? ' मिले हुए व्यक्ति' : currentLang === 'mr' ? ' सापडलेल्या व्यक्ती' : ' found persons';
+      count.textContent = persons.length + suffix;
       persons.forEach(p => {
         const div = document.createElement('div');
         div.className = 'photo-result-card';
@@ -1703,7 +1772,7 @@ function buildResultCard(p) {
     ? `<img src="${p.photo}" class="result-photo-thumb" alt="${p.name||'?'}">`
     : `<div class="result-photo-placeholder">👤</div>`;
   const scoreHtml = p.match_score != null
-    ? `<span class="match-score">${Math.round(p.match_score * 100)}%</span>` : '';
+    ? `<span class="match-score">${Math.round(p.match_score)}%</span>` : '';
   const badgeHtml = buildStatusBadge(p.status);
   const genderStr = translateGender(p.gender);
   const ageStr = translateAge(p.age_group);
@@ -1915,12 +1984,137 @@ document.getElementById('contactModal').addEventListener('click', function(e) {
 });
 
 // ═══════════════════════════════════════════════════════════
+//  AUTH — LOGIN GATE
+// ═══════════════════════════════════════════════════════════
+let isAuthenticated = false;
+
+function showLoginOverlay() {
+  document.getElementById('loginOverlay').classList.add('show');
+  document.getElementById('logoutBtn').classList.remove('visible');
+}
+
+function hideLoginOverlay() {
+  document.getElementById('loginOverlay').classList.remove('show');
+  document.getElementById('logoutBtn').classList.add('visible');
+  isAuthenticated = true;
+}
+
+function setGuestMode() {
+  // Guest: hide Report and Track tabs, show only Home and Search
+  document.getElementById('nav-report').style.display = 'none';
+  document.getElementById('nav-track').style.display = 'none';
+  // Also hide the report/track quick-action buttons on home
+  const actionBtnsAll = document.querySelectorAll('.action-btn');
+  if (actionBtnsAll[0]) actionBtnsAll[0].style.display = 'none'; // Report
+  if (actionBtnsAll[3]) actionBtnsAll[3].style.display = 'none'; // Track
+}
+
+function clearGuestMode() {
+  document.getElementById('nav-report').style.display = '';
+  document.getElementById('nav-track').style.display = '';
+  const actionBtnsAll = document.querySelectorAll('.action-btn');
+  if (actionBtnsAll[0]) actionBtnsAll[0].style.display = '';
+  if (actionBtnsAll[3]) actionBtnsAll[3].style.display = '';
+}
+
+async function checkAuth() {
+  try {
+    const r = await fetch('/api/me');
+    if (r.ok) {
+      const data = await r.json();
+      if (data.role === 'family') {
+        hideLoginOverlay();
+        clearGuestMode();
+        return;
+      }
+    }
+  } catch(e) {
+    // network error — fall through to show login
+  }
+  showLoginOverlay();
+}
+
+async function doLogin() {
+  const username = document.getElementById('loginUsername').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const errEl = document.getElementById('loginError');
+  const btn = document.getElementById('loginBtn');
+
+  if (!username || !password) {
+    errEl.textContent = 'Please enter username and password.';
+    errEl.classList.add('show');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = '⏳ Signing in…';
+  errEl.classList.remove('show');
+
+  try {
+    const r = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password, role: 'family' }),
+    });
+    if (r.ok) {
+      const data = await r.json();
+      if (data.role === 'family' || data.success) {
+        hideLoginOverlay();
+        clearGuestMode();
+        document.getElementById('loginUsername').value = '';
+        document.getElementById('loginPassword').value = '';
+      } else {
+        errEl.textContent = 'Access denied. This portal is for families only.';
+        errEl.classList.add('show');
+      }
+    } else {
+      const data = await r.json().catch(() => ({}));
+      errEl.textContent = data.error || data.message || 'Invalid username or password.';
+      errEl.classList.add('show');
+    }
+  } catch(e) {
+    errEl.textContent = 'Network error — please try again.';
+    errEl.classList.add('show');
+  }
+
+  btn.disabled = false;
+  btn.textContent = '🔐 Sign In';
+}
+
+function doGuest() {
+  document.getElementById('loginOverlay').classList.remove('show');
+  setGuestMode();
+  isAuthenticated = false;
+}
+
+async function doLogout() {
+  try {
+    await fetch('/api/logout', { method: 'POST' });
+  } catch(e) {}
+  isAuthenticated = false;
+  clearGuestMode();
+  window.location.href = '/';
+}
+
+// Allow Enter key in login form
+document.getElementById('loginPassword').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') doLogin();
+});
+document.getElementById('loginUsername').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') doLogin();
+});
+
+// Wire logout button
+document.getElementById('logoutBtn').addEventListener('click', doLogout);
+
+// ═══════════════════════════════════════════════════════════
 //  INIT
 // ═══════════════════════════════════════════════════════════
 applyLang();
 loadStats();
 handleHash();
 window.addEventListener('hashchange', handleHash);
+checkAuth();
 </script>
 </body>
 </html>

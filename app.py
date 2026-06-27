@@ -3,14 +3,145 @@ import sqlite3
 import os
 import json
 import math
+import time
 from datetime import datetime
-from flask import Flask, request, jsonify, send_from_directory, g
+from functools import wraps
+from flask import Flask, request, jsonify, send_from_directory, g, session
 from rapidfuzz import fuzz
+from werkzeug.security import generate_password_hash, check_password_hash
+from dotenv import load_dotenv
+import psycopg2
+import psycopg2.extras
+
+load_dotenv()
 
 app = Flask(__name__, static_folder="static")
+app.secret_key = os.environ.get("SECRET_KEY", "kumbh-mela-secret-key-2026")
 DB_PATH = os.path.join(os.path.dirname(__file__), "kumbh.db")
+SUPABASE_DB_URL = os.environ.get("SUPABASE_DB_URL")
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data-repo", "claude-impact-lab-mumbai-2026", "data")
 
+
+# ---------------------------------------------------------------------------
+# Supabase PostgreSQL helpers
+# ---------------------------------------------------------------------------
+
+def get_supabase_conn():
+    if not SUPABASE_DB_URL:
+        return None
+    try:
+        conn = psycopg2.connect(SUPABASE_DB_URL, connect_timeout=5)
+        return conn
+    except Exception:
+        return None
+
+
+def init_supabase_users():
+    conn = get_supabase_conn()
+    if not conn:
+        print("[Supabase] No connection — using local SQLite for auth")
+        return False
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY,
+                username VARCHAR(100) UNIQUE NOT NULL,
+                password_hash VARCHAR(300) NOT NULL,
+                role VARCHAR(50) NOT NULL,
+                created_at TIMESTAMP DEFAULT NOW()
+            )
+        """)
+        default_users = [
+            ("admin",     "admin123",   "admin"),
+            ("volunteer", "vol123",     "volunteer"),
+            ("family",    "family123",  "family"),
+        ]
+        for username, password, role in default_users:
+            cur.execute("SELECT 1 FROM users WHERE username=%s", (username,))
+            if not cur.fetchone():
+                cur.execute(
+                    "INSERT INTO users (username, password_hash, role) VALUES (%s, %s, %s)",
+                    (username, generate_password_hash(password), role),
+                )
+        conn.commit()
+        cur.close()
+        conn.close()
+        print("[Supabase] Users table ready — credentials encrypted with PBKDF2")
+        return True
+    except Exception as e:
+        print(f"[Supabase] Init failed: {e}")
+        conn.close()
+        return False
+
+
+def supabase_get_user(username):
+    conn = get_supabase_conn()
+    if not conn:
+        return None
+    try:
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute("SELECT username, password_hash, role FROM users WHERE username=%s", (username,))
+        row = cur.fetchone()
+        cur.close()
+        conn.close()
+        return row
+    except Exception:
+        conn.close()
+        return None
+
+
+def supabase_create_user(username, password, role):
+    conn = get_supabase_conn()
+    if not conn:
+        return False
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            "INSERT INTO users (username, password_hash, role) VALUES (%s, %s, %s) ON CONFLICT (username) DO NOTHING",
+            (username, generate_password_hash(password), role),
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+        return True
+    except Exception:
+        conn.close()
+        return False
+
+
+_supabase_available = init_supabase_users()
+
+
+# ---------------------------------------------------------------------------
+# In-memory rate limiter: IP -> list of timestamps
+# ---------------------------------------------------------------------------
+_rate_limit_store: dict = {}
+
+
+def rate_limit(max_per_minute: int):
+    """Decorator: allow at most max_per_minute POST requests per IP per 60 s."""
+    def decorator(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            ip = request.remote_addr or "unknown"
+            now = time.time()
+            window = 60.0
+            hits = _rate_limit_store.get(ip, [])
+            # Prune timestamps older than the window
+            hits = [t for t in hits if now - t < window]
+            if len(hits) >= max_per_minute:
+                return jsonify({"ok": False, "error": "Rate limit exceeded. Try again shortly."}), 429
+            hits.append(now)
+            _rate_limit_store[ip] = hits
+            return f(*args, **kwargs)
+        return wrapper
+    return decorator
+
+
+# ---------------------------------------------------------------------------
+# DB helpers
+# ---------------------------------------------------------------------------
 
 def get_db():
     if "db" not in g:
@@ -26,11 +157,99 @@ def close_db(exc):
         db.close()
 
 
+# ---------------------------------------------------------------------------
+# Auth helpers
+# ---------------------------------------------------------------------------
+
+def login_required(*roles):
+    """Decorator factory. If roles is empty, any authenticated user is allowed."""
+    def decorator(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            if "username" not in session:
+                return jsonify({"ok": False, "error": "Authentication required"}), 401
+            if roles and session.get("role") not in roles:
+                return jsonify({"ok": False, "error": "Insufficient permissions"}), 403
+            return f(*args, **kwargs)
+        return wrapper
+    return decorator
+
+
+# ---------------------------------------------------------------------------
+# Input validation
+# ---------------------------------------------------------------------------
+
+def validate_input(data: dict) -> tuple[dict, list[str]]:
+    """
+    Sanitise and validate common input fields.
+    Returns (cleaned_data, errors).
+    """
+    errors = []
+    out = {}
+
+    text_fields = [
+        "person_name", "found_location", "reporting_center", "state", "district",
+        "language", "last_seen_location", "last_seen_time", "physical_description",
+        "remarks", "reporter_name", "reporter_relationship", "special_needs",
+        "aadhaar_last4", "age_band", "gender",
+    ]
+    for field in text_fields:
+        val = data.get(field, "")
+        if val:
+            val = str(val).strip()[:500]
+        out[field] = val
+
+    # Gender validation
+    gender_val = out.get("gender", "")
+    if gender_val and gender_val not in ("Male", "Female", "Unknown", ""):
+        errors.append(f"gender must be Male, Female, Unknown, or empty (got '{gender_val}')")
+
+    # Phone validation
+    mobile_raw = str(data.get("reporter_mobile", "") or data.get("contact_mobile", "") or "").strip()
+    if mobile_raw:
+        digits = "".join(ch for ch in mobile_raw if ch.isdigit())
+        if not (10 <= len(digits) <= 13):
+            errors.append(f"Phone number must be 10-13 digits (got {len(digits)} digits)")
+        out["reporter_mobile"] = digits
+        out["contact_mobile"] = digits
+    else:
+        out["reporter_mobile"] = ""
+        out["contact_mobile"] = ""
+
+    # Photo size validation (base64 string length proxy for 500 KB)
+    photo_val = data.get("photo", "") or ""
+    # 500 KB binary → ~666 KB base64 chars; use 700 000 chars as ceiling
+    if len(photo_val) > 700_000:
+        errors.append("Photo exceeds 500 KB limit")
+        out["photo"] = ""
+    else:
+        out["photo"] = photo_val
+
+    return out, errors
+
+
+# ---------------------------------------------------------------------------
+# Audit log helper
+# ---------------------------------------------------------------------------
+
+def log_audit(db, case_id, action, details, actor=None):
+    if actor is None:
+        actor = session.get("username", "system")
+    db.execute(
+        "INSERT INTO audit_log (case_id, action, details, actor, timestamp) VALUES (?, ?, ?, ?, ?)",
+        (case_id, action, details, actor, datetime.now().strftime("%Y-%m-%d %H:%M:%S")),
+    )
+
+
+# ---------------------------------------------------------------------------
+# DB initialisation
+# ---------------------------------------------------------------------------
+
 def init_db():
     needs_data = not os.path.exists(DB_PATH)
     conn = sqlite3.connect(DB_PATH)
 
-    # Always ensure report_missing table exists (even on subsequent startups)
+    # Always ensure tables exist (idempotent on subsequent startups)
     conn.execute("""CREATE TABLE IF NOT EXISTS report_missing (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         reported_at TEXT,
@@ -52,12 +271,53 @@ def init_db():
         status TEXT DEFAULT 'Searching',
         matched_found_id INTEGER
     )""")
+
+    conn.execute("""CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL,
+        role TEXT NOT NULL
+    )""")
+
+    conn.execute("""CREATE TABLE IF NOT EXISTS callback_requests (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        found_person_id INTEGER,
+        requested_at TEXT,
+        status TEXT DEFAULT 'pending'
+    )""")
+
+    conn.execute("""CREATE TABLE IF NOT EXISTS audit_log (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        case_id TEXT,
+        action TEXT,
+        details TEXT,
+        actor TEXT,
+        timestamp TEXT
+    )""")
+
+    # Seed default users if not already present
+    default_users = [
+        ("admin",     "admin123",   "admin"),
+        ("volunteer", "vol123",     "volunteer"),
+        ("family",    "family123",  "family"),
+    ]
+    for username, password, role in default_users:
+        exists = conn.execute("SELECT 1 FROM users WHERE username=?", (username,)).fetchone()
+        if not exists:
+            conn.execute(
+                "INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)",
+                (username, generate_password_hash(password), role),
+            )
+
     conn.commit()
 
-    row_count = conn.execute("SELECT count(*) FROM sqlite_master WHERE type='table' AND name='missing_persons'").fetchone()[0]
+    row_count = conn.execute(
+        "SELECT count(*) FROM sqlite_master WHERE type='table' AND name='missing_persons'"
+    ).fetchone()[0]
     if row_count > 0:
         conn.close()
         return
+
     conn.execute("PRAGMA journal_mode=WAL")
     c = conn.cursor()
 
@@ -167,6 +427,10 @@ def init_db():
     conn.close()
 
 
+# ---------------------------------------------------------------------------
+# Static routes
+# ---------------------------------------------------------------------------
+
 @app.route("/")
 def landing():
     return send_from_directory("static", "landing.html")
@@ -192,16 +456,126 @@ def family():
     return send_from_directory("static", "family.html")
 
 
+# ---------------------------------------------------------------------------
+# Auth endpoints
+# ---------------------------------------------------------------------------
+
+@app.route("/api/login", methods=["POST"])
+@rate_limit(30)
+def api_login():
+    data = request.json or {}
+    username = (data.get("username") or "").strip()
+    password = data.get("password") or ""
+    requested_role = data.get("role") or ""
+
+    if not username or not password:
+        return jsonify({"ok": False, "error": "Username and password are required"}), 400
+
+    user = None
+    auth_source = "sqlite"
+
+    # Try Supabase first (encrypted credentials in cloud PostgreSQL)
+    if _supabase_available:
+        sb_user = supabase_get_user(username)
+        if sb_user and check_password_hash(sb_user["password_hash"], password):
+            user = sb_user
+            auth_source = "supabase"
+
+    # Fallback to local SQLite (offline mode)
+    if not user:
+        db = get_db()
+        row = db.execute("SELECT * FROM users WHERE username=?", (username,)).fetchone()
+        if row and check_password_hash(row["password_hash"], password):
+            user = {"username": row["username"], "password_hash": row["password_hash"], "role": row["role"]}
+            auth_source = "sqlite"
+
+    if not user:
+        return jsonify({"ok": False, "error": "Invalid credentials"}), 401
+
+    actual_role = user["role"]
+    if requested_role and requested_role != actual_role:
+        return jsonify({"ok": False, "error": "Role mismatch"}), 403
+
+    session.clear()
+    session["username"] = username
+    session["role"] = actual_role
+    session["auth_source"] = auth_source
+    return jsonify({"ok": True, "role": actual_role, "username": username})
+
+
+@app.route("/api/register", methods=["POST"])
+@login_required("admin")
+@rate_limit(10)
+def api_register():
+    data = request.json or {}
+    username = (data.get("username") or "").strip()
+    password = data.get("password") or ""
+    role = (data.get("role") or "").strip()
+
+    if not username or not password or role not in ("admin", "volunteer", "family"):
+        return jsonify({"ok": False, "error": "Valid username, password, and role (admin/volunteer/family) required"}), 400
+    if len(password) < 6:
+        return jsonify({"ok": False, "error": "Password must be at least 6 characters"}), 400
+
+    created = False
+    if _supabase_available:
+        created = supabase_create_user(username, password, role)
+
+    db = get_db()
+    try:
+        db.execute(
+            "INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)",
+            (username, generate_password_hash(password), role),
+        )
+        db.commit()
+        created = True
+    except sqlite3.IntegrityError:
+        if not created:
+            return jsonify({"ok": False, "error": "Username already exists"}), 409
+
+    return jsonify({"ok": True, "message": f"User '{username}' created with role '{role}'"})
+
+
+@app.route("/api/logout", methods=["POST"])
+def api_logout():
+    session.clear()
+    return jsonify({"ok": True})
+
+
+@app.route("/api/me")
+def api_me():
+    if "username" not in session:
+        return jsonify({"ok": False, "error": "Not authenticated"}), 401
+    return jsonify({"ok": True, "username": session["username"], "role": session["role"]})
+
+
+# ---------------------------------------------------------------------------
+# Stats (public subset vs admin full view)
+# ---------------------------------------------------------------------------
+
 @app.route("/api/stats")
 def stats():
     db = get_db()
     total = db.execute("SELECT COUNT(*) FROM missing_persons").fetchone()[0]
-    pending = db.execute("SELECT COUNT(*) FROM missing_persons WHERE status='Pending'").fetchone()[0]
     reunited = db.execute("SELECT COUNT(*) FROM missing_persons WHERE status='Reunited'").fetchone()[0]
+    avg_hours_row = db.execute(
+        "SELECT AVG(resolution_hours) FROM missing_persons WHERE resolution_hours IS NOT NULL"
+    ).fetchone()[0]
+    avg_resolution_hours = round(avg_hours_row, 1) if avg_hours_row else 0
+
+    # Public callers only get the summary
+    if session.get("role") != "admin":
+        return jsonify({
+            "total": total,
+            "reunited": reunited,
+            "avg_resolution_hours": avg_resolution_hours,
+        })
+
+    # Admin gets the full picture
+    pending = db.execute("SELECT COUNT(*) FROM missing_persons WHERE status='Pending'").fetchone()[0]
     unresolved = db.execute("SELECT COUNT(*) FROM missing_persons WHERE status='Unresolved'").fetchone()[0]
     hospital = db.execute("SELECT COUNT(*) FROM missing_persons WHERE status='Transferred to hospital'").fetchone()[0]
     duplicates = db.execute("SELECT COUNT(*) FROM missing_persons WHERE is_duplicate_report=1").fetchone()[0]
-    avg_hours = db.execute("SELECT AVG(resolution_hours) FROM missing_persons WHERE resolution_hours IS NOT NULL").fetchone()[0]
     found_total = db.execute("SELECT COUNT(*) FROM found_persons").fetchone()[0]
     found_matched = db.execute("SELECT COUNT(*) FROM found_persons WHERE matched_case_id IS NOT NULL").fetchone()[0]
     family_reports = db.execute("SELECT COUNT(*) FROM report_missing").fetchone()[0]
@@ -225,7 +599,7 @@ def stats():
     return jsonify({
         "total": total, "pending": pending, "reunited": reunited,
         "unresolved": unresolved, "hospital": hospital, "duplicates": duplicates,
-        "avg_resolution_hours": round(avg_hours, 1) if avg_hours else 0,
+        "avg_resolution_hours": avg_resolution_hours,
         "found_total": found_total, "found_matched": found_matched,
         "family_reports": family_reports, "family_matched": family_matched,
         "by_center": [{"center": r[0], "count": r[1], "reunited": r[2]} for r in by_center],
@@ -233,6 +607,10 @@ def stats():
         "by_date": [{"date": r[0], "count": r[1]} for r in by_date],
     })
 
+
+# ---------------------------------------------------------------------------
+# Search (public)
+# ---------------------------------------------------------------------------
 
 @app.route("/api/search")
 def search():
@@ -293,7 +671,13 @@ def search():
     return jsonify({"results": results, "count": len(results)})
 
 
+# ---------------------------------------------------------------------------
+# Fuzzy match (volunteer)
+# ---------------------------------------------------------------------------
+
 @app.route("/api/fuzzy-match", methods=["POST"])
+@login_required("volunteer", "admin")
+@rate_limit(30)
 def fuzzy_match():
     """Find potential matches for a found person against all missing reports."""
     db = get_db()
@@ -347,7 +731,7 @@ def fuzzy_match():
             score += 10
             reasons.append("Age match")
 
-        if score >= 20:
+        if score >= 35:  # raised from 20
             c["match_score"] = round(score, 1)
             c["match_reasons"] = reasons
             scored.append(c)
@@ -356,10 +740,20 @@ def fuzzy_match():
     return jsonify({"matches": scored[:20]})
 
 
+# ---------------------------------------------------------------------------
+# Report found (volunteer)
+# ---------------------------------------------------------------------------
+
 @app.route("/api/report-found", methods=["POST"])
+@login_required("volunteer", "admin")
+@rate_limit(30)
 def report_found():
     db = get_db()
-    data = request.json
+    raw = request.json or {}
+    cleaned, errors = validate_input(raw)
+    if errors:
+        return jsonify({"ok": False, "errors": errors}), 400
+
     db.execute("""INSERT INTO found_persons
         (found_at, found_location, reporting_center, person_name, gender,
          age_band, state, district, language, physical_description,
@@ -367,24 +761,34 @@ def report_found():
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         (
             datetime.now().strftime("%Y-%m-%d %H:%M"),
-            data.get("found_location", ""),
-            data.get("reporting_center", ""),
-            data.get("person_name", ""),
-            data.get("gender", ""),
-            data.get("age_band", ""),
-            data.get("state", ""),
-            data.get("district", ""),
-            data.get("language", ""),
-            data.get("physical_description", ""),
-            data.get("contact_mobile", ""),
-            data.get("remarks", ""),
-            data.get("photo", ""),
+            cleaned.get("found_location", "") or raw.get("found_location", ""),
+            cleaned.get("reporting_center", "") or raw.get("reporting_center", ""),
+            cleaned.get("person_name", ""),
+            cleaned.get("gender", ""),
+            cleaned.get("age_band", ""),
+            cleaned.get("state", ""),
+            cleaned.get("district", ""),
+            cleaned.get("language", ""),
+            cleaned.get("physical_description", ""),
+            cleaned.get("contact_mobile", ""),
+            cleaned.get("remarks", ""),
+            cleaned.get("photo", ""),
         ))
     db.commit()
-    return jsonify({"ok": True, "id": db.execute("SELECT last_insert_rowid()").fetchone()[0]})
+    new_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
+    log_audit(db, str(new_id), "found_person_logged",
+              f"Found person reported at {cleaned.get('found_location', '')}")
+    db.commit()
+    return jsonify({"ok": True, "id": new_id})
 
+
+# ---------------------------------------------------------------------------
+# Confirm match (admin)
+# ---------------------------------------------------------------------------
 
 @app.route("/api/confirm-match", methods=["POST"])
+@login_required("admin")
+@rate_limit(30)
 def confirm_match():
     db = get_db()
     data = request.json
@@ -393,14 +797,26 @@ def confirm_match():
     db.execute("UPDATE found_persons SET matched_case_id=?, status='Matched' WHERE id=?",
                (case_id, found_id))
     db.execute("UPDATE missing_persons SET status='Reunited' WHERE case_id=?", (case_id,))
+    log_audit(db, case_id, "match_confirmed",
+              f"Found person id={found_id} matched to case {case_id}")
     db.commit()
     return jsonify({"ok": True})
 
 
+# ---------------------------------------------------------------------------
+# Report missing (family)
+# ---------------------------------------------------------------------------
+
 @app.route("/api/report-missing", methods=["POST"])
+@login_required("family", "admin")
+@rate_limit(30)
 def report_missing():
     db = get_db()
-    data = request.json
+    raw = request.json or {}
+    cleaned, errors = validate_input(raw)
+    if errors:
+        return jsonify({"ok": False, "errors": errors}), 400
+
     db.execute("""INSERT INTO report_missing
         (reported_at, person_name, gender, age_band, state, district, language,
          last_seen_location, last_seen_time, physical_description, photo,
@@ -409,28 +825,37 @@ def report_missing():
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         (
             datetime.now().strftime("%Y-%m-%d %H:%M"),
-            data.get("person_name", ""),
-            data.get("gender", ""),
-            data.get("age_band", ""),
-            data.get("state", ""),
-            data.get("district", ""),
-            data.get("language", ""),
-            data.get("last_seen_location", ""),
-            data.get("last_seen_time", ""),
-            data.get("physical_description", ""),
-            data.get("photo", ""),
-            data.get("aadhaar_last4", ""),
-            data.get("reporter_name", ""),
-            data.get("reporter_mobile", ""),
-            data.get("reporter_relationship", ""),
-            data.get("special_needs", ""),
+            cleaned.get("person_name", ""),
+            cleaned.get("gender", ""),
+            cleaned.get("age_band", ""),
+            cleaned.get("state", ""),
+            cleaned.get("district", ""),
+            cleaned.get("language", ""),
+            cleaned.get("last_seen_location", "") or raw.get("last_seen_location", ""),
+            cleaned.get("last_seen_time", "") or raw.get("last_seen_time", ""),
+            cleaned.get("physical_description", ""),
+            cleaned.get("photo", ""),
+            cleaned.get("aadhaar_last4", "") or raw.get("aadhaar_last4", ""),
+            cleaned.get("reporter_name", ""),
+            cleaned.get("reporter_mobile", ""),
+            cleaned.get("reporter_relationship", "") or raw.get("reporter_relationship", ""),
+            cleaned.get("special_needs", "") or raw.get("special_needs", ""),
         ))
     db.commit()
     new_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
-    return jsonify({"ok": True, "id": new_id, "case_ref": f"FM-{new_id:04d}"})
+    case_ref = f"FM-{new_id:04d}"
+    log_audit(db, case_ref, "report_created",
+              f"Missing report filed for '{cleaned.get('person_name', '')}' by '{cleaned.get('reporter_name', '')}'")
+    db.commit()
+    return jsonify({"ok": True, "id": new_id, "case_ref": case_ref})
 
+
+# ---------------------------------------------------------------------------
+# Track case (family, public)
+# ---------------------------------------------------------------------------
 
 @app.route("/api/track")
+@login_required("family", "admin")
 def track_case():
     db = get_db()
     case_ref = request.args.get("case_ref", "").strip()
@@ -438,9 +863,7 @@ def track_case():
 
     results = []
 
-    # Search in missing_persons by case_id
     if case_ref:
-        # Try FM- format (family portal reports)
         if case_ref.startswith("FM-"):
             try:
                 fm_id = int(case_ref.replace("FM-", ""))
@@ -454,16 +877,21 @@ def track_case():
             if row:
                 results.append({**dict(row), "source": "missing_persons", "case_ref": case_ref})
 
-    # Search by mobile
     if mobile:
-        rows = db.execute("SELECT * FROM report_missing WHERE reporter_mobile LIKE ?", (f"%{mobile}%",)).fetchall()
+        # Parameterised LIKE — no f-string interpolation of user input
+        like_pattern = "%" + mobile + "%"
+        rows = db.execute(
+            "SELECT * FROM report_missing WHERE reporter_mobile LIKE ?", (like_pattern,)
+        ).fetchall()
         for r in rows:
             d = dict(r)
             d["source"] = "family_report"
             d["case_ref"] = f"FM-{d['id']:04d}"
             results.append(d)
 
-        rows2 = db.execute("SELECT * FROM missing_persons WHERE reporter_mobile LIKE ?", (f"%{mobile}%",)).fetchall()
+        rows2 = db.execute(
+            "SELECT * FROM missing_persons WHERE reporter_mobile LIKE ?", (like_pattern,)
+        ).fetchall()
         for r in rows2:
             d = dict(r)
             d["source"] = "missing_persons"
@@ -472,6 +900,10 @@ def track_case():
 
     return jsonify({"results": results, "count": len(results)})
 
+
+# ---------------------------------------------------------------------------
+# Found persons (public)
+# ---------------------------------------------------------------------------
 
 @app.route("/api/found-persons")
 def list_found_persons():
@@ -490,12 +922,24 @@ def list_found_persons():
         params.append(age_band)
 
     where = " AND ".join(conditions)
-    rows = db.execute(f"SELECT id, found_at, found_location, reporting_center, person_name, gender, age_band, state, language, physical_description, photo, status FROM found_persons WHERE {where} ORDER BY found_at DESC LIMIT ?", params + [limit]).fetchall()
+    rows = db.execute(
+        f"SELECT id, found_at, found_location, reporting_center, person_name, gender, "
+        f"age_band, state, language, physical_description, photo, status "
+        f"FROM found_persons WHERE {where} ORDER BY found_at DESC LIMIT ?",
+        params + [limit],
+    ).fetchall()
 
-    return jsonify({"results": [dict(r) for r in rows], "count": len([dict(r) for r in rows])})
+    result_list = [dict(r) for r in rows]
+    return jsonify({"results": result_list, "count": len(result_list)})
 
+
+# ---------------------------------------------------------------------------
+# Match against found (family)
+# ---------------------------------------------------------------------------
 
 @app.route("/api/match-found", methods=["POST"])
+@login_required("family", "admin")
+@rate_limit(30)
 def match_against_found():
     """Match a family's missing person report against found persons."""
     db = get_db()
@@ -562,7 +1006,12 @@ def match_against_found():
     return jsonify({"matches": scored[:20]})
 
 
+# ---------------------------------------------------------------------------
+# Duplicates (admin)
+# ---------------------------------------------------------------------------
+
 @app.route("/api/duplicates")
+@login_required("admin")
 def find_duplicates():
     db = get_db()
     rows = db.execute("""
@@ -598,6 +1047,10 @@ def find_duplicates():
     return jsonify({"duplicate_groups": groups, "count": len(groups)})
 
 
+# ---------------------------------------------------------------------------
+# Geo data (public)
+# ---------------------------------------------------------------------------
+
 @app.route("/api/geo")
 def geo_data():
     db = get_db()
@@ -611,6 +1064,10 @@ def geo_data():
     })
 
 
+# ---------------------------------------------------------------------------
+# Hotspots — enhanced with geo coordinates
+# ---------------------------------------------------------------------------
+
 @app.route("/api/hotspots")
 def hotspots():
     db = get_db()
@@ -620,8 +1077,60 @@ def hotspots():
         FROM missing_persons
         GROUP BY last_seen_location ORDER BY cnt DESC LIMIT 20
     """).fetchall()
-    return jsonify({"hotspots": [dict(r) for r in rows]})
 
+    hotspot_list = [dict(r) for r in rows]
+
+    # Best-effort geo enrichment: try to match location names against chokepoints/zones
+    # Load all chokepoints and zone centroids once
+    chokepoints = db.execute(
+        "SELECT location_name, latitude, longitude FROM chokepoints"
+    ).fetchall()
+    zones = db.execute(
+        "SELECT zone_name, centroid_lat, centroid_lng FROM zones"
+    ).fetchall()
+
+    # Build lookup lists
+    geo_sources = []
+    for cp in chokepoints:
+        geo_sources.append({
+            "name": (cp["location_name"] or "").lower(),
+            "lat": cp["latitude"],
+            "lng": cp["longitude"],
+        })
+    for z in zones:
+        geo_sources.append({
+            "name": (z["zone_name"] or "").lower(),
+            "lat": z["centroid_lat"],
+            "lng": z["centroid_lng"],
+        })
+
+    for h in hotspot_list:
+        loc_lower = (h.get("last_seen_location") or "").lower()
+        best_score = 0
+        best_lat = None
+        best_lng = None
+        for gs in geo_sources:
+            # Use simple token overlap as a fast proxy; rapidfuzz for quality
+            score = fuzz.partial_ratio(loc_lower, gs["name"])
+            if score > best_score and score >= 50:
+                best_score = score
+                best_lat = gs["lat"]
+                best_lng = gs["lng"]
+        if best_lat is not None:
+            h["lat"] = best_lat
+            h["lng"] = best_lng
+            h["geo_confidence"] = best_score
+        else:
+            h["lat"] = None
+            h["lng"] = None
+            h["geo_confidence"] = 0
+
+    return jsonify({"hotspots": hotspot_list})
+
+
+# ---------------------------------------------------------------------------
+# Filters (public)
+# ---------------------------------------------------------------------------
 
 @app.route("/api/filters")
 def filters():
@@ -633,6 +1142,52 @@ def filters():
     centers = [r[0] for r in db.execute("SELECT DISTINCT reporting_center FROM missing_persons ORDER BY reporting_center").fetchall()]
     return jsonify({"genders": genders, "ages": ages, "states": states, "languages": languages, "centers": centers})
 
+
+# ---------------------------------------------------------------------------
+# Callback request
+# ---------------------------------------------------------------------------
+
+@app.route("/api/request-callback", methods=["POST"])
+@rate_limit(30)
+def request_callback():
+    data = request.json or {}
+    found_person_id = data.get("found_person_id")
+    db = get_db()
+    db.execute(
+        "INSERT INTO callback_requests (found_person_id, requested_at, status) VALUES (?, ?, 'pending')",
+        (found_person_id, datetime.now().strftime("%Y-%m-%d %H:%M")),
+    )
+    log_audit(db, str(found_person_id or ""), "callback_requested",
+              f"Callback requested for found_person_id={found_person_id}")
+    db.commit()
+    return jsonify({"ok": True})
+
+
+# ---------------------------------------------------------------------------
+# Audit log endpoint (admin)
+# ---------------------------------------------------------------------------
+
+@app.route("/api/audit-log")
+@login_required("admin")
+def audit_log():
+    db = get_db()
+    case_id = request.args.get("case_id", "").strip()
+    if case_id:
+        rows = db.execute(
+            "SELECT * FROM audit_log WHERE case_id=? ORDER BY timestamp ASC",
+            (case_id,),
+        ).fetchall()
+    else:
+        # Return the 200 most recent entries across all cases
+        rows = db.execute(
+            "SELECT * FROM audit_log ORDER BY timestamp DESC LIMIT 200"
+        ).fetchall()
+    return jsonify({"timeline": [dict(r) for r in rows], "count": len(rows)})
+
+
+# ---------------------------------------------------------------------------
+# Startup
+# ---------------------------------------------------------------------------
 
 init_db()
 

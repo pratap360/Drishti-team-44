@@ -1,10 +1,15 @@
-const CACHE_NAME = 'kumbh-reunite-v2';
+const CACHE_NAME = 'kumbh-reunite-v3';
 const ASSETS = [
+  '/',
   '/volunteer',
   '/family',
+  '/control',
   '/landing.html',
   'https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js',
   'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js',
+  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
+  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
+  'https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js',
 ];
 
 self.addEventListener('install', e => {

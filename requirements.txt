@@ -1,0 +1,4 @@
+flask
+rapidfuzz
+python-dotenv
+psycopg2-binary
