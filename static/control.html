@@ -754,7 +754,7 @@ const _ctrlLang = {
 
 // Local t() that checks _ctrlLang first, falls back to global i18n.js t()
 const _globalT = window.t;
-function t(key) {
+const t = function(key) {
   const lang = getLang();
   const L = _ctrlLang[lang] || _ctrlLang.en;
   if (L[key] !== undefined) return L[key];
