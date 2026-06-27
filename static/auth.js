@@ -114,7 +114,7 @@
         if (res.ok) {
           const data = await res.json();
           // Accept if role matches OR if allowGuest and no role required
-          if (data.username && (data.role === requiredRole || requiredRole === '*')) {
+          if (data.username && (data.role === requiredRole || data.role === 'admin' || requiredRole === '*')) {
             _onLoginSuccess(data.username);
             return;
           }
@@ -161,7 +161,7 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify({ username, password, role: requiredRole }),
+          body: JSON.stringify({ username, password }),
         });
 
         if (res.ok) {

@@ -11,8 +11,12 @@ from flask import Flask, request, jsonify, send_from_directory, g, session
 from rapidfuzz import fuzz
 from werkzeug.security import generate_password_hash, check_password_hash
 from dotenv import load_dotenv
-import psycopg2
-import psycopg2.extras
+try:
+    import psycopg2
+    import psycopg2.extras
+    HAS_PSYCOPG2 = True
+except ImportError:
+    HAS_PSYCOPG2 = False
 
 load_dotenv()
 
@@ -46,7 +50,8 @@ app.config.update(
     SESSION_COOKIE_SAMESITE='Lax',
 )
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "kumbh.db")
+_IS_VERCEL = os.environ.get("VERCEL", "") == "1"
+DB_PATH = os.path.join("/tmp", "kumbh.db") if _IS_VERCEL else os.path.join(os.path.dirname(__file__), "kumbh.db")
 SUPABASE_DB_URL = os.environ.get("SUPABASE_DB_URL")
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 
@@ -92,7 +97,7 @@ def assign_request_id():
 # ---------------------------------------------------------------------------
 
 def get_supabase_conn():
-    if not SUPABASE_DB_URL:
+    if not SUPABASE_DB_URL or not HAS_PSYCOPG2:
         return None
     try:
         conn = psycopg2.connect(SUPABASE_DB_URL, connect_timeout=5)

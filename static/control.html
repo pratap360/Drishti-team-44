@@ -964,12 +964,12 @@ async function checkAuth() {
       }
     }
   } catch (e) { /* network error — show login */ }
-  document.getElementById('login-overlay').classList.remove('hidden');
+  document.getElementById('login-overlay').classList.add('show');
 }
 
 function onLoginSuccess(username) {
   currentUser = username;
-  document.getElementById('login-overlay').classList.add('hidden');
+  document.getElementById('login-overlay').classList.remove('show');
   const userInfo = document.getElementById('header-user-info');
   userInfo.classList.add('visible');
   document.getElementById('header-username').textContent = username;
@@ -1008,7 +1008,7 @@ async function doLogout() {
   document.getElementById('header-user-info').classList.remove('visible');
   document.getElementById('btn-logout').classList.remove('visible');
   document.getElementById('login-password').value = '';
-  document.getElementById('login-overlay').classList.remove('hidden');
+  document.getElementById('login-overlay').classList.add('show');
   showToast(t('signedOut'), 'info');
 }
 
