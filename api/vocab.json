@@ -1,0 +1,48 @@
+{
+  "languages": [
+    "Awadhi",
+    "Bengali",
+    "Bhojpuri",
+    "Gujarati",
+    "Hindi",
+    "Kannada",
+    "Maithili",
+    "Marathi",
+    "Tamil",
+    "Telugu"
+  ],
+  "seen_locations": [
+    "Adgaon Parking",
+    "Bus Stand Nashik",
+    "Dasak Ghat",
+    "Dindori Road Crossing",
+    "Gauri Patangan",
+    "Kapila Sangam",
+    "Kushavart Kund",
+    "Laxmi Narayan Ghat",
+    "Madsangvi Transit",
+    "Main Police Chowki",
+    "Nandur Ghat",
+    "Nashik Road Station",
+    "Panchavati Circle",
+    "Rajur Bahula",
+    "Ramkund Ghat",
+    "Sadhugram Gate 1",
+    "Sadhugram Gate 2",
+    "Takli Sangam",
+    "Trimbak Road",
+    "Trimbakeshwar Approach"
+  ],
+  "centers": [
+    "Adgaon Kho-Ya-Paya",
+    "Bharat Bharati Control Room",
+    "Central Control Room",
+    "Nashik Road Center",
+    "Panchavati Center",
+    "Police Main Control Room",
+    "Rajur Bahula Center",
+    "Ramkund Kho-Ya-Paya Kendra",
+    "Sadhugram Lost Found",
+    "Trimbakeshwar Kho-Ya-Paya Kendra"
+  ]
+}

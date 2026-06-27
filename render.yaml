@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: drishti-api
+    runtime: python
+    plan: free                          # upgrade to starter for no sleep + more RAM
+    region: singapore                   # closest to India
+    buildCommand: pip install -r requirements-server.txt
+    startCommand: uvicorn server:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+
+    envVars:
+      # ── Set these in the Render dashboard (Environment → Add env var) ──────
+      - key: SARVAM_API_KEY
+        sync: false                     # secret — paste value in dashboard
+
+      - key: ANTHROPIC_API_KEY
+        sync: false                     # secret — paste value in dashboard
+
+      - key: BHASHINI_USER_ID
+        sync: false                     # set after Bhashini approves your request
+
+      - key: BHASHINI_API_KEY
+        sync: false                     # set after Bhashini approves your request
+
+      # ── Fixed values (committed, not secret) ─────────────────────────────
+      - key: BHASHINI_PIPELINE_ID
+        value: 64392f96daac500b55c543cd
+
+      - key: DRISHTI_MODEL
+        value: claude-haiku-4-5-20251001  # cheapest Claude; change to opus for best quality

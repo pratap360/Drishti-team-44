@@ -6,5 +6,12 @@ __pycache__/
 .DS_Store
 data-repo/
 .claude/
+.vercel/
 
-.env
+# local dev artifacts
+archive/
+*.wav
+qdrant_data/
+captures/
+venv/
+.venv/
