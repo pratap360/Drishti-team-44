@@ -80,6 +80,24 @@ export class ApiService {
     })());
   }
 
+  /** Fetch missing_persons rows by hard eq filters (no ranking) — feeds the
+   *  client-side Unified Search match engine. */
+  searchRaw(filters: Record<string, string | undefined>, limit = 1000): Observable<MissingPerson[]> {
+    return from((async () => {
+      let query = this.sb.from('missing_persons').select('*').order('reported_at', { ascending: false });
+      const eqMap: Record<string, string> = {
+        gender: 'gender', age_band: 'age_band', language: 'language',
+        state: 'state', center: 'reporting_center', status: 'status',
+      };
+      for (const [key, col] of Object.entries(eqMap)) {
+        const v = filters[key];
+        if (v) query = query.eq(col, v);
+      }
+      const { data } = await query.limit(limit);
+      return (data ?? []) as MissingPerson[];
+    })());
+  }
+
   foundPersons(params: Record<string, string | number | undefined> = {}): Observable<SearchResponse<FoundPerson>> {
     return from((async () => {
       let query = this.sb.from('found_persons')

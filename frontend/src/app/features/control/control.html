@@ -63,6 +63,132 @@
       }
     }
 
+    <!-- UNIFIED SEARCH -->
+    @if (tab() === 'unified') {
+      <mat-card class="card">
+        <h3>{{ 'ctrl.unifiedTitle' | t }}</h3>
+        <p class="muted">{{ 'ctrl.unifiedSub' | t }}</p>
+        <div class="smart-row">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>{{ 'ctrl.smartFill' | t }}</mat-label>
+            <input matInput [(ngModel)]="uText" placeholder="e.g. elderly woman, Marathi, near Ramkund"
+                   (keydown.enter)="smartFill()">
+          </mat-form-field>
+          <button mat-stroked-button (click)="smartFill()">✨ {{ 'ctrl.smartFillBtn' | t }}</button>
+        </div>
+        <div class="filters-inline">
+          <mat-form-field appearance="outline"><mat-label>{{ 'form.name' | t }}</mat-label>
+            <input matInput [(ngModel)]="uName" (keydown.enter)="unifiedSearch()"></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>{{ 'common.gender' | t }}</mat-label>
+            <mat-select [(ngModel)]="uGender"><mat-option value="">—</mat-option>
+              <mat-option value="Male">Male</mat-option><mat-option value="Female">Female</mat-option></mat-select></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>{{ 'common.age' | t }}</mat-label>
+            <mat-select [(ngModel)]="uAge"><mat-option value="">—</mat-option>
+              @for (a of ageBands; track a) { <mat-option [value]="a">{{ a }}</mat-option> }</mat-select></mat-form-field>
+          @if (filters(); as f) {
+            <mat-form-field appearance="outline"><mat-label>{{ 'common.language' | t }}</mat-label>
+              <mat-select [(ngModel)]="uLang"><mat-option value="">—</mat-option>
+                @for (l of f.languages; track l) { <mat-option [value]="l">{{ l }}</mat-option> }</mat-select></mat-form-field>
+          }
+          <mat-form-field appearance="outline"><mat-label>{{ 'family.lastSeenLocation' | t }}</mat-label>
+            <mat-select [(ngModel)]="uSeen"><mat-option value="">—</mat-option>
+              @for (s of seenOptions; track s) { <mat-option [value]="s">{{ s }}</mat-option> }</mat-select></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>{{ 'common.status' | t }}</mat-label>
+            <mat-select [(ngModel)]="uStatus"><mat-option value="">—</mat-option>
+              <mat-option value="Pending">Pending</mat-option><mat-option value="Reunited">Reunited</mat-option>
+              <mat-option value="Unresolved">Unresolved</mat-option></mat-select></mat-form-field>
+          <button mat-flat-button class="brand-btn" (click)="unifiedSearch()">{{ 'common.search' | t }}</button>
+          <button mat-button (click)="clearUnified()">{{ 'ctrl.clear' | t }}</button>
+        </div>
+        <span class="muted small">{{ uInfo() }}</span>
+      </mat-card>
+
+      <mat-card class="table-wrap">
+        <table class="full-width uni-table">
+          <thead><tr><th>%</th><th>Case</th><th>Person</th><th>Last seen</th><th>Center</th><th>Status</th></tr></thead>
+          <tbody>
+            @for (x of uResults(); track x.r.case_id) {
+              <tr class="clk" (click)="pickResult(x.r)">
+                <td><span class="pill" [class]="scorePillClass(x.sc)">{{ x.sc }}%</span></td>
+                <td>{{ x.r.case_id }}</td>
+                <td>{{ x.r.missing_person_name || '(name unknown)' }}<div class="small muted">{{ x.r.gender }}, {{ x.r.age_band }}, {{ x.r.language }}</div></td>
+                <td>{{ x.r.last_seen_location }}</td>
+                <td>{{ x.r.reporting_center }}</td>
+                <td><span class="badge" [class]="badgeClass(x.r.status)">{{ x.r.status }}</span></td>
+              </tr>
+              @if (uSelected() === x.r) {
+                <tr class="detail-row"><td colspan="6"><div class="detail">{{ coverageOf(x.r) }}</div></td></tr>
+              }
+            }
+            @if (!uResults().length) { <tr><td colspan="6" class="muted small">{{ 'ctrl.unifiedHint' | t }}</td></tr> }
+          </tbody>
+        </table>
+      </mat-card>
+    }
+
+    <!-- CCTV TRACE -->
+    @if (tab() === 'trace') {
+      <mat-card class="card">
+        <h3>{{ 'ctrl.traceTitle' | t }}</h3>
+        <p class="muted">{{ 'ctrl.traceSub' | t }}</p>
+        <div class="trace-inputs">
+          <mat-form-field appearance="outline"><mat-label>{{ 'family.lastSeenLocation' | t }}</mat-label>
+            <mat-select [(ngModel)]="trLoc">
+              @for (s of seenOptions; track s) { <mat-option [value]="s">{{ s }}</mat-option> }</mat-select></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>{{ 'ctrl.timeSeen' | t }}</mat-label>
+            <input matInput type="time" [(ngModel)]="trTime"></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>{{ 'ctrl.photoMode' | t }}</mat-label>
+            <mat-select [(ngModel)]="trMode">
+              <mat-option value="none">{{ 'ctrl.modeNone' | t }}</mat-option>
+              <mat-option value="contains">{{ 'ctrl.modeContains' | t }}</mat-option>
+              <mat-option value="relative">{{ 'ctrl.modeRelative' | t }}</mat-option>
+            </mat-select></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>{{ 'common.gender' | t }}</mat-label>
+            <mat-select [(ngModel)]="trGender"><mat-option value="">—</mat-option>
+              <mat-option value="Male">Male</mat-option><mat-option value="Female">Female</mat-option></mat-select></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>{{ 'common.age' | t }}</mat-label>
+            <mat-select [(ngModel)]="trAge"><mat-option value="">—</mat-option>
+              @for (a of ageBands; track a) { <mat-option [value]="a">{{ a }}</mat-option> }</mat-select></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>{{ 'ctrl.clothingColor' | t }}</mat-label>
+            <input matInput [(ngModel)]="trColor"></mat-form-field>
+          <button mat-flat-button class="brand-btn" (click)="traceSearch()">📹 {{ 'ctrl.pullFootage' | t }}</button>
+        </div>
+        <p class="muted small">{{ 'ctrl.traceSimNote' | t }}</p>
+      </mat-card>
+
+      <div class="trace-grid">
+        <mat-card class="card">
+          <h4>{{ 'ctrl.candidates' | t }}</h4>
+          @if (trZone()) {
+            <p class="small muted">{{ 'ctrl.track' | t }} {{ trTrack() }} · {{ trZone() }} · {{ trWindow() }} · {{ trCands().length }} {{ 'ctrl.sightings' | t }}</p>
+          }
+          @for (c of trCands(); track $index; let i = $index) {
+            <div class="cand">
+              <div class="cand-thumb">👤</div>
+              <div class="cand-body">
+                <b [class]="c.sc >= 0.7 ? 'sc-hi' : c.sc >= 0.55 ? 'sc-md' : 'sc-lo'">{{ scorePct(c.sc) }}% match</b>
+                <div class="small muted">cam <b>{{ c.cam }}</b> · {{ geo.fmtTime(c.t) }}</div>
+              </div>
+              <button mat-stroked-button (click)="confirmSighting(c)">{{ 'ctrl.confirm' | t }}</button>
+            </div>
+          }
+          @if (!trCands().length) { <p class="small muted">{{ 'ctrl.traceRunHint' | t }}</p> }
+        </mat-card>
+
+        <mat-card class="card">
+          <h4>{{ 'ctrl.trajectory' | t }}</h4>
+          <div #traceMapEl class="trace-map"></div>
+          <div class="legend small">
+            <span><i class="dot g"></i> {{ 'ctrl.confirmedStart' | t }}</span>
+            <span><i class="dot o"></i> {{ 'ctrl.trackedPath' | t }}</span>
+            <span><i class="dot r"></i> {{ 'ctrl.currentEstimate' | t }}</span>
+            <span><i class="dot b"></i> {{ 'ctrl.helpPoint' | t }}</span>
+          </div>
+          @if (trResult()) { <div class="trace-result">✓ {{ trResult() }}</div> }
+        </mat-card>
+      </div>
+    }
+
     <!-- SEARCH -->
     @if (tab() === 'search') {
       <mat-card class="filters">
