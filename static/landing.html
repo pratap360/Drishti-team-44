@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kumbh Reunite — Simhastha 2027</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: linear-gradient(135deg, #e65100 0%, #ac1900 50%, #880e4f 100%);
+  min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 24px;
+}
+
+.logo {
+  text-align: center; margin-bottom: 48px; color: white;
+}
+.logo h1 { font-size: 42px; font-weight: 800; letter-spacing: -1px; }
+.logo h1 span { font-weight: 300; opacity: 0.85; }
+.logo p { font-size: 16px; opacity: 0.8; margin-top: 8px; max-width: 500px; line-height: 1.5; }
+
+.cards {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 24px;
+  max-width: 720px; width: 100%;
+}
+
+.card {
+  background: white; border-radius: 20px; padding: 40px 32px;
+  text-decoration: none; color: #212121;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+  transition: all 0.3s ease; text-align: center;
+  display: flex; flex-direction: column; align-items: center; gap: 16px;
+}
+.card:hover { transform: translateY(-6px); box-shadow: 0 16px 48px rgba(0,0,0,0.25); }
+
+.card-icon {
+  width: 80px; height: 80px; border-radius: 20px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 36px;
+}
+.card-control .card-icon { background: linear-gradient(135deg, #1a237e, #283593); color: white; }
+.card-volunteer .card-icon { background: linear-gradient(135deg, #e65100, #ff833a); color: white; }
+
+.card h2 { font-size: 22px; font-weight: 700; }
+.card p { font-size: 14px; color: #666; line-height: 1.5; }
+
+.card-features {
+  text-align: left; width: 100%; margin-top: 8px;
+}
+.card-features li {
+  font-size: 13px; color: #555; padding: 4px 0;
+  list-style: none; display: flex; align-items: center; gap: 8px;
+}
+.card-features li::before {
+  content: ''; width: 6px; height: 6px; border-radius: 50%;
+  flex-shrink: 0;
+}
+.card-control .card-features li::before { background: #1a237e; }
+.card-volunteer .card-features li::before { background: #e65100; }
+.card-family .card-features li::before { background: #c62828; }
+
+.footer {
+  margin-top: 48px; text-align: center; color: rgba(255,255,255,0.7);
+  font-size: 13px; line-height: 1.6;
+}
+
+@media (max-width: 900px) {
+  .cards { grid-template-columns: 1fr !important; max-width: 400px !important; }
+}
+@media (max-width: 600px) {
+  .cards { grid-template-columns: 1fr; max-width: 360px; }
+  .logo h1 { font-size: 32px; }
+  .card { padding: 28px 24px; }
+}
+</style>
+</head>
+<body>
+
+<div class="logo">
+  <h1>Kumbh Reunite <span>| Simhastha 2027</span></h1>
+  <p>Unified missing persons reunification system for Nashik-Trimbakeshwar Kumbh Mela. Cross-center search, fuzzy matching, and real-time coordination.</p>
+</div>
+
+<div class="cards" style="grid-template-columns: repeat(3, 1fr); max-width: 1080px;">
+  <a href="/family" class="card card-family">
+    <div class="card-icon" style="background:linear-gradient(135deg,#c62828,#e53935);color:white">&#x1f46a;</div>
+    <h2>Family Portal</h2>
+    <p>For families — report missing person, search by photo, track your case</p>
+    <ul class="card-features">
+      <li>Report a missing loved one</li>
+      <li>Search found persons by photo</li>
+      <li>Track case status with case ID</li>
+      <li>Hindi/English bilingual</li>
+      <li>Privacy-protected contact</li>
+    </ul>
+  </a>
+
+  <a href="/volunteer" class="card card-volunteer">
+    <div class="card-icon">&#x1f91d;</div>
+    <h2>Volunteer App</h2>
+    <p>Mobile-first field interface for volunteers at lost-and-found centers</p>
+    <ul class="card-features">
+      <li>Report a found person</li>
+      <li>Quick search missing persons</li>
+      <li>Instant fuzzy match suggestions</li>
+      <li>Offline-ready &amp; QR sharing</li>
+      <li>Works without smartphone</li>
+    </ul>
+  </a>
+
+  <a href="/control" class="card card-control">
+    <div class="card-icon">&#x1f3db;</div>
+    <h2>Control Centre</h2>
+    <p>Command dashboard for coordinators and administrators</p>
+    <ul class="card-features">
+      <li>Live dashboard &amp; analytics</li>
+      <li>Cross-center duplicate detection</li>
+      <li>Infrastructure &amp; coverage map</li>
+      <li>Hotspot analysis</li>
+      <li>Match confirmation &amp; case management</li>
+    </ul>
+  </a>
+</div>
+
+<div class="footer">
+  Claude Impact Lab | Mumbai 2026<br>
+  Nashik-Trimbakeshwar Simhastha Kumbh Mela 2027
+</div>
+
+</body>
+</html>
