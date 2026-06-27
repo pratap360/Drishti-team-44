@@ -115,3 +115,6 @@ All missing-person records are fake. No real personal data is present in any fil
 *India's First Claude Impact Lab | 27 June 2026 | RIIDL, Somaiya Vidyavihar University, Mumbai*
 *Organized and hosted by Sumeet Doshi, Claude Community Ambassador India*
 *In partnership with Kumbhathon Innovation Foundation and the Government of Maharashtra*
+
+
+link to web - https://frontend-pink-gamma-31.vercel.app/
