@@ -1,59 +1,54 @@
-# Frontend
+# Drishti — Reunification System (Angular 20 PWA)
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.3.30.
+A serverless, installable Progressive Web App for reuniting missing persons at
+the Nashik-Trimbakeshwar Simhastha Kumbh Mela. Built with **Angular 20** +
+**Angular Material**, talking **directly to Supabase** (no backend server).
 
-## Development server
+## Portals
 
-To start a local development server, run:
+| Route | Portal | Who | Notes |
+|-------|--------|-----|-------|
+| `/` | Landing | everyone | Portal chooser, live stats, install prompt |
+| `/family` | Family | families (guest or `pre_registree`) | Report missing, search found, track case |
+| `/volunteer` | Volunteer | `volunteer` / `admin` | Report found, search, QR share (offline), nearby |
+| `/control` | Control Centre | `admin` | Dashboard, search, duplicates, Leaflet map, hotspots |
 
-```bash
-ng serve
-```
-
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
-```bash
-ng generate component component-name
-```
-
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+## Run
 
 ```bash
-ng generate --help
+cd frontend
+npm install
+npm start          # ng serve → http://localhost:4200
 ```
 
-## Building
+No backend needed — the app reads/writes Supabase directly. See
+[`../supabase/README.md`](../supabase/README.md) for the database setup and the
+demo logins (e.g. `admin` / `admin123`).
 
-To build the project run:
+## Build
 
 ```bash
-ng build
+npm run build      # production build with PWA service worker → dist/frontend/browser
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+Deploy `dist/frontend/browser` to any static host (Vercel, Netlify, Supabase
+Hosting, GitHub Pages). It is a fully static PWA.
 
-## Running unit tests
+## Architecture
 
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+- **Data layer:** `src/app/core/api.service.ts` — typed wrapper over Supabase
+  (PostgREST queries + `app_*` RPC functions). Fuzzy matching is client-side in
+  `src/app/core/fuzzy.ts`.
+- **Auth:** `src/app/core/auth.service.ts` — Supabase Auth; role comes from the
+  `profiles` table. Route guards in `src/app/core/guards/`.
+- **i18n:** `src/app/core/i18n.ts` + `LanguageService` — English / Hindi /
+  Marathi, toggled in-app, persisted in `localStorage`.
+- **PWA:** `public/manifest.webmanifest` + Angular service worker
+  (`ngsw-config.json`). Installable from the browser; offline app shell.
+- **Offline queue:** `src/app/core/offline-queue.service.ts` — volunteer
+  found-person reports are queued in IndexedDB when offline and auto-synced.
 
-```bash
-ng test
-```
+## Config
 
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+Supabase URL + anon key live in `src/environments/environment.ts`. The anon key
+is public and safe to ship because **RLS is enabled on every table**.
