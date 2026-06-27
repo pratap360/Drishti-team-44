@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>DRISHTI — Kumbh Mela Unified Lost-&-Found (Prototype)</title>
+<style>
+  :root{
+    --saffron:#FF6A00;--saffron-d:#e25c00;--ink:#161123;--ink2:#241a4a;
+    --bg:#0d1117;--panel:#161b22;--panel2:#1c232c;--line:#2a323c;
+    --muted:#8b97a4;--text:#e6edf3;--green:#2ea043;--red:#e5484d;
+    --amber:#f5a623;--blue:#2f81f7;--purple:#a371f7;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Segoe UI',system-ui,Arial,sans-serif;background:var(--bg);color:var(--text)}
+  header{display:flex;align-items:center;gap:14px;padding:14px 22px;background:linear-gradient(90deg,#1a1207,#161b22);border-bottom:2px solid var(--saffron)}
+  .logo{width:42px;height:42px;border-radius:50%;background:var(--saffron);display:flex;align-items:center;justify-content:center;box-shadow:0 0 18px rgba(255,106,0,.4)}
+  .logo .eye{width:20px;height:20px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center}
+  .logo .eye::after{content:'';width:9px;height:9px;border-radius:50%;background:var(--ink)}
+  header h1{font-size:18px;margin:0;letter-spacing:.5px}
+  header .sub{font-size:12px;color:var(--muted);margin-top:2px}
+  .badge{margin-left:auto;font-size:11px;background:#0f2b16;color:var(--green);border:1px solid #1d5230;padding:5px 10px;border-radius:20px}
+  nav{display:flex;gap:2px;padding:0 14px;background:var(--panel);border-bottom:1px solid var(--line);flex-wrap:wrap}
+  nav button{background:none;border:none;color:var(--muted);padding:13px 16px;font-size:14px;cursor:pointer;border-bottom:3px solid transparent;font-weight:600}
+  nav button.active{color:var(--saffron);border-bottom-color:var(--saffron)}
+  nav button:hover{color:var(--text)}
+  main{padding:22px;max-width:1280px;margin:0 auto}
+  .tab{display:none}.tab.active{display:block;animation:fade .3s}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1}}
+  h2{font-size:17px;margin:0 0 4px;display:flex;align-items:center;gap:8px}
+  .hint{font-size:13px;color:var(--muted);margin:0 0 16px;max-width:900px;line-height:1.5}
+  .grid{display:grid;gap:16px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px}
+  .btn{background:var(--saffron);color:#1a1207;border:none;padding:11px 18px;border-radius:8px;font-weight:700;cursor:pointer;font-size:14px}
+  .btn:hover{background:var(--saffron-d);color:#fff}
+  .btn.sec{background:var(--panel2);color:var(--text);border:1px solid var(--line)}
+  .btn.lg{padding:14px 22px;font-size:15px}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  input,select,textarea{background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:11px 12px;border-radius:8px;font-size:14px;width:100%;font-family:inherit}
+  label{font-size:12px;color:var(--muted);display:block;margin-bottom:6px;font-weight:600}
+  .field{margin-bottom:12px}
+  .row{display:grid;gap:12px}
+  .row.c2{grid-template-columns:1fr 1fr}.row.c3{grid-template-columns:1fr 1fr 1fr}
+  @media(max-width:680px){.row.c2,.row.c3{grid-template-columns:1fr}}
+  .seg{display:flex;gap:0;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .seg button{flex:1;background:var(--panel2);border:none;color:var(--muted);padding:12px;font-weight:700;cursor:pointer;font-size:14px}
+  .seg button.on{background:var(--saffron);color:#1a1207}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line)}
+  th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.4px}
+  tr.clk{cursor:pointer}tr.clk:hover td{background:var(--panel2)}
+  .pill{font-size:11px;padding:3px 9px;border-radius:20px;font-weight:700;white-space:nowrap}
+  .pill.hi{background:#0f2b16;color:var(--green);border:1px solid #1d5230}
+  .pill.md{background:#2b220a;color:var(--amber);border:1px solid #5a4413}
+  .pill.lo{background:#241a4a;color:var(--purple);border:1px solid #3a2d6b}
+  .pill.reu{background:#0f2b16;color:var(--green)}
+  .pill.pen{background:#2b220a;color:var(--amber)}
+  .pill.unr{background:#2b0f12;color:var(--red)}
+  .pill.hosp{background:#0e2330;color:var(--blue)}
+  .pill.dup{background:#2b0f24;color:#e57ad4;border:1px solid #5a2350}
+  .stat .v{font-size:28px;font-weight:800;color:var(--saffron)}
+  .stat .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+  .kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+  @media(min-width:760px){.kpis{grid-template-columns:repeat(4,1fr)}}
+  .small{font-size:11px;color:var(--muted)}
+  code{background:var(--panel2);padding:2px 6px;border-radius:5px;font-size:12px;color:var(--saffron)}
+  .matchcard{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:10px;display:flex;gap:12px;align-items:center}
+  .matchcard .score{font-size:22px;font-weight:800;min-width:64px;text-align:center}
+  .alertbar{border-radius:10px;padding:14px 16px;margin-bottom:16px;display:none}
+  .alertbar.show{display:block;animation:fade .3s}
+  .alertbar.ok{background:linear-gradient(90deg,#0f2b16,#161b22);border:1px solid #1d5230}
+  .alertbar.warn{background:linear-gradient(90deg,#2b220a,#161b22);border:1px solid #5a4413}
+  canvas#map{width:100%;height:560px;background:#0a0d12;border:1px solid var(--line);border-radius:12px;display:block;cursor:crosshair}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;margin-top:10px;color:var(--muted)}
+  .legend span{display:inline-flex;align-items:center;gap:5px}
+  .dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+  .bar{height:22px;background:var(--saffron);border-radius:4px}
+  .barrow{display:grid;grid-template-columns:120px 1fr 52px;gap:10px;align-items:center;margin-bottom:7px;font-size:12px}
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px}
+  .tag{font-size:11px;background:var(--panel2);border:1px solid var(--line);padding:3px 8px;border-radius:6px;color:var(--muted)}
+  #leafmap{width:100%;height:560px;border:1px solid var(--line);border-radius:12px}
+  .leaflet-popup-content{font-family:inherit;font-size:13px}
+  .leaflet-container{background:#0a0d12}
+</style>
+<!-- Leaflet for the satellite Coverage map (optional, needs internet; the offline
+     canvas diagram is the fallback when these fail to load). -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+</head>
+<body>
+<header>
+  <div class="logo"><div class="eye"></div></div>
+  <div>
+    <h1>DRISHTI <span style="color:var(--saffron)">·</span> Unified Lost-&amp;-Found</h1>
+    <div class="sub">One searchable registry across every center · Nashik Kumbh Mela 2027</div>
+  </div>
+  <div class="badge">● Offline-ready · <span id="recCount">0</span> cases loaded</div>
+</header>
+
+<nav>
+  <button class="active" data-tab="report">① Report a case</button>
+  <button data-tab="search">② Unified search</button>
+  <button data-tab="dupes">③ Cross-center duplicates</button>
+  <button data-tab="map">④ Coverage map</button>
+  <button data-tab="dash">⑤ Dashboard</button>
+  <button data-tab="trace">⑥ CCTV trace</button>
+  <button data-tab="about">ℹ️ About</button>
+</nav>
+
+<main>
+  <!-- 1. REPORT -->
+  <section class="tab active" id="report">
+    <h2>① Report a missing or found person</h2>
+    <p class="hint">Designed for a <b>volunteer at a kiosk</b> — the missing person may have no phone, no smartphone, and may not read. Capture whatever is known; name and mobile are optional. On submit, DRISHTI instantly searches <b>every other center</b> for a possible match, closing the cross-center gap.</p>
+    <div class="grid" style="grid-template-columns:1.1fr .9fr">
+      <div class="panel">
+        <div class="field">
+          <label>Report type</label>
+          <div class="seg" id="repType">
+            <button class="on" data-v="Missing">🔎 MISSING (family is searching)</button>
+            <button data-v="Found">🙋 FOUND (person is with us)</button>
+          </div>
+        </div>
+        <div class="row c2">
+          <div class="field"><label>Name (optional — 15% are unknown)</label><input id="f_name" placeholder="leave blank if unknown"/></div>
+          <div class="field"><label>Gender</label><select id="f_gender"><option>Unknown</option><option>Female</option><option>Male</option></select></div>
+        </div>
+        <div class="row c2">
+          <div class="field"><label>Age band</label><select id="f_age"></select></div>
+          <div class="field"><label>Language spoken</label><select id="f_lang"></select></div>
+        </div>
+        <div class="row c2">
+          <div class="field"><label>Last seen / found location</label><select id="f_seen"></select></div>
+          <div class="field"><label>This center</label><select id="f_center"></select></div>
+        </div>
+        <div class="field"><label>Physical description (clothing, marks)</label><textarea id="f_desc" rows="2" placeholder="e.g. green saree, walking stick, tilak on forehead"></textarea></div>
+        <div class="row c2">
+          <div class="field"><label>Family contact (optional)</label><input id="f_mob" placeholder="+91 …"/></div>
+          <div class="field"><label>Photo (optional — ~20% of families have none)</label><input type="file" id="f_photo" accept="image/*"/><span class="small">No photo? Submit anyway — we match on attributes + pull CCTV from the last-seen zone.</span></div>
+        </div>
+        <button class="btn lg" id="submitCase">Register &amp; search all centers →</button>
+        <span class="small" id="faceStatus" style="margin-left:10px"></span>
+      </div>
+      <div>
+        <div class="alertbar ok" id="repAlert"></div>
+        <div class="panel">
+          <h2 style="font-size:14px">🔗 Possible matches at other centers</h2>
+          <p class="small" id="repMatchHint">Submit a report to cross-search the registry.</p>
+          <div id="repMatches"></div>
+        </div>
+        <div class="panel" id="cctvPanel" style="margin-top:14px;display:none">
+          <h2 style="font-size:14px">📹 No-photo path — CCTV footage review</h2>
+          <div id="cctvBody"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. SEARCH -->
+  <section class="tab" id="search">
+    <h2>② Unified search — every center at once</h2>
+    <p class="hint">A family arrives at <em>any</em> center and describes their relative. DRISHTI ranks the whole registry by similarity — no need to know which center filed the report. Partial information is fine.</p>
+    <div class="panel" style="margin-bottom:16px">
+      <div class="field" style="margin-bottom:14px">
+        <label>✨ Describe in your own words <span style="font-weight:400">(optional — uses Claude when the AI server is running)</span></label>
+        <div style="display:flex;gap:8px">
+          <input id="ai_query" placeholder="e.g. elderly woman in a green saree, speaks Marathi, last seen near Ramkund"/>
+          <button class="btn" id="aiSearch" style="white-space:nowrap">✨ Smart fill</button>
+        </div>
+        <span class="small" id="aiMsg"></span>
+      </div>
+      <div class="row c3">
+        <div class="field"><label>Name contains</label><input id="s_name" placeholder="any / partial"/></div>
+        <div class="field"><label>Gender</label><select id="s_gender"><option value="">Any</option><option>Female</option><option>Male</option><option>Unknown</option></select></div>
+        <div class="field"><label>Age band</label><select id="s_age"><option value="">Any</option></select></div>
+      </div>
+      <div class="row c3">
+        <div class="field"><label>Language</label><select id="s_lang"><option value="">Any</option></select></div>
+        <div class="field"><label>Last seen near</label><select id="s_seen"><option value="">Any</option></select></div>
+        <div class="field"><label>Status</label><select id="s_status"><option value="">Any</option><option>Pending</option><option>Reunited</option><option>Unresolved</option><option>Transferred to hospital</option></select></div>
+      </div>
+      <div class="toolbar" style="margin-top:6px;margin-bottom:0">
+        <button class="btn" id="runSearch">Search registry</button>
+        <button class="btn sec" id="clearSearch">Clear</button>
+        <span class="small" id="searchInfo"></span>
+      </div>
+    </div>
+    <div class="panel">
+      <table><thead><tr><th>Match</th><th>Case</th><th>Person</th><th>Last seen</th><th>Center</th><th>Status</th></tr></thead>
+      <tbody id="searchResults"><tr><td colspan="6" class="small">Run a search to see ranked results.</td></tr></tbody></table>
+    </div>
+  </section>
+
+  <!-- 3. DUPES -->
+  <section class="tab" id="dupes">
+    <h2>③ Cross-center duplicate detection</h2>
+    <p class="hint">The core failure: the same person reported at two centers shows up as two open cases — families wait while a "found" record already exists elsewhere. DRISHTI clusters likely-same records <b>across different centers</b> by attribute similarity so an operator can link &amp; resolve them. (~8% of cases in this dataset are cross-center duplicates.)</p>
+    <div class="toolbar">
+      <button class="btn" id="findDupes">Scan registry for duplicate clusters</button>
+      <span class="small" id="dupeInfo"></span>
+    </div>
+    <div id="dupeList"></div>
+  </section>
+
+  <!-- 4. MAP -->
+  <section class="tab" id="map_tab">
+    <h2>④ Coverage &amp; routing map <span class="small" style="font-weight:400">— renders offline from GPS data</span></h2>
+    <p class="hint"><span id="camCountHint">4,079</span> zone-tagged cameras, 32 zones, 14 police stations and 85 chokepoints/parking nodes. <b>🛰 Satellite</b> shows them on a real zoomable map (Leaflet + Esri imagery, no API key — needs internet); <b>▦ Diagram</b> is drawn purely from coordinates and works fully offline. Pick a location to see the nearest police help-point, the cameras in that zone, and separation-hotspot risk.</p>
+    <div class="toolbar">
+      <div class="field" style="margin:0;min-width:240px"><label>Focus on a last-seen location</label><select id="m_loc"></select></div>
+      <div class="seg" id="mapMode" style="max-width:300px;margin:0 0 12px">
+        <button class="on" data-v="sat">🛰 Satellite</button>
+        <button data-v="diagram">▦ Offline diagram</button>
+      </div>
+      <label class="small" style="margin:0 0 12px"><input type="checkbox" id="m_cam" checked style="width:auto;display:inline"> cameras</label>
+      <label class="small" style="margin:0 0 12px"><input type="checkbox" id="m_choke" checked style="width:auto;display:inline"> chokepoints</label>
+    </div>
+    <div id="leafmap" style="display:none"></div>
+    <canvas id="map"></canvas>
+    <div class="legend">
+      <span><i class="dot" style="background:#2ea043"></i> CCTV camera</span>
+      <span><i class="dot" style="background:#2f81f7"></i> Police station</span>
+      <span><i class="dot" style="background:#e5484d"></i> Traffic chokepoint</span>
+      <span><i class="dot" style="background:#f5a623"></i> Parking / transfer</span>
+      <span><i class="dot" style="background:#a371f7"></i> Zone centroid</span>
+      <span><i class="dot" style="background:#FF6A00"></i> Selected location</span>
+    </div>
+    <div class="panel" id="mapInfo" style="margin-top:14px;display:none"></div>
+  </section>
+
+  <!-- 5. DASH -->
+  <section class="tab" id="dash">
+    <h2>⑤ Operations dashboard</h2>
+    <p class="hint">Live view over the full 2,500-case registry.</p>
+    <div class="kpis" style="margin-bottom:18px">
+      <div class="panel stat"><span class="v" id="k_total">0</span><span class="l">Total cases</span></div>
+      <div class="panel stat"><span class="v" id="k_open">0</span><span class="l">Still open (pending+unresolved)</span></div>
+      <div class="panel stat"><span class="v" id="k_dup">0</span><span class="l">Cross-center duplicates</span></div>
+      <div class="panel stat"><span class="v" id="k_res">0</span><span class="l">Median reunion time (h)</span></div>
+    </div>
+    <div class="grid" style="grid-template-columns:1fr 1fr">
+      <div class="panel"><h2 style="font-size:14px">By status</h2><div id="chartStatus"></div></div>
+      <div class="panel"><h2 style="font-size:14px">By age band <span class="small" style="font-weight:400">— elderly dominate</span></h2><div id="chartAge"></div></div>
+      <div class="panel"><h2 style="font-size:14px">Case load by center</h2><div id="chartCenter"></div></div>
+      <div class="panel"><h2 style="font-size:14px">Top last-seen hotspots</h2><div id="chartSeen"></div></div>
+    </div>
+  </section>
+
+  <!-- 6. CCTV TRACE -->
+  <section class="tab" id="trace">
+    <h2>⑥ CCTV trace — locate a person with no photo <span class="small" style="font-weight:400">— workflow demo</span></h2>
+    <p class="hint">When a family has no photo, DRISHTI pulls CCTV from the <b>last-seen zone</b> in a
+      <b>±15-minute window</b>, ranks likely sightings for an operator to <b>confirm</b>, then
+      <b>tracks the confirmed person across neighbouring zones</b> (gated by walking distance) to
+      estimate where they are now and route the nearest help-point.
+      <span style="color:var(--amber)">Match scores here are simulated for the demo — the real pipeline uses face + Re-ID + attribute models (see <code>LOST_PERSON_VIDEO_SEARCH_PLAN.md</code>).</span></p>
+    <div class="panel" style="margin-bottom:16px">
+      <div class="row c3">
+        <div class="field"><label>Last seen location</label><select id="tr_loc"></select></div>
+        <div class="field"><label>Last seen time</label><input id="tr_time" type="time" value="09:00"/></div>
+        <div class="field"><label>Photo available?</label><select id="tr_photo">
+          <option value="none">No photo — search by attributes (Track B)</option>
+          <option value="contains">Photo contains the person — face search (Track A)</option>
+          <option value="relative">Only a relative's photo — attributes + soft cues (Track B)</option>
+        </select></div>
+      </div>
+      <div class="row c3">
+        <div class="field"><label>Gender</label><select id="tr_gender"><option>Unknown</option><option>Female</option><option>Male</option></select></div>
+        <div class="field"><label>Age band</label><select id="tr_age"></select></div>
+        <div class="field"><label>Clothing / colour</label><input id="tr_color" placeholder="e.g. green saree"/></div>
+      </div>
+      <div class="field"><label>Query photo <span style="font-weight:400">(Track A — a photo containing the person; enables a real face search when <code>backend_reference.py</code> is running with ingested footage)</span></label><input type="file" id="tr_file" accept="image/*"/></div>
+      <div class="toolbar" style="margin-bottom:0">
+        <button class="btn" id="tr_search">📹 Pull footage &amp; search the zone</button>
+        <span class="small" id="tr_info"></span>
+      </div>
+    </div>
+    <div class="grid" style="grid-template-columns:1fr 1fr">
+      <div class="panel"><h2 style="font-size:14px">Candidate sightings <span class="small" style="font-weight:400">— operator confirms one</span></h2>
+        <div id="tr_cands"><p class="small">Run a search to see ranked candidate sightings in the zone.</p></div></div>
+      <div>
+        <div class="seg" id="traceMode" style="max-width:280px;margin-bottom:8px">
+          <button class="on" data-v="sat">🛰 Satellite</button>
+          <button data-v="diagram">▦ Diagram</button>
+        </div>
+        <div id="tracemapLeaf" style="width:100%;height:340px;border:1px solid var(--line);border-radius:12px;display:none"></div>
+        <canvas id="tracemap" style="width:100%;height:340px;background:#0a0d12;border:1px solid var(--line);border-radius:12px;display:block"></canvas>
+        <div class="legend"><span><i class="dot" style="background:#2ea043"></i> confirmed start</span><span><i class="dot" style="background:#FF6A00"></i> tracked path</span><span><i class="dot" style="background:#e5484d"></i> current estimate</span><span><i class="dot" style="background:#2f81f7"></i> nearest help-point</span></div>
+        <div class="panel" id="tr_result" style="margin-top:12px;display:none"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ABOUT -->
+  <section class="tab" id="about">
+    <h2>ℹ️ How DRISHTI works &amp; design choices</h2>
+    <div class="panel">
+      <p>DRISHTI turns ten disconnected lost-and-found centers into <b>one searchable registry</b>. The matching engine scores any two records on gender, age band, language, last-seen proximity (real GPS), name similarity and report time, producing a confidence score used for both <b>search ranking</b> and <b>cross-center duplicate linking</b>.</p>
+      <p style="margin-top:10px"><b>Built around the judging criteria:</b></p>
+      <ul style="line-height:1.8;font-size:14px">
+        <li><b>Deployability</b> — runs from a single HTML file, fully offline (data embedded, map drawn from coordinates, no tiles/CDN needed for the core flow).</li>
+        <li><b>Real-world fit</b> — closes the cross-center search gap and the 8% duplicate problem, the dataset's stated core failures.</li>
+        <li><b>UX for phoneless / non-literate</b> — operator-driven kiosk intake, attribute-based (no app on the missing person), language captured, big touch targets.</li>
+        <li><b>System design</b> — handles missing name (15%) &amp; mobile (20%), partial queries, and offline operation; a face photo is an optional enhancement, never required.</li>
+        <li><b>Responsible data</b> — synthetic records only; mobile numbers masked on load; nothing leaves the device.</li>
+      </ul>
+      <p class="small" style="margin-top:10px">Face matching uses pre-trained in-browser models (no training-from-scratch) and only activates when a photo is attached. Data: Kumbhathon Innovation Foundation (locations) + synthetic missing-person set (Claude Impact Lab, Mumbai 2026).</p>
+    </div>
+  </section>
+</main>
+
+<script src="app_data.js"></script>
+<script>
+const D = window.KMP;
+// Optional Claude AI backend (backend.py). The app is fully usable without it;
+// when this server is running, the "Smart fill" box turns plain English into
+// structured filters. The API key lives only on that server, never here.
+const AI_BACKEND='http://localhost:8000';
+const AGES=["0-12","13-17","18-40","41-60","61-70","71-80","80+"];
+let runtime = [];
+let allRecords = [];
+let faceReady=false, faceapi=null, pendingFace=null, repType='Missing', selectedLoc=null;
+
+function $(id){return document.getElementById(id);}
+function uniq(arr){return [...new Set(arr)];}
+function haversine(a,b){
+  const R=6371,dLat=(b.lat-a.lat)*Math.PI/180,dLng=(b.lng-a.lng)*Math.PI/180;
+  const s=Math.sin(dLat/2)**2+Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLng/2)**2;
+  return 2*R*Math.asin(Math.sqrt(s));
+}
+function coordOf(loc){return D.seenCoords[loc]||null;}
+function zoneOf(loc){return (D.seenCoords[loc]||{}).zone||null;}
+function camsInZone(zone){return zone?D.cameras.filter(c=>c.zone===zone):[];}
+function nearestCams(c,n){return c?D.cameras.map(cm=>({cm,d:haversine(c,cm)})).sort((a,b)=>a.d-b.d).slice(0,n):[];}
+function lev(a,b){
+  a=(a||'').toLowerCase().trim();b=(b||'').toLowerCase().trim();
+  if(!a||!b) return 0; if(a===b) return 1;
+  const m=a.length,n=b.length,dp=Array.from({length:m+1},(_,i)=>[i,...Array(n).fill(0)]);
+  for(let j=0;j<=n;j++)dp[0][j]=j;
+  for(let i=1;i<=m;i++)for(let j=1;j<=n;j++)
+    dp[i][j]=Math.min(dp[i-1][j]+1,dp[i][j-1]+1,dp[i-1][j-1]+(a[i-1]===b[j-1]?0:1));
+  return 1-dp[m][n]/Math.max(m,n);
+}
+
+// the matching engine: how likely two records are the SAME person (0..100)
+function matchScore(q,r){
+  let s=0,max=0;
+  max+=20; if(q.g&&r.g&&q.g!=="Unknown"&&r.g!=="Unknown"){ s+= q.g===r.g?20:0; } else max-=10;
+  max+=20; if(q.age&&r.age){ s+= q.age===r.age?20:(Math.abs(AGES.indexOf(q.age)-AGES.indexOf(r.age))===1?8:0); }
+  max+=14; if(q.lang&&r.lang){ s+= q.lang===r.lang?14:0; } else max-=7;
+  max+=22;
+  if(q.seen&&r.seen){
+    if(q.seen===r.seen) s+=22;
+    else{const ca=coordOf(q.seen),cb=coordOf(r.seen);
+      if(ca&&cb){const d=haversine(ca,cb); s+= d<1?16:d<3?10:d<6?4:0;}}
+  }
+  max+=18; if(q.name&&r.name){ s+=Math.round(18*lev(q.name,r.name)); } else max-=9;
+  max+=6; if(q.t&&r.t){const dh=Math.abs(new Date(q.t)-new Date(r.t))/36e5; s+= dh<6?6:dh<24?4:dh<72?2:0;}
+  return Math.round(100*s/Math.max(max,1));
+}
+function scorePill(v){const c=v>=70?'hi':v>=50?'md':'lo';return `<span class="pill ${c}">${v}%</span>`;}
+function statusPill(st){const m={'Reunited':'reu','Pending':'pen','Unresolved':'unr','Transferred to hospital':'hosp'};return `<span class="pill ${m[st]||'pen'}">${st}</span>`;}
+function nameOf(r){return r.name||'<span class="small">(name unknown)</span>';}
+
+function buildSelects(){
+  const langs=uniq(D.persons.map(p=>p.lang)).sort();
+  const centers=uniq(D.persons.map(p=>p.center)).sort();
+  const seens=uniq(D.persons.map(p=>p.seen)).sort();
+  const fill=(el,arr,first)=>{el.innerHTML=(first?`<option value="">${first}</option>`:'')+arr.map(v=>`<option>${v}</option>`).join('');};
+  fill($('f_age'),AGES);fill($('f_lang'),langs);fill($('f_seen'),seens);fill($('f_center'),centers);
+  fill($('s_age'),AGES,'Any');fill($('s_lang'),langs,'Any');fill($('s_seen'),seens,'Any');
+  fill($('m_loc'),seens,'— pick —');
+  fill($('tr_loc'),seens);fill($('tr_age'),AGES);
+}
+
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  const id=b.dataset.tab==='map'?'map_tab':b.dataset.tab;
+  $(id).classList.add('active');
+  if(b.dataset.tab==='map') showMap();
+  if(b.dataset.tab==='trace') showTrace();
+});
+
+document.querySelectorAll('#repType button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#repType button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');repType=b.dataset.v;
+});
+$('f_photo').onchange=async e=>{
+  const f=e.target.files[0]; if(!f)return;
+  $('faceStatus').textContent='Loading face model…';
+  try{await ensureFace();
+    const img=await faceapi.bufferToImage(f);
+    const det=await faceapi.detectSingleFace(img).withFaceLandmarks().withFaceDescriptor();
+    pendingFace=det?det.descriptor:null;
+    $('faceStatus').textContent=det?'✓ face captured':'no clear face found';
+  }catch(err){$('faceStatus').textContent='face model needs internet — skipped';}
+};
+$('submitCase').onclick=()=>{
+  const rec={
+    id:'KMP-NEW-'+String(runtime.length+1).padStart(3,'0'),
+    t:new Date().toISOString().slice(0,16).replace('T',' '),
+    name:$('f_name').value.trim(),g:$('f_gender').value,age:$('f_age').value,
+    lang:$('f_lang').value,seen:$('f_seen').value,center:$('f_center').value,
+    mob:$('f_mob').value.trim(),desc:$('f_desc').value.trim(),
+    status:'Pending',rh:'',dup:false,rem:repType+' report (new)',
+    face:pendingFace,kind:repType
+  };
+  runtime.push(rec);allRecords.push(rec);
+  $('recCount').textContent=allRecords.length;
+  const cands=allRecords.filter(r=>r!==rec&&r.center!==rec.center)
+    .map(r=>({r,sc:matchScore(rec,r),face:(rec.face&&r.face)?Math.round(100*(1-faceapi.euclideanDistance(rec.face,r.face))):null}))
+    .sort((a,b)=>b.sc-a.sc).slice(0,5).filter(x=>x.sc>=40);
+  const al=$('repAlert');al.className='alertbar ok show';
+  al.innerHTML=`<b>✓ Case ${rec.id} registered</b> at ${rec.center}. Cross-searched ${allRecords.length-1} records across all centers — ${cands.length} possible match${cands.length!==1?'es':''} found.`;
+  $('repMatchHint').style.display='none';
+  $('repMatches').innerHTML=cands.length?cands.map(c=>`
+    <div class="matchcard">
+      <div class="score" style="color:${c.sc>=70?'var(--green)':c.sc>=50?'var(--amber)':'var(--purple)'}">${c.sc}%</div>
+      <div style="flex:1">
+        <div><b>${nameOf(c.r)}</b> · ${c.r.g}, ${c.r.age} · ${c.r.lang}</div>
+        <div class="small">${c.r.seen} · <b>${c.r.center}</b> · ${c.r.id} ${c.face!=null?'· face '+c.face+'%':''}</div>
+      </div>
+      <button class="btn sec" onclick="linkCase('${rec.id}','${c.r.id}',${c.sc})">Link</button>
+    </div>`).join(''):'<p class="small">No strong cross-center match. Case stays open and visible to all centers.</p>';
+  renderCctvPacket(rec);
+  pendingFace=null;$('faceStatus').textContent='';
+};
+
+// No-photo handling: 20% of families have no photo. The person was still last
+// seen in a *zone*, and that zone is densely covered by CCTV. So even with no
+// photo DRISHTI works two ways — (1) attribute match across centers, shown above,
+// and (2) a footage-pull packet: the exact cameras whose recordings cover the
+// last-seen zone, so police/operators can review them (or lift a face from them).
+function renderCctvPacket(rec){
+  const panel=$('cctvPanel'),body=$('cctvBody');
+  const zone=zoneOf(rec.seen), c=coordOf(rec.seen);
+  if(!rec.seen||!zone){panel.style.display='none';return;}
+  const zCams=camsInZone(zone), near=nearestCams(c,6);
+  const noPhoto=!rec.face;
+  const lead=noPhoto
+    ? `<b>No photo attached.</b> That's fine — DRISHTI does not require one. The case is matched on attributes across every center (above), and the cameras covering the last-seen zone are queued for footage review.`
+    : `Photo captured for face-matching. The last-seen zone's cameras are also listed so footage can confirm a sighting.`;
+  panel.style.display='block';
+  body.innerHTML=`
+    <p class="small" style="margin:0 0 10px;line-height:1.5">${lead}</p>
+    <div style="margin-bottom:10px">
+      <span class="tag">last seen: <b>${rec.seen}</b></span>
+      <span class="tag">${zone}</span>
+      <span class="tag" style="color:var(--green)">${zCams.length} cameras in zone</span>
+    </div>
+    <label>Nearest cameras to pull footage from</label>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">
+      ${near.map(n=>`<span class="tag" title="${n.d.toFixed(2)} km away">${n.cm.id} · ${(n.d*1000).toFixed(0)} m</span>`).join('')||'<span class="small">no coordinates</span>'}
+    </div>
+    <button class="btn sec" onclick="requestFootage('${zone}','${rec.id}')">📨 Queue footage-pull for all ${zCams.length} cameras in ${zone}</button>
+    <p class="small" id="footageMsg" style="margin-top:8px"></p>`;
+}
+window.requestFootage=(zone,caseId)=>{
+  const ids=camsInZone(zone).map(c=>c.id);
+  $('footageMsg').innerHTML=`<span style="color:var(--green)">✓ Footage-pull request raised for ${caseId}</span> — ${ids.length} cameras in ${zone} flagged for the control room (e.g. ${ids.slice(0,4).join(', ')}…). In production this notifies the zone's CCTV operator and time-windows the recordings around the report time.`;
+};
+window.linkCase=(a,b,sc)=>{
+  const al=$('repAlert');al.className='alertbar warn show';
+  al.innerHTML=`<b>🔗 Linked ${a} ↔ ${b}</b> (${sc}% confidence). In production this notifies both centers + the family contact, and routes them to the nearest help-point (see Coverage map).`;
+};
+
+function runSearch(){
+  const q={name:$('s_name').value.trim(),g:$('s_gender').value,age:$('s_age').value,
+           lang:$('s_lang').value,seen:$('s_seen').value};
+  const stf=$('s_status').value;
+  let res=allRecords.map(r=>({r,sc:matchScore(q,r)}));
+  if(q.name) res=res.filter(x=>lev(q.name,x.r.name)>0.34||(x.r.name||'').toLowerCase().includes(q.name.toLowerCase()));
+  if(stf) res=res.filter(x=>x.r.status===stf);
+  res=res.filter(x=>x.sc>0).sort((a,b)=>b.sc-a.sc).slice(0,40);
+  $('searchInfo').textContent=`${res.length} ranked result${res.length!==1?'s':''} across all ${uniq(allRecords.map(r=>r.center)).length} centers`;
+  $('searchResults').innerHTML=res.length?res.map(x=>`
+    <tr class="clk" onclick='showCase("${x.r.id}")'>
+      <td>${scorePill(x.sc)}</td><td>${x.r.id}</td>
+      <td>${nameOf(x.r)}<div class="small">${x.r.g}, ${x.r.age}, ${x.r.lang}</div></td>
+      <td>${x.r.seen}</td><td>${x.r.center}</td><td>${statusPill(x.r.status)}${x.r.dup?' <span class="pill dup">dup</span>':''}</td>
+    </tr>`).join(''):'<tr><td colspan="6" class="small">No matches — try fewer filters.</td></tr>';
+}
+$('runSearch').onclick=runSearch;
+// Smart fill: free text -> structured filters via the Claude backend, then search.
+// Degrades gracefully to manual filters if the AI server isn't reachable.
+$('aiSearch').onclick=async()=>{
+  const q=$('ai_query').value.trim();const msg=$('aiMsg');
+  if(!q){msg.textContent='Type a description first.';return;}
+  msg.textContent='Asking Claude…';
+  try{
+    const r=await fetch(AI_BACKEND+'/parse-search',{method:'POST',
+      headers:{'Content-Type':'application/json'},body:JSON.stringify({text:q})});
+    if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.detail||('HTTP '+r.status));}
+    const f=await r.json(),set=(id,v)=>{if(v)$(id).value=v;};
+    set('s_name',f.name);set('s_gender',f.gender);set('s_age',f.age);
+    set('s_lang',f.lang);set('s_seen',f.seen);set('s_status',f.status);
+    msg.innerHTML='<span style="color:var(--green)">✓ '+(f.notes||'filled from your description')+'</span>';
+    runSearch();
+  }catch(err){
+    msg.innerHTML='<span style="color:var(--amber)">AI server offline — fill the filters below manually ('+err.message+'). Start it with <code>python3 backend.py</code>.</span>';
+  }
+};
+$('clearSearch').onclick=()=>{['s_name','s_gender','s_age','s_lang','s_seen','s_status'].forEach(i=>$(i).value='');$('searchResults').innerHTML='<tr><td colspan="6" class="small">Run a search to see ranked results.</td></tr>';$('searchInfo').textContent='';};
+window.showCase=(id)=>{
+  const r=allRecords.find(x=>x.id===id);if(!r)return;
+  const c=coordOf(r.seen);let near='';
+  if(c){const ps=D.police.map(p=>({p,d:haversine(c,p)})).sort((a,b)=>a.d-b.d)[0];
+        const ncam=D.cameras.filter(cam=>haversine(c,cam)<0.8).length;
+        const zone=zoneOf(r.seen),zc=camsInZone(zone).length;
+        const photoLine=r.face?'Photo on file → face-match enabled.':'No photo → '+zc+' cameras in '+zone+' available for footage review.';
+        near=`Nearest police: ${ps.p.name} (${ps.d.toFixed(1)} km). ${ncam} cameras within 800 m of ${r.seen}.\n${photoLine}`;}
+  alert(`${r.id}\n${r.name||'(name unknown)'} — ${r.g}, ${r.age}, ${r.lang}\nFrom: ${r.state||'?'} / ${r.dist||'?'}\nLast seen: ${r.seen}\nCenter: ${r.center}\nStatus: ${r.status}${r.rh?' ('+r.rh+'h)':''}\nDesc: ${r.desc||'—'}\nContact: ${r.mob||'—'}\n\n${near}`);
+};
+
+// strict same-person test: different center + same demographics + same/very-near
+// location + agreeing names (when both are known). Keeps clusters realistic (~8%).
+function isDuplicate(a,b){
+  if(a.center===b.center) return false;
+  if(a.g!==b.g || a.age!==b.age || a.lang!==b.lang) return false;
+  const sameLoc = a.seen===b.seen;
+  if(!sameLoc){const ca=coordOf(a.seen),cb=coordOf(b.seen);
+    if(!(ca&&cb&&haversine(ca,cb)<1.5)) return false;}
+  if(a.name&&b.name) return lev(a.name,b.name)>=0.72;   // both named → names must agree
+  return sameLoc;                                        // unnamed → require exact same location
+}
+$('findDupes').onclick=()=>{
+  $('dupeInfo').textContent='Scanning…';
+  const pool=allRecords,used=new Set(),clusters=[],buckets={};
+  pool.forEach(r=>{const k=r.g+'|'+r.age+'|'+r.lang;(buckets[k]=buckets[k]||[]).push(r);});
+  Object.values(buckets).forEach(list=>{
+    for(let i=0;i<list.length;i++){
+      const a=list[i];if(used.has(a.id))continue;const grp=[a];
+      for(let j=i+1;j<list.length;j++){
+        const b=list[j];if(used.has(b.id))continue;
+        if(isDuplicate(a,b)){grp.push(b);used.add(b.id);}
+      }
+      if(grp.length>1){used.add(a.id);clusters.push(grp);}
+    }
+  });
+  clusters.sort((x,y)=>y.length-x.length);
+  const top=clusters.slice(0,40);
+  $('dupeInfo').textContent=`${clusters.length} likely cross-center duplicate clusters found (showing ${top.length}).`;
+  $('dupeList').innerHTML=top.map((g,i)=>`
+    <div class="panel" style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <b>Cluster #${i+1} · ${g.length} records · ${g.length-1} duplicate${g.length-1>1?'s':''}</b>
+        <button class="btn sec" onclick="this.parentNode.parentNode.style.opacity=.5;this.textContent='✓ merged'">Merge &amp; resolve</button>
+      </div>
+      <table style="margin-top:8px"><thead><tr><th>Case</th><th>Person</th><th>Center</th><th>Last seen</th><th>Status</th></tr></thead><tbody>
+      ${g.map(r=>`<tr><td>${r.id}</td><td>${nameOf(r)} <span class="small">${r.g},${r.age},${r.lang}</span></td><td><b>${r.center}</b></td><td>${r.seen}</td><td>${statusPill(r.status)}</td></tr>`).join('')}
+      </tbody></table>
+    </div>`).join('');
+};
+
+$('m_loc').onchange=e=>{selectedLoc=e.target.value||null;showMap();};
+$('m_cam').onchange=drawMap;$('m_choke').onchange=drawMap;
+function project(lat,lng,W,H,pad){
+  const b=D.bbox;
+  const x=pad+(lng-b.lngMin)/(b.lngMax-b.lngMin)*(W-2*pad);
+  const y=H-pad-(lat-b.latMin)/(b.latMax-b.latMin)*(H-2*pad);
+  return [x,y];
+}
+function drawMap(){
+  const cv=$('map');const W=cv.clientWidth,H=cv.clientHeight,dpr=window.devicePixelRatio||1;
+  cv.width=W*dpr;cv.height=H*dpr;const g=cv.getContext('2d');g.scale(dpr,dpr);
+  g.clearRect(0,0,W,H);const pad=44;
+  g.fillStyle='rgba(163,113,247,.55)';
+  D.zones.forEach(z=>{const[x,y]=project(z.lat,z.lng,W,H,pad);g.beginPath();g.arc(x,y,3,0,7);g.fill();});
+  const selZone=selectedLoc?zoneOf(selectedLoc):null;
+  if($('m_cam').checked){
+    D.cameras.forEach(c=>{const[x,y]=project(c.lat,c.lng,W,H,pad);
+      if(selZone&&c.zone===selZone){g.fillStyle='#FF6A00';g.fillRect(x-1.5,y-1.5,3,3);}
+      else{g.fillStyle=selZone?'rgba(46,160,67,.22)':'rgba(46,160,67,.5)';g.fillRect(x-1,y-1,2,2);}});}
+  if($('m_choke').checked){D.choke.forEach(c=>{const[x,y]=project(c.lat,c.lng,W,H,pad);
+    g.fillStyle=c.cat.toLowerCase().includes('choke')?'#e5484d':'#f5a623';g.beginPath();g.arc(x,y,3,0,7);g.fill();});}
+  D.police.forEach(p=>{const[x,y]=project(p.lat,p.lng,W,H,pad);
+    g.fillStyle='#2f81f7';g.beginPath();g.arc(x,y,5,0,7);g.fill();
+    g.fillStyle='#fff';g.font='bold 8px Segoe UI';g.fillText('P',x-2.5,y+3);});
+  let info='';
+  if(selectedLoc){const c=coordOf(selectedLoc);
+    if(c){const[x,y]=project(c.lat,c.lng,W,H,pad);
+      const ps=D.police.map(p=>({p,d:haversine(c,p)})).sort((a,b)=>a.d-b.d)[0];
+      const[px,py]=project(ps.p.lat,ps.p.lng,W,H,pad);
+      g.strokeStyle='#FF6A00';g.lineWidth=2;g.setLineDash([5,4]);g.beginPath();g.moveTo(x,y);g.lineTo(px,py);g.stroke();g.setLineDash([]);
+      const ncam=D.cameras.filter(cm=>haversine(c,cm)<0.8).length;
+      const nchoke=D.choke.filter(cm=>haversine(c,cm)<0.6).length;
+      g.fillStyle='#FF6A00';g.beginPath();g.arc(x,y,8,0,7);g.fill();
+      g.fillStyle='#fff';g.font='bold 11px Segoe UI';g.fillText(selectedLoc,x+12,y+4);
+      const zc=camsInZone(selZone).length;
+      info=`<b>${selectedLoc}</b> (${selZone||'—'}) — nearest help-point <b>${ps.p.name}</b> (${ps.d.toFixed(1)} km). ${ncam} cameras within 800 m; <b style="color:var(--saffron)">${zc} cameras in this zone</b> (highlighted) available for footage review if a missing person here has no photo. `+
+           (nchoke?`<span style="color:var(--red)">⚠ ${nchoke} chokepoint(s) within 600 m — high separation risk; place a help desk here.</span>`:`No major chokepoint nearby.`);
+    }
+  }
+  const mi=$('mapInfo');if(info){mi.style.display='block';mi.innerHTML=info;}else{mi.style.display='none';}
+}
+// ---- Satellite Coverage map (Leaflet + Esri imagery; no API key) ----
+// Plots all cameras/police/chokepoints/zones as toggleable layers on real
+// imagery. Falls back to the offline canvas diagram if Leaflet didn't load.
+let leaf=null,leafSel=null,coverLive=null,coverTrace=null,liveCtl=null,liveTimer=null,mapMode='sat';
+function buildLeaf(){
+  if(leaf||typeof L==='undefined')return leaf;
+  leaf=L.map('leafmap',{preferCanvas:true});
+  const esri=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Imagery © Esri'}).addTo(leaf);
+  const osm=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'});
+  const r=L.canvas({padding:0.5});
+  const cams=L.layerGroup(D.cameras.map(c=>L.circleMarker([c.lat,c.lng],{renderer:r,radius:1.6,stroke:false,fillColor:'#2ea043',fillOpacity:.7}).bindPopup('cam <b>'+c.id+'</b><br>'+c.zone)));
+  const pol=L.layerGroup(D.police.map(p=>L.circleMarker([p.lat,p.lng],{renderer:r,radius:6,weight:1,color:'#fff',fillColor:'#2f81f7',fillOpacity:1}).bindPopup('🚓 <b>'+p.name+'</b>')));
+  const chk=L.layerGroup(D.choke.map(c=>{const k=c.cat.toLowerCase().includes('choke');return L.circleMarker([c.lat,c.lng],{renderer:r,radius:4,stroke:false,fillColor:k?'#e5484d':'#f5a623',fillOpacity:.85}).bindPopup((k?'⚠ ':'🅿 ')+'<b>'+c.name+'</b><br>'+c.cat);}));
+  const zns=L.layerGroup(D.zones.map(z=>L.circleMarker([z.lat,z.lng],{renderer:r,radius:5,weight:1,color:'#a371f7',fillColor:'#a371f7',fillOpacity:.3}).bindPopup('<b>'+z.name+'</b><br>'+(z.cams||0)+' cameras')));
+  cams.addTo(leaf);pol.addTo(leaf);chk.addTo(leaf);zns.addTo(leaf);
+  leafSel=L.layerGroup().addTo(leaf);
+  coverLive=L.layerGroup().addTo(leaf);coverTrace=L.layerGroup().addTo(leaf);
+  L.control.layers({'🛰 Satellite':esri,'🗺 Streets':osm},
+    {['📷 Cameras ('+D.cameras.length+')']:cams,['🚓 Police ('+D.police.length+')']:pol,
+     ['⚠ Chokepoints ('+D.choke.length+')']:chk,['◯ Zones ('+D.zones.length+')']:zns,
+     '📹 Live sightings':coverLive,'🧭 Trace path':coverTrace},
+    {collapsed:false}).addTo(leaf);
+  liveCtl=L.control({position:'topleft'});
+  liveCtl.onAdd=function(){const d=L.DomUtil.create('div');d.style.cssText='background:rgba(22,27,34,.85);color:#e6edf3;padding:4px 9px;border-radius:6px;font:12px Segoe UI;border:1px solid #2a323c';d.innerHTML='● live: 0 sightings';this._d=d;return d;};
+  liveCtl.update=function(n){if(this._d)this._d.innerHTML='● <span style="color:#22d3ee">live: '+n+'</span>';};
+  liveCtl.addTo(leaf);
+  const b=D.bbox;leaf.fitBounds([[b.latMin,b.lngMin],[b.latMax,b.lngMax]]);
+  if(!liveTimer)liveTimer=setInterval(()=>{if($('map_tab').classList.contains('active')&&mapMode==='sat')refreshLive();},4000);
+  return leaf;
+}
+// Build Leaflet layers for the current confirmed trajectory (shared by both maps)
+function trajectoryLayers(){
+  if(!trTraj||!trTraj.length)return [];
+  const pts=trTraj.map(s=>{const z=zoneObj(s.zone);return [z.lat,z.lng];});
+  const out=[L.polyline(pts,{color:'#FF6A00',weight:3})];
+  trTraj.forEach((s,i)=>{const last=i===trTraj.length-1;
+    out.push(L.circleMarker(pts[i],{radius:last?8:6,weight:2,color:'#fff',fillColor:i===0?'#2ea043':last?'#e5484d':'#FF6A00',fillOpacity:1})
+      .bindTooltip((i+1)+' · '+fmtTime(s.t),{permanent:true,direction:'right',offset:[6,0]})
+      .bindPopup('#'+(i+1)+' <b>'+s.zone+'</b><br>cam '+s.cam+' · '+fmtTime(s.t)));});
+  return out;
+}
+function renderCoverTrace(){if(coverTrace){coverTrace.clearLayers();trajectoryLayers().forEach(l=>l.addTo(coverTrace));}}
+function jit(z,key){const h=hashStr(key),a=(h%997)/997*6.283,r=((Math.floor(h/997))%100)/100*0.004;return [z.lat+r*Math.cos(a),z.lng+r*Math.sin(a)];}
+async function refreshLive(){
+  if(!leaf||!coverLive)return;
+  try{
+    const r=await fetch(FACE_BACKEND+'/recent-sightings?limit=400');if(!r.ok)throw 0;
+    const d=await r.json();coverLive.clearLayers();
+    d.sightings.forEach(s=>{const z=zoneObj(s.zone);if(!z)return;const p=jit(z,(s.camera_id||'')+'|'+s.t);
+      L.circleMarker(p,{radius:2.6,stroke:false,fillColor:'#22d3ee',fillOpacity:.85}).addTo(coverLive)
+        .bindPopup('live sighting<br>cam '+s.camera_id+' · '+s.zone+' · '+fmtTime(s.t));});
+    if(liveCtl)liveCtl.update(d.count+' sightings');
+  }catch(e){if(liveCtl)liveCtl.update('feed off');}
+}
+function renderLeafSel(){
+  if(!leaf||!leafSel)return;leafSel.clearLayers();
+  const mi=$('mapInfo');
+  if(!selectedLoc){mi.style.display='none';return;}
+  const c=coordOf(selectedLoc);if(!c){mi.style.display='none';return;}
+  const ps=D.police.map(p=>({p,d:haversine(c,p)})).sort((a,b)=>a.d-b.d)[0];
+  const zone=zoneOf(selectedLoc),zc=camsInZone(zone).length;
+  const ncam=D.cameras.filter(cm=>haversine(c,cm)<0.8).length,nchoke=D.choke.filter(cm=>haversine(c,cm)<0.6).length;
+  L.polyline([[c.lat,c.lng],[ps.p.lat,ps.p.lng]],{color:'#FF6A00',weight:2,dashArray:'6,5'}).addTo(leafSel);
+  L.circleMarker([c.lat,c.lng],{radius:9,weight:2,color:'#fff',fillColor:'#FF6A00',fillOpacity:1}).addTo(leafSel)
+    .bindPopup('<b>'+selectedLoc+'</b> ('+(zone||'—')+')<br>nearest help-point <b>'+ps.p.name+'</b> ('+ps.d.toFixed(1)+' km)<br>'+zc+' cameras in zone'+(nchoke?'<br>⚠ '+nchoke+' chokepoint(s) within 600 m':'')).openPopup();
+  leaf.setView([c.lat,c.lng],15);
+  mi.style.display='block';
+  mi.innerHTML='<b>'+selectedLoc+'</b> ('+(zone||'—')+') — nearest help-point <b>'+ps.p.name+'</b> ('+ps.d.toFixed(1)+' km). '+ncam+' cameras within 800 m; <b style="color:var(--saffron)">'+zc+' cameras in this zone</b>. '+(nchoke?'<span style="color:var(--red)">⚠ '+nchoke+' chokepoint(s) within 600 m — high separation risk.</span>':'No major chokepoint nearby.');
+}
+function showMap(){
+  const sat=mapMode==='sat'&&typeof L!=='undefined';
+  $('leafmap').style.display=sat?'block':'none';
+  $('map').style.display=sat?'none':'block';
+  if(sat){buildLeaf();setTimeout(()=>{leaf.invalidateSize();renderLeafSel();renderCoverTrace();refreshLive();},60);}
+  else drawMap();
+}
+// one shared mode (sat/diagram) drives both the Coverage and CCTV-trace maps
+function setMapMode(m){mapMode=m;document.querySelectorAll('#mapMode button,#traceMode button').forEach(x=>x.classList.toggle('on',x.dataset.v===m));}
+document.querySelectorAll('#mapMode button').forEach(b=>b.onclick=()=>{
+  if(b.dataset.v==='sat'&&typeof L==='undefined'){
+    $('mapInfo').style.display='block';
+    $('mapInfo').innerHTML='Satellite tiles need internet and Leaflet failed to load — showing the offline diagram.';
+    return;
+  }
+  setMapMode(b.dataset.v);showMap();
+});
+document.querySelectorAll('#traceMode button').forEach(b=>b.onclick=()=>{
+  if(b.dataset.v==='sat'&&typeof L==='undefined')return;
+  setMapMode(b.dataset.v);showTrace();
+});
+window.addEventListener('resize',()=>{
+  if($('map_tab').classList.contains('active')){if(mapMode==='sat'&&leaf)leaf.invalidateSize();else drawMap();}
+  if($('trace').classList.contains('active')){if(mapMode==='sat'&&traceLeaf)traceLeaf.invalidateSize();else drawTrace();}
+});
+
+function barChart(el,pairs,color){
+  const max=Math.max(...pairs.map(p=>p[1]));
+  el.innerHTML=pairs.map(([k,v])=>`<div class="barrow"><span>${k}</span><div class="bar" style="width:${Math.max(3,100*v/max)}%;background:${color||'var(--saffron)'}"></div><span style="text-align:right">${v}</span></div>`).join('');
+}
+function dashboard(){
+  const P=D.persons;
+  $('k_total').textContent=P.length;
+  $('k_open').textContent=P.filter(p=>p.status==='Pending'||p.status==='Unresolved').length;
+  $('k_dup').textContent=P.filter(p=>p.dup).length;
+  const rhs=P.filter(p=>p.rh).map(p=>parseFloat(p.rh)).sort((a,b)=>a-b);
+  $('k_res').textContent=rhs.length?rhs[Math.floor(rhs.length/2)].toFixed(1):'—';
+  const cnt=(f)=>{const m={};P.forEach(p=>{m[f(p)]=(m[f(p)]||0)+1;});return Object.entries(m);};
+  barChart($('chartStatus'),cnt(p=>p.status).sort((a,b)=>b[1]-a[1]),'#2ea043');
+  barChart($('chartAge'),AGES.map(a=>[a,P.filter(p=>p.age===a).length]));
+  barChart($('chartCenter'),cnt(p=>p.center).sort((a,b)=>b[1]-a[1]),'#2f81f7');
+  barChart($('chartSeen'),cnt(p=>p.seen).sort((a,b)=>b[1]-a[1]).slice(0,8),'#f5a623');
+}
+
+async function ensureFace(){
+  if(faceReady)return;
+  await new Promise((res,rej)=>{const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js';s.onload=res;s.onerror=rej;document.head.appendChild(s);});
+  faceapi=window.faceapi;const U='https://cdn.jsdelivr.net/gh/vladmandic/face-api@master/model/';
+  await faceapi.nets.ssdMobilenetv1.loadFromUri(U);
+  await faceapi.nets.faceLandmark68Net.loadFromUri(U);
+  await faceapi.nets.faceRecognitionNet.loadFromUri(U);
+  faceReady=true;
+}
+
+// ---- ⑥ CCTV trace: scope → rank → confirm → cross-zone track (workflow demo) ----
+// Scores are SIMULATED; the real pipeline (face/Re-ID/attribute models + gated
+// cross-zone tracking) is specified in LOST_PERSON_VIDEO_SEARCH_PLAN.md.
+let trTraj=null;
+function zoneObj(name){return D.zones.find(z=>z.name===name);}
+function fmtTime(min){const h=((Math.floor(min/60))%24+24)%24,m=((min%60)+60)%60;return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');}
+function parseTime(s){const p=(s||'09:00').split(':').map(Number);return (p[0]||0)*60+(p[1]||0);}
+function hashStr(s){let h=0;for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))|0;return Math.abs(h)||1;}
+function mkRng(seed){let x=seed%2147483647;if(x<=0)x+=2147483646;return ()=>(x=x*16807%2147483647)/2147483647;}
+
+function buildTrajectory(startZone,startCam,startT){
+  // greedy walk: each 5-min step, move to one of the nearest unvisited zones
+  // (reachable on foot) — the gated cross-zone search from the plan.
+  const traj=[{zone:startZone,cam:startCam,t:startT}];
+  const visited=new Set([startZone]);
+  let cur=zoneObj(startZone),t=startT,rnd=mkRng(hashStr(startZone+startCam));
+  for(let i=0;i<5;i++){
+    t+=5;
+    const near=D.zones.filter(z=>!visited.has(z.name))
+      .map(z=>({z,d:haversine(cur,z)})).sort((a,b)=>a.d-b.d).slice(0,4);
+    if(!near.length)break;
+    const pick=near[Math.floor(rnd()*Math.min(3,near.length))].z;
+    const cams=camsInZone(pick.name);
+    traj.push({zone:pick.name,cam:cams.length?cams[Math.floor(rnd()*cams.length)].id:'?',t});
+    visited.add(pick.name);cur=pick;
+  }
+  return traj;
+}
+
+function drawTrace(){
+  const cv=$('tracemap');if(!cv)return;
+  const W=cv.clientWidth,H=cv.clientHeight,dpr=window.devicePixelRatio||1;
+  cv.width=W*dpr;cv.height=H*dpr;const g=cv.getContext('2d');g.scale(dpr,dpr);
+  g.clearRect(0,0,W,H);const pad=40;
+  g.fillStyle='rgba(163,113,247,.35)';
+  D.zones.forEach(z=>{const[x,y]=project(z.lat,z.lng,W,H,pad);g.beginPath();g.arc(x,y,2.5,0,7);g.fill();});
+  D.police.forEach(p=>{const[x,y]=project(p.lat,p.lng,W,H,pad);g.fillStyle='#2f81f7';g.beginPath();g.arc(x,y,4,0,7);g.fill();});
+  if(!trTraj||!trTraj.length)return;
+  const pts=trTraj.map(s=>{const z=zoneObj(s.zone);return project(z.lat,z.lng,W,H,pad);});
+  g.strokeStyle='#FF6A00';g.lineWidth=2.5;g.beginPath();pts.forEach((p,i)=>i?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1]));g.stroke();
+  // dashed line from current estimate to nearest help-point
+  const lastZ=zoneObj(trTraj[trTraj.length-1].zone);
+  const ps=D.police.map(p=>({p,d:haversine(lastZ,p)})).sort((a,b)=>a.d-b.d)[0];
+  const lp=pts[pts.length-1],pp=project(ps.p.lat,ps.p.lng,W,H,pad);
+  g.strokeStyle='#2f81f7';g.lineWidth=1.5;g.setLineDash([4,3]);g.beginPath();g.moveTo(lp[0],lp[1]);g.lineTo(pp[0],pp[1]);g.stroke();g.setLineDash([]);
+  pts.forEach((p,i)=>{const last=i===pts.length-1;
+    g.fillStyle=i===0?'#2ea043':last?'#e5484d':'#FF6A00';
+    g.beginPath();g.arc(p[0],p[1],last?7:5,0,7);g.fill();
+    g.fillStyle='#fff';g.font='bold 9px Segoe UI';g.fillText(String(i+1),p[0]-2.5,p[1]+3);
+    g.fillStyle='#e6edf3';g.font='10px Segoe UI';g.fillText(fmtTime(trTraj[i].t),p[0]+9,p[1]+3);});
+}
+// Leaflet (satellite) version of the trace map — same trajectory on real imagery
+let traceLeaf=null,traceSel=null;
+function buildTraceLeaf(){
+  if(traceLeaf||typeof L==='undefined')return traceLeaf;
+  traceLeaf=L.map('tracemapLeaf',{preferCanvas:true});
+  const esri=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Imagery © Esri'}).addTo(traceLeaf);
+  const osm=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'});
+  const r=L.canvas({padding:0.5});
+  D.zones.forEach(z=>L.circleMarker([z.lat,z.lng],{renderer:r,radius:3,stroke:false,fillColor:'#a371f7',fillOpacity:.4}).addTo(traceLeaf).bindPopup(z.name));
+  D.police.forEach(p=>L.circleMarker([p.lat,p.lng],{renderer:r,radius:5,weight:1,color:'#fff',fillColor:'#2f81f7',fillOpacity:1}).addTo(traceLeaf).bindPopup('🚓 '+p.name));
+  L.control.layers({'🛰 Satellite':esri,'🗺 Streets':osm},{},{collapsed:true}).addTo(traceLeaf);
+  traceSel=L.layerGroup().addTo(traceLeaf);
+  const b=D.bbox;traceLeaf.fitBounds([[b.latMin,b.lngMin],[b.latMax,b.lngMax]]);
+  return traceLeaf;
+}
+function renderTraceLeaf(){
+  if(!traceLeaf||!traceSel)return;traceSel.clearLayers();
+  if(!trTraj||!trTraj.length)return;
+  const pts=trTraj.map(s=>{const z=zoneObj(s.zone);return [z.lat,z.lng];});
+  L.polyline(pts,{color:'#FF6A00',weight:3}).addTo(traceSel);
+  const lastZ=zoneObj(trTraj[trTraj.length-1].zone);
+  const ps=D.police.map(p=>({p,d:haversine(lastZ,p)})).sort((a,b)=>a.d-b.d)[0];
+  L.polyline([pts[pts.length-1],[ps.p.lat,ps.p.lng]],{color:'#2f81f7',weight:2,dashArray:'6,5'}).addTo(traceSel);
+  trTraj.forEach((s,i)=>{const last=i===trTraj.length-1;
+    L.circleMarker(pts[i],{radius:last?8:6,weight:2,color:'#fff',fillColor:i===0?'#2ea043':last?'#e5484d':'#FF6A00',fillOpacity:1}).addTo(traceSel)
+      .bindTooltip((i+1)+' · '+fmtTime(s.t),{permanent:true,direction:'right',offset:[6,0]})
+      .bindPopup('#'+(i+1)+' <b>'+s.zone+'</b><br>cam '+s.cam+' · '+fmtTime(s.t));});
+  try{traceLeaf.fitBounds(L.latLngBounds(pts).pad(0.4));}catch(e){}
+}
+function showTrace(){
+  const sat=mapMode==='sat'&&typeof L!=='undefined';
+  $('tracemapLeaf').style.display=sat?'block':'none';
+  $('tracemap').style.display=sat?'none':'block';
+  if(sat){buildTraceLeaf();setTimeout(()=>{traceLeaf.invalidateSize();renderTraceLeaf();},60);}
+  else drawTrace();
+}
+
+const FACE_BACKEND='http://localhost:8100';   // backend_reference.py (face + sighting search)
+function renderTrCands(cands,zone,t0,track,live){
+  cands.sort((a,b)=>b.sc-a.sc);
+  trTraj=null;showTrace();$('tr_result').style.display='none';
+  window._trCands=cands;window._trZone=zone;window._trLive=live;
+  const m={g:$('tr_gender').value,age:$('tr_age').value,color:$('tr_color').value};
+  const tag=live?'<span class="pill hi" style="margin-left:6px">live face match</span>'
+                :'<span class="pill lo" style="margin-left:6px">simulated</span>';
+  $('tr_info').innerHTML=`Track ${track} ${tag} · zone <b>${zone}</b> · window <b>${fmtTime(t0-15)}–${fmtTime(t0+15)}</b> · ${cands.length} sightings ranked.`;
+  $('tr_cands').innerHTML=cands.length?cands.map((c,i)=>`
+    <div class="matchcard">
+      <div style="width:42px;height:42px;border-radius:8px;background:linear-gradient(135deg,#FF6A00,#a371f7);display:flex;align-items:center;justify-content:center;font-size:20px">👤</div>
+      <div style="flex:1">
+        <div><b style="color:${c.sc>=0.7?'var(--green)':c.sc>=0.55?'var(--amber)':'var(--purple)'}">${Math.round(c.sc*100)}% match</b> · ${m.g}, ${m.age||'?'}${m.color?' · '+m.color:''}</div>
+        <div class="small">cam <b>${c.cam}</b> · ${zone} · ${fmtTime(c.t)}</div>
+      </div>
+      <button class="btn sec" onclick='trConfirm(${i})'>Confirm</button>
+    </div>`).join(''):'<p class="small">No sightings in this zone/window.</p>';
+}
+$('tr_search').onclick=async()=>{
+  const loc=$('tr_loc').value,zone=zoneOf(loc),t0=parseTime($('tr_time').value),mode=$('tr_photo').value;
+  if(!zone){$('tr_info').textContent='Pick a last-seen location.';return;}
+  const zcams=camsInZone(zone),track=mode==='contains'?'A':'B',file=$('tr_file').files[0];
+  if(track==='A'&&file){                            // try the real face backend
+    $('tr_info').textContent='Searching CCTV by face…';
+    try{
+      const fd=new FormData();fd.append('file',file);fd.append('zone',zone);
+      fd.append('t_center',$('tr_time').value);fd.append('window_min','15');
+      const r=await fetch(FACE_BACKEND+'/search/face',{method:'POST',body:fd});
+      if(!r.ok)throw new Error('HTTP '+r.status);
+      const d=await r.json();
+      if(d.candidates&&d.candidates.length){
+        renderTrCands(d.candidates.map(c=>({cam:c.camera_id,t:c.t,sc:c.score/100,sid:c.sighting_id})),zone,t0,'A',true);
+        return;
+      }
+      // backend reachable but no footage indexed for this scope → fall through to simulation
+    }catch(err){ /* backend offline → fall through to simulation */ }
+  }
+  const rnd=mkRng(hashStr(loc+$('tr_time').value+mode)),cands=[];
+  for(let i=0;i<8;i++){
+    const cam=zcams.length?zcams[Math.floor(rnd()*zcams.length)]:{id:'?'};
+    const sc=i===0?(track==='A'?0.88+rnd()*0.08:0.70+rnd()*0.10):(track==='A'?0.30:0.42)+rnd()*0.22;
+    cands.push({cam:cam.id,t:t0+Math.round(rnd()*30-15),sc:Math.min(0.98,sc)});
+  }
+  renderTrCands(cands,zone,t0,track,false);
+};
+window.trConfirm=async(i)=>{
+  const c=window._trCands[i],zone=window._trZone;
+  if(window._trLive&&c.sid){                        // real cross-zone face tracking
+    try{
+      const fd=new FormData();fd.append('sighting_id',c.sid);
+      const r=await fetch(FACE_BACKEND+'/track',{method:'POST',body:fd});
+      if(r.ok){const d=await r.json();
+        trTraj=d.trajectory.map(s=>({zone:s.zone,cam:s.camera_id,t:s.t}));showTrace();
+        showTrResult(c,zone,d.nearest_help_point);return;}
+    }catch(err){ /* fall back to local gated tracking */ }
+  }
+  trTraj=buildTrajectory(zone,c.cam,c.t);showTrace();showTrResult(c,zone,null);
+};
+function showTrResult(c,zone,nearest){
+  const last=trTraj[trTraj.length-1],lastZ=zoneObj(last.zone);
+  if(!nearest){const ps=D.police.map(p=>({p,d:haversine(lastZ,p)})).sort((a,b)=>a.d-b.d)[0];
+    nearest={name:ps.p.name,km:+ps.d.toFixed(1)};}
+  const el=$('tr_result');el.style.display='block';
+  el.innerHTML=`<b>✓ Sighting confirmed</b> — appearance signature locked from cam <b>${c.cam}</b> (${zone}) at ${fmtTime(c.t)}.
+    <div style="margin-top:8px">Tracked across <b>${trTraj.length}</b> zones (each step gated to walking-reachable zones).
+    <br><b style="color:var(--red)">Current estimate: ${last.zone}</b> — last seen at cam <b>${last.cam}</b>, <b>${fmtTime(last.t)}</b> (${last.t-c.t} min after confirmation).
+    <br>Nearest help-point: <b>${nearest.name}</b> (${nearest.km} km) — alert + family notification dispatched <span class="small">(demo)</span>.</div>`;
+}
+
+// boot
+allRecords=D.persons.slice();
+$('recCount').textContent=allRecords.length;
+buildSelects();dashboard();
+if($('camCountHint'))$('camCountHint').textContent=D.cameras.length.toLocaleString();
+if(typeof L==='undefined') setMapMode('diagram');   // Leaflet didn't load (offline) → diagram on both maps
+</script>
+</body>
+</html>

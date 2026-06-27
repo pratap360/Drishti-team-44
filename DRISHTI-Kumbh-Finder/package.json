@@ -1,0 +1,16 @@
+{
+  "name": "drishti-kumbh-finder",
+  "version": "1.0.0",
+  "description": "Real-time face-matching system to reunite missing people with their families at the **Nashik–Trimbakeshwar Simhastha Kumbh Mela 2027** (≈12 crore pilgrims, peak ~2.5 crore/day, 4,011 planned AI CCTV cameras).",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "pip": "^0.0.1",
+    "pptxgenjs": "^4.0.1"
+  }
+}

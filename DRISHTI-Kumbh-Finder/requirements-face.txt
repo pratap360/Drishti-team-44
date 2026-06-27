@@ -1,0 +1,9 @@
+# DRISHTI face/sighting backend (backend_reference.py) + feeders
+fastapi>=0.110
+uvicorn[standard]>=0.29
+python-multipart>=0.0.9      # required for multipart file uploads
+numpy>=1.24
+opencv-python-headless>=4.9  # also used by ingest_video.py / live_feed.py
+insightface>=0.7.3           # SCRFD + ArcFace (ANTELOPEV2)
+onnxruntime>=1.17            # swap for onnxruntime-gpu on a GPU box
+qdrant-client>=1.10          # vector DB — embedded local mode by default, or QDRANT_URL server

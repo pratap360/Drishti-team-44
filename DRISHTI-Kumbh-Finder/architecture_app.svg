@@ -1,0 +1,186 @@
+<svg viewBox="0 0 1180 800" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Arial, sans-serif">
+  <defs>
+    <linearGradient id="hdr3" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#FF6A00"/><stop offset="1" stop-color="#e25c00"/>
+    </linearGradient>
+    <marker id="ar" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#FF6A00"/>
+    </marker>
+    <marker id="ag" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#2ea043"/>
+    </marker>
+    <style>
+      .lyr{fill:#f4f6f8;stroke:#d7dde3}
+      .lt{font-size:12px;fill:#8b97a4;font-weight:700;letter-spacing:1px}
+      .box{fill:#ffffff;stroke:#cfd8e1;stroke-width:1.5}
+      .accent{fill:#fff4ec;stroke:#FF6A00;stroke-width:1.5}
+      .bt{font-size:12.5px;fill:#1a2027;font-weight:700}
+      .bs{font-size:10.3px;fill:#6b7682}
+      .edge{stroke:#FF6A00;stroke-width:2;fill:none;marker-end:url(#ar)}
+      .back{stroke:#2ea043;stroke-width:2;fill:none;marker-end:url(#ag)}
+      .el{font-size:9.5px;fill:#FF6A00;font-weight:700}
+      .eg{font-size:9.5px;fill:#2ea043;font-weight:700}
+    </style>
+  </defs>
+
+  <rect width="1180" height="800" fill="#ffffff"/>
+  <rect x="0" y="0" width="1180" height="54" fill="url(#hdr3)"/>
+  <text x="28" y="34" font-size="20" font-weight="800" fill="#fff">DRISHTI — App Architecture &amp; Data Flow (as built)</text>
+  <text x="1152" y="34" font-size="12" fill="#ffe6d3" text-anchor="end">Offline-first prototype · optional Claude + Qdrant services</text>
+
+  <!-- ===== LANE A: DATA & BUILD ===== -->
+  <rect class="lyr" x="24" y="74" width="250" height="574" rx="12"/>
+  <text class="lt" x="44" y="98">① DATA &amp; OFFLINE BUILD</text>
+
+  <rect class="box" x="40" y="112" width="218" height="58" rx="10"/>
+  <text class="bt" x="54" y="135">data/*.csv</text>
+  <text class="bs" x="54" y="152">2,500 synthetic missing persons,</text>
+  <text class="bs" x="54" y="165">locations (Kumbhathon data)</text>
+
+  <rect class="box" x="40" y="182" width="218" height="76" rx="10"/>
+  <text class="bt" x="54" y="205">Google Earth KML</text>
+  <text class="bs" x="54" y="222">CCTV Dataset.kml — 4,079 cams</text>
+  <text class="bs" x="54" y="236">zone-tagged (Z&#8249;n&#8250;-C&#8249;m&#8250;)</text>
+  <text class="bs" x="54" y="250">Police · Chokepoints KML</text>
+
+  <rect class="accent" x="40" y="270" width="218" height="60" rx="10"/>
+  <text class="bt" x="54" y="293">build_data.py</text>
+  <text class="bs" x="54" y="310">parse CSV+KML · mask mobiles</text>
+  <text class="bs" x="54" y="324">zone-tag cameras · centroids</text>
+
+  <rect class="accent" x="40" y="346" width="218" height="118" rx="10"/>
+  <text class="bt" x="54" y="369">app_data.js  (window.KMP)</text>
+  <text class="bs" x="54" y="387">persons · cameras (4,079)</text>
+  <text class="bs" x="54" y="401">zones (32) · police (14)</text>
+  <text class="bs" x="54" y="415">chokepoints (85)</text>
+  <text class="bs" x="54" y="429">seenCoords · bbox</text>
+  <text class="bs" x="54" y="448">→ embedded; no DB, no network</text>
+
+  <text class="bs" x="40" y="486">Built once and baked into the</text>
+  <text class="bs" x="40" y="500">page — the core app runs offline.</text>
+
+  <path class="edge" d="M149,170 L149,182"/>
+  <path class="edge" d="M149,258 L149,270"/>
+  <path class="edge" d="M149,330 L149,346"/>
+
+  <!-- ===== LANE B: BROWSER APP ===== -->
+  <rect class="lyr" x="288" y="74" width="540" height="574" rx="12"/>
+  <text class="lt" x="308" y="98">② BROWSER APP — index.html (offline single file)</text>
+
+  <rect class="accent" x="304" y="110" width="508" height="38" rx="10"/>
+  <text class="bt" x="318" y="134">Loads window.KMP from app_data.js — core flow needs no server</text>
+
+  <!-- tabs row 1 -->
+  <rect class="box" x="304" y="160" width="246" height="82" rx="10"/>
+  <text class="bt" x="318" y="183">&#9312; Report a case</text>
+  <text class="bs" x="318" y="201">kiosk intake · optional photo</text>
+  <text class="bs" x="318" y="215">cross-searches all centers</text>
+  <text class="bs" x="318" y="229">no-photo → CCTV review packet</text>
+
+  <rect class="box" x="566" y="160" width="246" height="82" rx="10"/>
+  <text class="bt" x="580" y="183">&#9313; Unified search</text>
+  <text class="bs" x="580" y="201">matchScore ranking, all centers</text>
+  <text class="bs" x="580" y="215">&#10024; Smart fill &#8594; Claude backend</text>
+  <text class="bs" x="580" y="229">partial info is fine</text>
+
+  <!-- tabs row 2 -->
+  <rect class="box" x="304" y="250" width="246" height="82" rx="10"/>
+  <text class="bt" x="318" y="273">&#9314; Cross-center duplicates</text>
+  <text class="bs" x="318" y="291">cluster the same person across</text>
+  <text class="bs" x="318" y="305">different centers (~8%)</text>
+
+  <rect class="accent" x="566" y="250" width="246" height="82" rx="10"/>
+  <text class="bt" x="580" y="273">&#9315; Coverage map</text>
+  <text class="bs" x="580" y="291">&#128752; Satellite (Esri) / &#9638; diagram</text>
+  <text class="bs" x="580" y="305">cams · police · choke · zones</text>
+  <text class="bs" x="580" y="319">+ live sightings + trace path</text>
+
+  <!-- tabs row 3 -->
+  <rect class="box" x="304" y="340" width="246" height="82" rx="10"/>
+  <text class="bt" x="318" y="363">&#9316; Dashboard</text>
+  <text class="bs" x="318" y="381">status · age · center · hotspots</text>
+  <text class="bs" x="318" y="395">over 2,500 cases</text>
+
+  <rect class="accent" x="566" y="340" width="246" height="82" rx="10"/>
+  <text class="bt" x="580" y="363">&#9317; CCTV trace (no-photo locate)</text>
+  <text class="bs" x="580" y="381">scope &#8594; rank &#8594; confirm &#8594; track</text>
+  <text class="bs" x="580" y="395">Track A face · satellite map</text>
+  <text class="bs" x="580" y="409">current position + help-point</text>
+
+  <rect class="accent" x="304" y="434" width="508" height="60" rx="10"/>
+  <text class="bt" x="318" y="456">matchScore() engine</text>
+  <text class="bs" x="318" y="474">gender · age · language · last-seen GPS (haversine) · name · time</text>
+  <text class="bs" x="318" y="488">&#8594; powers search ranking + duplicate linking</text>
+
+  <rect class="box" x="304" y="506" width="508" height="50" rx="10"/>
+  <text class="bt" x="318" y="528">Maps &amp; offline fallback</text>
+  <text class="bs" x="318" y="546">Leaflet + Esri satellite tiles (online) &#8596; canvas diagram (offline, no key)</text>
+
+  <!-- ===== LANE C: OPTIONAL SERVICES ===== -->
+  <rect class="lyr" x="842" y="74" width="314" height="574" rx="12"/>
+  <text class="lt" x="862" y="98">③ OPTIONAL ONLINE SERVICES (graceful-degrade)</text>
+
+  <rect class="accent" x="858" y="110" width="282" height="92" rx="10"/>
+  <text class="bt" x="872" y="132">backend.py · :8000 (Claude)</text>
+  <text class="bs" x="872" y="150">/parse-search · /parse-intake</text>
+  <text class="bs" x="872" y="164">&#8594; claude-opus-4-8 (structured out)</text>
+  <text class="bs" x="872" y="178">natural language &#8594; filters</text>
+  <text class="bs" x="872" y="194">API key in env — never in browser</text>
+
+  <rect class="accent" x="858" y="212" width="282" height="142" rx="10"/>
+  <text class="bt" x="872" y="234">backend_reference.py · :8100</text>
+  <text class="bs" x="872" y="252">SCRFD + ArcFace (buffalo_l)</text>
+  <text class="bs" x="872" y="266">attributes: gender·age·colour·height</text>
+  <text class="bs" x="872" y="280">cross-zone gated tracking</text>
+  <text class="bs" x="872" y="298">/enroll /search /ingest-frame</text>
+  <text class="bs" x="872" y="312">/search/face /track</text>
+  <text class="bs" x="872" y="326">/ingest-people /recent-sightings</text>
+  <text class="bs" x="872" y="344">/persons /people /stats /health</text>
+
+  <rect class="box" x="858" y="366" width="282" height="86" rx="10"/>
+  <text class="bt" x="872" y="388">Qdrant — vector DB</text>
+  <text class="bs" x="872" y="406">embedded ./qdrant_data or server</text>
+  <text class="bs" x="872" y="420">(QDRANT_URL)</text>
+  <text class="bs" x="872" y="438">collections: persons · sightings · people</text>
+
+  <rect class="box" x="858" y="464" width="282" height="100" rx="10"/>
+  <text class="bt" x="872" y="486">Feeders (HTTP &#8594; backend)</text>
+  <text class="bs" x="872" y="504">ingest_video · seed (persons)</text>
+  <text class="bs" x="872" y="518">live_feed &#8594; crowd &#8594; sightings</text>
+  <text class="bs" x="872" y="532">capture_people &#8594; mp4 &#8594; people</text>
+  <text class="bs" x="872" y="548">(gender/colour/height + image) · real-time</text>
+
+  <rect class="box" x="858" y="576" width="282" height="50" rx="10"/>
+  <text class="bt" x="872" y="598">Sample footage</text>
+  <text class="bs" x="872" y="616">street_crossing.webm · 10924096-…mp4</text>
+
+  <!-- ===== cross-lane edges ===== -->
+  <path class="edge" d="M258,405 L304,360"/>
+  <text class="el" x="262" y="392">loads KMP</text>
+
+  <path class="edge" d="M812,196 L856,150"/>
+  <text class="el" x="816" y="168">NL &#8594; filters</text>
+
+  <path class="edge" d="M812,388 L856,300"/>
+  <text class="el" x="812" y="352">/search/face · /track</text>
+
+  <path class="back" d="M856,330 L812,318"/>
+  <text class="eg" x="800" y="338">live sightings / candidates / trajectory</text>
+
+  <!-- within lane C -->
+  <path class="edge" d="M999,464 L999,356"/>
+  <text class="el" x="1003" y="412">/ingest-frame</text>
+  <text class="el" x="1003" y="426">/ingest-people</text>
+  <path class="edge" d="M980,356 L980,366"/>
+  <path class="back" d="M1018,366 L1018,356"/>
+  <text class="el" x="900" y="362">vectors + filtered search</text>
+  <path class="edge" d="M999,576 L999,564"/>
+
+  <!-- ===== bottom band: principles ===== -->
+  <rect class="accent" x="24" y="664" width="1132" height="118" rx="12"/>
+  <text class="bt" x="44" y="690" font-size="14">Design principles</text>
+  <text class="bs" x="44" y="714" font-size="11.5">• Offline-first — Report · Search · Duplicates · Dashboard · Diagram map run with NO internet and NO backend (all data embedded).</text>
+  <text class="bs" x="44" y="736" font-size="11.5">• Graceful degradation — Claude NL-search, satellite tiles, and the face/people pipeline activate only when reachable; otherwise the app falls back.</text>
+  <text class="bs" x="44" y="758" font-size="11.5">• Human-in-the-loop confirmation · API key server-side only · consent on photos · embeddings auto-purged at case/mela close.</text>
+  <text class="bs" x="44" y="775" font-size="11.5">• demo_setup.sh brings the full stack (Qdrant backend + real-time feed + sample data) up in one command.</text>
+</svg>

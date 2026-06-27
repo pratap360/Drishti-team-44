@@ -1,0 +1,109 @@
+<svg viewBox="0 0 1180 560" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Arial, sans-serif">
+  <defs>
+    <linearGradient id="hdr2" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#FF6A00"/><stop offset="1" stop-color="#e25c00"/>
+    </linearGradient>
+    <marker id="a2" markerWidth="11" markerHeight="11" refX="8" refY="3.2" orient="auto">
+      <path d="M0,0 L8,3.2 L0,6.4 Z" fill="#FF6A00"/>
+    </marker>
+    <style>
+      .st{fill:#fff;stroke:#FF6A00;stroke-width:2;rx:12}
+      .stt{font-size:14px;fill:#1a2027;font-weight:800}
+      .sts{font-size:11px;fill:#5b6671}
+      .stp{font-size:10px;fill:#FF6A00;font-weight:700}
+      .fl{stroke:#FF6A00;stroke-width:2.5;fill:none;marker-end:url(#a2)}
+      .num{font-size:13px;fill:#fff;font-weight:800}
+    </style>
+  </defs>
+  <rect width="1180" height="560" fill="#ffffff"/>
+  <rect x="0" y="0" width="1180" height="50" fill="url(#hdr2)"/>
+  <text x="28" y="32" font-size="19" font-weight="800" fill="#fff">DRISHTI — Real-Time Matching Pipeline (per frame)</text>
+
+  <!-- enrollment lane -->
+  <text x="40" y="92" font-size="12" font-weight="700" fill="#8b97a4" letter-spacing="1">ENROLLMENT (once, when a person is reported missing)</text>
+  <rect class="st" x="40" y="104" width="190" height="92" rx="12"/>
+  <circle cx="62" cy="126" r="11" fill="#FF6A00"/><text class="num" x="58" y="130">A</text>
+  <text class="stt" x="80" y="130">Family photo</text>
+  <text class="sts" x="56" y="152">+ name, age, last-seen</text>
+  <text class="sts" x="56" y="168">+ explicit consent</text>
+  <text class="stp" x="56" y="186">DPDP opt-in</text>
+
+  <rect class="st" x="300" y="104" width="190" height="92" rx="12"/>
+  <circle cx="322" cy="126" r="11" fill="#FF6A00"/><text class="num" x="318" y="130">B</text>
+  <text class="stt" x="340" y="130">Detect + embed</text>
+  <text class="sts" x="316" y="152">SCRFD finds the face,</text>
+  <text class="sts" x="316" y="168">ArcFace → 512-D vector</text>
+  <text class="stp" x="316" y="186">"face-print"</text>
+
+  <rect class="st" x="560" y="104" width="200" height="92" rx="12"/>
+  <circle cx="582" cy="126" r="11" fill="#FF6A00"/><text class="num" x="578" y="130">C</text>
+  <text class="stt" x="600" y="130">Add to index</text>
+  <text class="sts" x="576" y="152">vector → FAISS / Milvus</text>
+  <text class="sts" x="576" y="168">watch-list (the gallery)</text>
+  <text class="stp" x="576" y="186">searchable in &lt;50ms</text>
+
+  <path class="fl" d="M230 150 L300 150"/>
+  <path class="fl" d="M490 150 L560 150"/>
+
+  <!-- live lane -->
+  <text x="40" y="262" font-size="12" font-weight="700" fill="#8b97a4" letter-spacing="1">LIVE INFERENCE (every frame, every camera, 24×7)</text>
+
+  <rect class="st" x="40" y="276" width="158" height="96" rx="12"/>
+  <circle cx="60" cy="298" r="11" fill="#FF6A00"/><text class="num" x="56" y="302">1</text>
+  <text class="stt" x="78" y="302">CCTV frame</text>
+  <text class="sts" x="56" y="324">RTSP stream decoded</text>
+  <text class="sts" x="56" y="340">on edge GPU</text>
+  <text class="stp" x="56" y="360">DeepStream</text>
+
+  <rect class="st" x="238" y="276" width="158" height="96" rx="12"/>
+  <circle cx="258" cy="298" r="11" fill="#FF6A00"/><text class="num" x="254" y="302">2</text>
+  <text class="stt" x="276" y="302">Detect faces</text>
+  <text class="sts" x="254" y="324">SCRFD: N boxes</text>
+  <text class="sts" x="254" y="340">quality + liveness</text>
+  <text class="stp" x="254" y="360">RetinaFace-class</text>
+
+  <rect class="st" x="436" y="276" width="158" height="96" rx="12"/>
+  <circle cx="456" cy="298" r="11" fill="#FF6A00"/><text class="num" x="452" y="302">3</text>
+  <text class="stt" x="474" y="302">Embed each</text>
+  <text class="sts" x="454" y="324">ArcFace → 512-D</text>
+  <text class="sts" x="454" y="340">per detected face</text>
+  <text class="stp" x="454" y="360">normalized vec</text>
+
+  <rect class="st" x="634" y="276" width="158" height="96" rx="12"/>
+  <circle cx="654" cy="298" r="11" fill="#FF6A00"/><text class="num" x="650" y="302">4</text>
+  <text class="stt" x="672" y="302">Vector search</text>
+  <text class="sts" x="652" y="324">top-1 vs watch-list</text>
+  <text class="sts" x="652" y="340">cosine distance</text>
+  <text class="stp" x="652" y="360">FAISS GPU</text>
+
+  <rect class="st" x="832" y="276" width="158" height="96" rx="12"/>
+  <circle cx="852" cy="298" r="11" fill="#FF6A00"/><text class="num" x="848" y="302">5</text>
+  <text class="stt" x="870" y="302">Threshold</text>
+  <text class="sts" x="850" y="324">dist &lt; τ ? → HIT</text>
+  <text class="sts" x="850" y="340">else discard vec</text>
+  <text class="stp" x="850" y="360">no face stored</text>
+
+  <rect class="st" x="1010" y="276" width="150" height="96" rx="12"/>
+  <circle cx="1030" cy="298" r="11" fill="#2ea043"/><text class="num" x="1026" y="302">6</text>
+  <text class="stt" x="1048" y="302">Alert</text>
+  <text class="sts" x="1028" y="324">cam + time + conf</text>
+  <text class="sts" x="1028" y="340">notify family +</text>
+  <text class="sts" x="1028" y="356">nearest booth</text>
+
+  <path class="fl" d="M198 324 L238 324"/>
+  <path class="fl" d="M396 324 L436 324"/>
+  <path class="fl" d="M594 324 L634 324"/>
+  <path class="fl" d="M792 324 L832 324"/>
+  <path class="fl" d="M990 324 L1010 324"/>
+
+  <!-- index link from enrollment to step 4 -->
+  <path class="fl" d="M660 196 C 660 230, 700 240, 710 276" stroke-dasharray="6 5"/>
+  <text x="668" y="232" font-size="10" fill="#FF6A00" font-weight="700">gallery</text>
+
+  <!-- tracking note -->
+  <rect x="40" y="404" width="1120" height="116" rx="12" fill="#fff4ec" stroke="#FF6A00" stroke-width="1.5"/>
+  <text x="60" y="430" font-size="14" font-weight="800" fill="#1a2027">Cross-camera continuity &amp; safeguards</text>
+  <text x="60" y="454" class="sts" font-size="12">• <tspan font-weight="700">ByteTrack</tspan> links the same person across consecutive frames and neighbouring cameras → reconstructs the person's path through the mela.</text>
+  <text x="60" y="476" class="sts" font-size="12">• <tspan font-weight="700">Human-in-the-loop:</tspan> a control-room operator confirms each high-confidence hit before the family is dispatched — the model assists, people decide.</text>
+  <text x="60" y="498" class="sts" font-size="12">• <tspan font-weight="700">Privacy by design:</tspan> non-matching faces are never stored; only watch-list (consented) embeddings persist, and all are purged when the mela ends.</text>
+</svg>

@@ -1,0 +1,154 @@
+<svg viewBox="0 0 1180 720" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Arial, sans-serif">
+  <defs>
+    <linearGradient id="hdr" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#FF6A00"/><stop offset="1" stop-color="#e25c00"/>
+    </linearGradient>
+    <marker id="arr" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#FF6A00"/>
+    </marker>
+    <style>
+      .lyr{fill:#f4f6f8;stroke:#d7dde3;rx:12}
+      .lt{font-size:12px;fill:#8b97a4;font-weight:700;letter-spacing:1px}
+      .box{fill:#ffffff;stroke:#cfd8e1;stroke-width:1.5;rx:10}
+      .bt{font-size:13px;fill:#1a2027;font-weight:700}
+      .bs{font-size:10.5px;fill:#6b7682}
+      .edge{stroke:#FF6A00;stroke-width:2;fill:none;marker-end:url(#arr)}
+      .accent{fill:#fff4ec;stroke:#FF6A00;stroke-width:1.5;rx:10}
+    </style>
+  </defs>
+
+  <rect width="1180" height="720" fill="#ffffff"/>
+  <rect x="0" y="0" width="1180" height="54" fill="url(#hdr)"/>
+  <text x="28" y="34" font-size="20" font-weight="800" fill="#fff">DRISHTI — End-to-End System Architecture</text>
+  <text x="1152" y="34" font-size="12" fill="#ffe6d3" text-anchor="end">Nashik Kumbh Mela 2027 · Missing Person Finder</text>
+
+  <!-- LAYER 1: EDGE / FIELD -->
+  <rect class="lyr" x="24" y="74" width="280" height="618" rx="12"/>
+  <text class="lt" x="44" y="98">① EDGE — FIELD CAPTURE</text>
+
+  <rect class="box" x="44" y="112" width="240" height="62" rx="10"/>
+  <text class="bt" x="60" y="136">4,011 AI CCTV cameras</text>
+  <text class="bs" x="60" y="154">Ramkund · Ghats · Sadhugram ·</text>
+  <text class="bs" x="60" y="167">Trimbakeshwar · stns · corridors</text>
+
+  <rect class="box" x="44" y="184" width="240" height="50" rx="10"/>
+  <text class="bt" x="60" y="206">18 surveillance drones</text>
+  <text class="bs" x="60" y="223">aerial coverage of ghats / crowds</text>
+
+  <rect class="accent" x="44" y="248" width="240" height="92" rx="10"/>
+  <text class="bt" x="60" y="270">Edge GPU nodes</text>
+  <text class="bs" x="60" y="288">NVIDIA DeepStream + TensorRT</text>
+  <text class="bs" x="60" y="303">• decode RTSP  • SCRFD detect</text>
+  <text class="bs" x="60" y="318">• ArcFace embed  • ByteTrack</text>
+  <text class="bs" x="60" y="333">→ sends vectors, not raw video</text>
+
+  <rect class="box" x="44" y="352" width="240" height="58" rx="10"/>
+  <text class="bt" x="60" y="374">Bhula-Bhatka booths</text>
+  <text class="bs" x="60" y="392">lost-and-found kiosks + family</text>
+  <text class="bs" x="60" y="405">enrollment (photo + consent)</text>
+
+  <rect class="box" x="44" y="424" width="240" height="58" rx="10"/>
+  <text class="bt" x="60" y="446">Citizen / Police app</text>
+  <text class="bs" x="60" y="464">report missing, upload photo,</text>
+  <text class="bs" x="60" y="477">receive match alerts</text>
+
+  <!-- LAYER 2: CORE PLATFORM -->
+  <rect class="lyr" x="330" y="74" width="470" height="618" rx="12"/>
+  <text class="lt" x="350" y="98">② CORE — "KUMBH AI STACK" (CONTROL ROOM)</text>
+
+  <rect class="accent" x="352" y="112" width="426" height="78" rx="10"/>
+  <text class="bt" x="370" y="135">Stream ingest &amp; orchestration</text>
+  <text class="bs" x="370" y="154">Kafka event bus · per-camera workers · load-balanced</text>
+  <text class="bs" x="370" y="170">handles 4,011 streams; auto-failover &amp; health monitoring</text>
+
+  <rect class="box" x="352" y="200" width="206" height="96" rx="10"/>
+  <text class="bt" x="368" y="222">Face pipeline</text>
+  <text class="bs" x="368" y="240">SCRFD → detect faces</text>
+  <text class="bs" x="368" y="256">ArcFace → 512-D embedding</text>
+  <text class="bs" x="368" y="272">ByteTrack → cross-cam ID</text>
+  <text class="bs" x="368" y="288">quality &amp; liveness filter</text>
+
+  <rect class="accent" x="572" y="200" width="206" height="96" rx="10"/>
+  <text class="bt" x="588" y="222">Vector matching engine</text>
+  <text class="bs" x="588" y="240">FAISS / Milvus index</text>
+  <text class="bs" x="588" y="256">millions of embeddings</text>
+  <text class="bs" x="588" y="272">cosine top-k, &lt;50 ms</text>
+  <text class="bs" x="588" y="288">GPU IVF-PQ at scale</text>
+
+  <rect class="box" x="352" y="306" width="206" height="86" rx="10"/>
+  <text class="bt" x="368" y="328">Watch-list DB</text>
+  <text class="bs" x="368" y="346">missing persons + consent</text>
+  <text class="bs" x="368" y="362">PostgreSQL (metadata)</text>
+  <text class="bs" x="368" y="378">encrypted at rest</text>
+
+  <rect class="box" x="572" y="306" width="206" height="86" rx="10"/>
+  <text class="bt" x="588" y="328">Alert &amp; case engine</text>
+  <text class="bs" x="588" y="346">dedupe · route to nearest</text>
+  <text class="bs" x="588" y="362">booth + family · SMS/push</text>
+  <text class="bs" x="588" y="378">human-in-the-loop confirm</text>
+
+  <rect class="accent" x="352" y="402" width="426" height="74" rx="10"/>
+  <text class="bt" x="370" y="424">Crowd-analytics co-tenant</text>
+  <text class="bs" x="370" y="443">density heatmaps · flow · anomaly &amp; stampede early-warning</text>
+  <text class="bs" x="370" y="459">(same feeds, shared with disaster-management — Kumbh AI Stack)</text>
+
+  <rect class="box" x="352" y="486" width="426" height="62" rx="10"/>
+  <text class="bt" x="370" y="508">Governance &amp; audit layer</text>
+  <text class="bs" x="370" y="527">DPDP-compliant: consent registry · access logs · auto-purge</text>
+  <text class="bs" x="370" y="541">embeddings deleted at mela close · purpose-limited</text>
+
+  <rect class="box" x="352" y="558" width="426" height="120" rx="10"/>
+  <text class="bt" x="370" y="580">Operations APIs</text>
+  <text class="bs" x="370" y="599">/enroll · /search · /watchlist · /alerts · /stats</text>
+  <text class="bs" x="370" y="617">REST + WebSocket (real-time push)</text>
+  <text class="bs" x="370" y="641">— mirrored by the prototype backend_reference.py —</text>
+  <text class="bs" x="370" y="659">scales horizontally behind API gateway</text>
+
+  <!-- LAYER 3: CONSUMERS -->
+  <rect class="lyr" x="826" y="74" width="330" height="618" rx="12"/>
+  <text class="lt" x="846" y="98">③ CONSUMERS</text>
+
+  <rect class="box" x="846" y="112" width="290" height="86" rx="10"/>
+  <text class="bt" x="862" y="134">Control-room dashboard</text>
+  <text class="bs" x="862" y="152">live map · camera wall · active</text>
+  <text class="bs" x="862" y="168">cases · density heatmap</text>
+  <text class="bs" x="862" y="184">operators confirm matches</text>
+
+  <rect class="accent" x="846" y="208" width="290" height="86" rx="10"/>
+  <text class="bt" x="862" y="230">Family / citizen app</text>
+  <text class="bs" x="862" y="248">"your relative was seen at</text>
+  <text class="bs" x="862" y="264">Ramkund Ghat, CAM-02, 14:32"</text>
+  <text class="bs" x="862" y="280">turn-by-turn to reunion point</text>
+
+  <rect class="box" x="846" y="304" width="290" height="80" rx="10"/>
+  <text class="bt" x="862" y="326">Police &amp; lost-found booths</text>
+  <text class="bs" x="862" y="344">dispatch nearest volunteer</text>
+  <text class="bs" x="862" y="360">verify identity · log reunion</text>
+  <text class="bs" x="862" y="376">special priority: children</text>
+
+  <rect class="box" x="846" y="394" width="290" height="78" rx="10"/>
+  <text class="bt" x="862" y="416">Disaster-management cell</text>
+  <text class="bs" x="862" y="434">stampede / overcrowd alerts</text>
+  <text class="bs" x="862" y="450">reroute crowds in real time</text>
+  <text class="bs" x="862" y="466">(shared analytics tenant)</text>
+
+  <rect class="accent" x="846" y="498" width="290" height="180" rx="10"/>
+  <text class="bt" x="862" y="520">Scale targets (Nashik 2027)</text>
+  <text class="bs" x="862" y="542">• ~12 crore pilgrims total</text>
+  <text class="bs" x="862" y="560">• ~2.5 crore peak-day footfall</text>
+  <text class="bs" x="862" y="578">• 4,011 cameras + 18 drones</text>
+  <text class="bs" x="862" y="596">• ≈ ₹300 cr surveillance budget</text>
+  <text class="bs" x="862" y="614">• match latency target &lt; 2 s</text>
+  <text class="bs" x="862" y="632">• 24×7 over ~9-month mela</text>
+  <text class="bs" x="862" y="656">• children = highest priority SLA</text>
+
+  <!-- edges between layers -->
+  <path class="edge" d="M284 295 L352 230"/>
+  <path class="edge" d="M284 381 L352 345"/>
+  <path class="edge" d="M284 450 L352 600"/>
+  <path class="edge" d="M558 248 L572 248"/>
+  <path class="edge" d="M800 155 L846 155"/>
+  <path class="edge" d="M800 250 L846 250"/>
+  <path class="edge" d="M800 345 L846 345"/>
+  <path class="edge" d="M800 432 L846 432"/>
+</svg>
