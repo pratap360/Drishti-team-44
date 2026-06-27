@@ -1,0 +1,207 @@
+<div class="control">
+  <mat-toolbar class="hdr">
+    <span class="brand">🛡️ {{ 'app.name' | t }} <small>{{ 'ctrl.title' | t }}</small></span>
+    <span class="spacer"></span>
+    @if (auth.user(); as u) { <span class="user">{{ u.username }}</span> }
+    <app-lang-toggle />
+    <button mat-icon-button (click)="logout()" title="Logout"><mat-icon>logout</mat-icon></button>
+  </mat-toolbar>
+
+  <nav class="tabs">
+    @for (t of tabs; track t.key) {
+      <button [class.active]="tab()===t.key" (click)="go(t.key)">
+        <mat-icon>{{ t.icon }}</mat-icon> {{ t.label | t }}
+      </button>
+    }
+  </nav>
+
+  <div class="page">
+    <!-- DASHBOARD -->
+    @if (tab() === 'dashboard') {
+      @if (stats(); as s) {
+        <div class="stat-grid">
+          <div class="stat-card b-orange"><div class="n">{{ s.total }}</div><div class="l">{{ 'ctrl.statTotal' | t }}</div></div>
+          <div class="stat-card b-yellow"><div class="n">{{ s.pending }}</div><div class="l">{{ 'ctrl.statPending' | t }}</div></div>
+          <div class="stat-card b-green"><div class="n">{{ s.reunited }}</div><div class="l">{{ 'ctrl.statReunited' | t }}</div></div>
+          <div class="stat-card b-red"><div class="n">{{ s.unresolved }}</div><div class="l">{{ 'ctrl.statUnresolved' | t }}</div></div>
+          <div class="stat-card b-blue"><div class="n">{{ s.hospital }}</div><div class="l">{{ 'ctrl.statHospital' | t }}</div></div>
+          <div class="stat-card b-orange"><div class="n">{{ s.duplicates }}</div><div class="l">{{ 'ctrl.statDuplicates' | t }}</div></div>
+          <div class="stat-card b-green"><div class="n">{{ s.found_total }}</div><div class="l">{{ 'ctrl.statFound' | t }}</div></div>
+          <div class="stat-card b-blue"><div class="n">{{ s.avg_resolution_hours }}</div><div class="l">{{ 'ctrl.statAvg' | t }}</div></div>
+        </div>
+
+        <div class="charts">
+          <mat-card class="chart">
+            <h4>{{ 'ctrl.byAge' | t }}</h4>
+            @for (a of s.by_age; track a.age_band) {
+              <div class="bar-row"><span class="bl">{{ a.age_band || '—' }}</span>
+                <div class="bar"><div class="fill" [style.width.%]="a.count / maxOf(s.by_age) * 100"></div></div>
+                <span class="bv">{{ a.count }}</span></div>
+            }
+          </mat-card>
+          <mat-card class="chart">
+            <h4>{{ 'ctrl.byCenter' | t }}</h4>
+            @for (c of s.by_center.slice(0, 10); track c.center) {
+              <div class="bar-row"><span class="bl">{{ c.center || '—' }}</span>
+                <div class="bar"><div class="fill" [style.width.%]="c.count / maxOf(s.by_center) * 100"></div></div>
+                <span class="bv">{{ c.count }}</span></div>
+            }
+          </mat-card>
+        </div>
+        <mat-card class="chart">
+          <h4>{{ 'ctrl.byDate' | t }}</h4>
+          <div class="vbars">
+            @for (d of s.by_date; track d.date) {
+              <div class="vbar-wrap" [title]="d.date + ': ' + d.count">
+                <div class="vbar" [style.height.%]="d.count / maxOf(s.by_date) * 100"></div>
+              </div>
+            }
+          </div>
+        </mat-card>
+      } @else {
+        <div class="loading"><mat-spinner diameter="36" /></div>
+      }
+    }
+
+    <!-- SEARCH -->
+    @if (tab() === 'search') {
+      <mat-card class="filters">
+        <mat-form-field appearance="outline"><mat-label>{{ 'common.search' | t }}</mat-label>
+          <input matInput [(ngModel)]="q" (keydown.enter)="search()"></mat-form-field>
+        <mat-form-field appearance="outline"><mat-label>{{ 'common.gender' | t }}</mat-label>
+          <mat-select [(ngModel)]="sGender"><mat-option value="">—</mat-option>
+            <mat-option value="Male">Male</mat-option><mat-option value="Female">Female</mat-option></mat-select></mat-form-field>
+        <mat-form-field appearance="outline"><mat-label>{{ 'common.age' | t }}</mat-label>
+          <mat-select [(ngModel)]="sAge"><mat-option value="">—</mat-option>
+            @for (a of ageBands; track a) { <mat-option [value]="a">{{ a }}</mat-option> }</mat-select></mat-form-field>
+        @if (filters(); as f) {
+          <mat-form-field appearance="outline"><mat-label>{{ 'common.state' | t }}</mat-label>
+            <mat-select [(ngModel)]="sState"><mat-option value="">—</mat-option>
+              @for (s of f.states; track s) { <mat-option [value]="s">{{ s }}</mat-option> }</mat-select></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>{{ 'common.center' | t }}</mat-label>
+            <mat-select [(ngModel)]="sCenter"><mat-option value="">—</mat-option>
+              @for (c of f.centers; track c) { <mat-option [value]="c">{{ c }}</mat-option> }</mat-select></mat-form-field>
+        }
+        <mat-form-field appearance="outline"><mat-label>{{ 'common.status' | t }}</mat-label>
+          <mat-select [(ngModel)]="sStatus"><mat-option value="">—</mat-option>
+            <mat-option value="Pending">Pending</mat-option><mat-option value="Reunited">Reunited</mat-option>
+            <mat-option value="Unresolved">Unresolved</mat-option></mat-select></mat-form-field>
+        <button mat-flat-button class="brand-btn" (click)="search()">{{ 'common.search' | t }}</button>
+      </mat-card>
+
+      <mat-card class="table-wrap">
+        <table mat-table [dataSource]="results()" class="full-width">
+          <ng-container matColumnDef="score"><th mat-header-cell *matHeaderCellDef>%</th>
+            <td mat-cell *matCellDef="let r">{{ r.match_score != null ? r.match_score + '%' : '—' }}</td></ng-container>
+          <ng-container matColumnDef="case_id"><th mat-header-cell *matHeaderCellDef>Case</th>
+            <td mat-cell *matCellDef="let r">{{ r.case_id }}</td></ng-container>
+          <ng-container matColumnDef="name"><th mat-header-cell *matHeaderCellDef>Name</th>
+            <td mat-cell *matCellDef="let r">{{ r.missing_person_name }}</td></ng-container>
+          <ng-container matColumnDef="gender"><th mat-header-cell *matHeaderCellDef>Gender</th>
+            <td mat-cell *matCellDef="let r">{{ r.gender }}</td></ng-container>
+          <ng-container matColumnDef="age"><th mat-header-cell *matHeaderCellDef>Age</th>
+            <td mat-cell *matCellDef="let r">{{ r.age_band }}</td></ng-container>
+          <ng-container matColumnDef="location"><th mat-header-cell *matHeaderCellDef>Last Seen</th>
+            <td mat-cell *matCellDef="let r">{{ r.last_seen_location }}</td></ng-container>
+          <ng-container matColumnDef="center"><th mat-header-cell *matHeaderCellDef>Center</th>
+            <td mat-cell *matCellDef="let r">{{ r.reporting_center }}</td></ng-container>
+          <ng-container matColumnDef="status"><th mat-header-cell *matHeaderCellDef>Status</th>
+            <td mat-cell *matCellDef="let r"><span class="badge" [class]="badgeClass(r.status)">{{ r.status }}</span></td></ng-container>
+          <tr mat-header-row *matHeaderRowDef="cols"></tr>
+          <tr mat-row *matRowDef="let row; columns: cols;"></tr>
+        </table>
+        @if (!results().length && !searching()) { <p class="muted empty">No results.</p> }
+      </mat-card>
+    }
+
+    <!-- REPORT FOUND -->
+    @if (tab() === 'report') {
+      <mat-card class="card">
+        <h3>{{ 'ctrl.reportFound' | t }}</h3>
+        <label class="fld-label">{{ 'form.photo' | t }}</label>
+        <app-photo-capture [(photo)]="photo" />
+        <div class="form-grid">
+          <mat-form-field appearance="outline"><mat-label>{{ 'form.name' | t }}</mat-label>
+            <input matInput [(ngModel)]="form.person_name"></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>{{ 'common.gender' | t }}</mat-label>
+            <mat-select [(ngModel)]="form.gender">@for (g of genders; track g) { <mat-option [value]="g">{{ g }}</mat-option> }</mat-select></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>{{ 'common.age' | t }}</mat-label>
+            <mat-select [(ngModel)]="form.age_band">@for (a of ageBands; track a) { <mat-option [value]="a">{{ a }}</mat-option> }</mat-select></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>{{ 'common.state' | t }}</mat-label>
+            <input matInput [(ngModel)]="form.state"></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>{{ 'common.language' | t }}</mat-label>
+            <input matInput [(ngModel)]="form.language"></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>{{ 'vol.whereFound' | t }}</mat-label>
+            <input matInput [(ngModel)]="form.found_location"></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>{{ 'vol.yourCenter' | t }}</mat-label>
+            <input matInput [(ngModel)]="form.reporting_center"></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>{{ 'form.mobile' | t }}</mat-label>
+            <input matInput [(ngModel)]="form.contact_mobile"></mat-form-field>
+        </div>
+        <mat-form-field appearance="outline" class="full-width"><mat-label>{{ 'form.description' | t }}</mat-label>
+          <textarea matInput rows="2" [(ngModel)]="form.physical_description"></textarea></mat-form-field>
+        <button mat-flat-button class="brand-btn" (click)="submit()" [disabled]="submitting()">
+          @if (submitting()) { <mat-spinner diameter="20" /> } @else { {{ 'vol.register' | t }} }
+        </button>
+      </mat-card>
+
+      @if (matches().length) {
+        <h4 class="list-title">{{ 'vol.potentialMatches' | t }}</h4>
+        @for (m of matches(); track m.case_id) {
+          <mat-card class="match">
+            <div class="match-top"><span class="big-score">{{ m.match_score }}%</span>
+              <div><b>{{ m.missing_person_name }}</b><br><small class="muted">{{ m.case_id }} · {{ m.gender }} · {{ m.age_band }}</small></div></div>
+            <div class="reasons">@for (r of m.match_reasons; track r) { <span class="reason">{{ r }}</span> }</div>
+            <button mat-flat-button class="brand-btn" (click)="confirm(m)">{{ 'vol.confirmMatch' | t }}</button>
+          </mat-card>
+        }
+      }
+    }
+
+    <!-- DUPLICATES -->
+    @if (tab() === 'duplicates') {
+      <button mat-flat-button class="brand-btn" (click)="scanDuplicates()" [disabled]="scanning()">
+        @if (scanning()) { <mat-spinner diameter="20" /> } @else { {{ 'ctrl.scanDuplicates' | t }} }
+      </button>
+      @for (group of duplicateGroups(); track $index) {
+        <mat-card class="dup-group">
+          <h4>{{ 'ctrl.duplicateGroup' | t }} ({{ group.length }})</h4>
+          @for (p of group; track p.case_id) {
+            <div class="dup-row"><b>{{ p.case_id }}</b> — {{ p.missing_person_name }} · {{ p.reporting_center }}
+              · <span class="badge" [class]="badgeClass(p.status)">{{ p.status }}</span></div>
+          }
+        </mat-card>
+      }
+      @if (!duplicateGroups().length && !scanning()) { <p class="muted empty">{{ 'ctrl.noDuplicates' | t }}</p> }
+    }
+
+    <!-- MAP -->
+    @if (tab() === 'map') {
+      <div class="map-controls">
+        <strong>{{ 'ctrl.layers' | t }}:</strong>
+        <mat-checkbox [checked]="layerOn['cctv']" (change)="toggleLayer('cctv')">{{ 'ctrl.cctv' | t }}</mat-checkbox>
+        <mat-checkbox [checked]="layerOn['police']" (change)="toggleLayer('police')">{{ 'ctrl.police' | t }}</mat-checkbox>
+        <mat-checkbox [checked]="layerOn['chokepoints']" (change)="toggleLayer('chokepoints')">{{ 'ctrl.chokepoints' | t }}</mat-checkbox>
+        <mat-checkbox [checked]="layerOn['zones']" (change)="toggleLayer('zones')">{{ 'ctrl.zones' | t }}</mat-checkbox>
+        <mat-checkbox [checked]="layerOn['heatmap']" (change)="toggleLayer('heatmap')">{{ 'ctrl.heatmap' | t }}</mat-checkbox>
+      </div>
+      <div #mapEl class="map"></div>
+    }
+
+    <!-- HOTSPOTS -->
+    @if (tab() === 'hotspots') {
+      <mat-card class="card">
+        <h3>{{ 'ctrl.hotspotTitle' | t }}</h3>
+        <p class="muted">{{ 'ctrl.hotspotSub' | t }}</p>
+        @for (h of hotspots(); track $index; let i = $index) {
+          <div class="hot-row">
+            <span class="rank">{{ i + 1 }}</span>
+            <span class="loc">{{ h.last_seen_location || '—' }}</span>
+            <div class="bar"><div class="fill" [style.width.%]="h.cnt / (hotspots()[0].cnt || 1) * 100"></div></div>
+            <span class="cnt">{{ h.cnt }} <small class="muted">({{ h.active }} active)</small></span>
+          </div>
+        }
+      </mat-card>
+    }
+  </div>
+</div>

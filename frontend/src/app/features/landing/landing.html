@@ -1,0 +1,50 @@
+<div class="landing">
+  <!-- top bar -->
+  <div class="topbar">
+    <div class="auth">
+      @if (auth.user(); as u) {
+        <span class="badge-glass">{{ 'common.loggedInAs' | t }} <strong>{{ u.username }}</strong> ({{ u.role }})</span>
+        <button mat-stroked-button class="glass-btn" (click)="logout()">{{ 'common.logout' | t }}</button>
+      } @else {
+        <button mat-stroked-button class="glass-btn" (click)="openLogin()">{{ 'common.login' | t }}</button>
+      }
+    </div>
+    <div class="right">
+      @if (canInstall()) {
+        <button mat-stroked-button class="glass-btn" (click)="install()">⬇ {{ 'common.installApp' | t }}</button>
+      }
+      <app-lang-toggle />
+    </div>
+  </div>
+
+  <!-- logo -->
+  <div class="logo">
+    <h1>{{ 'app.name' | t }} <span>| {{ 'landing.tagline' | t }}</span></h1>
+    <p>{{ 'landing.hero' | t }}</p>
+  </div>
+
+  <!-- stats -->
+  <div class="stats">
+    <div class="stat"><span class="val">{{ total() }}</span><span class="lbl">{{ 'landing.statTotal' | t }}</span></div>
+    <div class="stat"><span class="val">{{ reunited() }}</span><span class="lbl">{{ 'landing.statReunited' | t }}</span></div>
+    <div class="stat"><span class="val">{{ avg() }}</span><span class="lbl">{{ 'landing.statAvgTime' | t }}</span></div>
+  </div>
+
+  <!-- cards -->
+  <div class="cards">
+    @for (c of cards; track c.key) {
+      <div class="card" [class]="c.cls" (click)="open(c)">
+        <div class="card-icon">{{ c.icon }}</div>
+        <h2>{{ titleFor(c) | t }}</h2>
+        <p>{{ descFor(c) | t }}</p>
+        <ul class="features">
+          @for (f of c.features; track f) { <li>{{ f | t }}</li> }
+        </ul>
+      </div>
+    }
+  </div>
+
+  <div class="footer">
+    {{ 'landing.footer' | t }}<br>{{ 'landing.footer2' | t }}
+  </div>
+</div>

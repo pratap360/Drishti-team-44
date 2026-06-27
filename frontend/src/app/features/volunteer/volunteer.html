@@ -1,0 +1,245 @@
+<div class="portal portal-vol">
+  <mat-toolbar class="hdr">
+    <div class="hdr-title">
+      <span class="t">{{ 'app.name' | t }}</span>
+      <span class="s">{{ 'vol.title' | t }}</span>
+    </div>
+    <span class="spacer"></span>
+    <app-lang-toggle />
+    <button mat-icon-button (click)="logout()" title="Logout"><mat-icon>logout</mat-icon></button>
+    <button mat-button (click)="exit()">{{ 'common.exit' | t }}</button>
+  </mat-toolbar>
+
+  @if (!offline.online()) {
+    <div class="bar offline">⚠️ {{ 'vol.offline' | t }}</div>
+  } @else if (offline.pendingCount() > 0) {
+    <div class="bar sync" (click)="sync()">🔄 {{ offline.pendingCount() }} {{ 'vol.queued' | t }} — {{ 'vol.tapToSync' | t }}</div>
+  }
+
+  <div class="content">
+    <!-- HOME -->
+    @if (page() === 'home') {
+      <div class="hero">
+        <h2>{{ 'vol.welcome' | t }}</h2>
+        <p>{{ 'vol.heroSub' | t }}</p>
+      </div>
+      <div class="quick-stats three">
+        <div class="qs"><div class="v">{{ total() }}</div><div class="l">{{ 'landing.statTotal' | t }}</div></div>
+        <div class="qs"><div class="v green">{{ reunited() }}</div><div class="l">{{ 'landing.statReunited' | t }}</div></div>
+        <div class="qs"><div class="v">{{ avg() }}</div><div class="l">{{ 'landing.statAvgTime' | t }}</div></div>
+      </div>
+      <div class="actions">
+        <button class="action" (click)="nav('report')"><span class="ai orange">🙋</span>
+          <span><b>{{ 'vol.actReport' | t }}</b><small>{{ 'vol.actReportD' | t }}</small></span></button>
+        <button class="action" (click)="nav('search')"><span class="ai blue">🔍</span>
+          <span><b>{{ 'vol.actSearch' | t }}</b><small>{{ 'vol.actSearchD' | t }}</small></span></button>
+        <button class="action" (click)="nav('share')"><span class="ai purple">📡</span>
+          <span><b>{{ 'vol.actShare' | t }}</b><small>{{ 'vol.actShareD' | t }}</small></span></button>
+        <button class="action" (click)="nav('nearby')"><span class="ai green">📍</span>
+          <span><b>{{ 'vol.actNearby' | t }}</b><small>{{ 'vol.actNearbyD' | t }}</small></span></button>
+      </div>
+    }
+
+    <!-- REPORT -->
+    @if (page() === 'report') {
+      @if (!registered()) {
+        <mat-card class="card">
+          <h3>{{ 'vol.reportTitle' | t }}</h3>
+          <p class="muted">{{ 'vol.reportSub' | t }}</p>
+
+          <label class="fld-label">{{ 'form.photo' | t }}</label>
+          <app-photo-capture [(photo)]="photo" />
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>{{ 'form.name' | t }}</mat-label>
+            <input matInput [(ngModel)]="form.person_name" name="pn">
+          </mat-form-field>
+          <div class="row">
+            <mat-form-field appearance="outline">
+              <mat-label>{{ 'common.gender' | t }}</mat-label>
+              <mat-select [(ngModel)]="form.gender" name="g">
+                @for (g of genders; track g) { <mat-option [value]="g">{{ g }}</mat-option> }
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>{{ 'common.age' | t }}</mat-label>
+              <mat-select [(ngModel)]="form.age_band" name="a">
+                @for (a of ageBands; track a) { <mat-option [value]="a">{{ ('ageBand.' + a) | t }}</mat-option> }
+              </mat-select>
+            </mat-form-field>
+          </div>
+          <div class="row">
+            <mat-form-field appearance="outline">
+              <mat-label>{{ 'common.language' | t }}</mat-label>
+              <input matInput [(ngModel)]="form.language" name="l">
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>{{ 'common.state' | t }}</mat-label>
+              <input matInput [(ngModel)]="form.state" name="s">
+            </mat-form-field>
+          </div>
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>{{ 'vol.whereFound' | t }}</mat-label>
+            <input matInput [(ngModel)]="form.found_location" name="loc">
+            <button matSuffix mat-icon-button (click)="fillGps()" title="GPS"><mat-icon>my_location</mat-icon></button>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>{{ 'vol.yourCenter' | t }}</mat-label>
+            <input matInput [(ngModel)]="form.reporting_center" name="ctr">
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>{{ 'form.description' | t }}</mat-label>
+            <textarea matInput rows="2" [(ngModel)]="form.physical_description" name="d"></textarea>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>{{ 'form.mobile' | t }}</mat-label>
+            <input matInput type="tel" [(ngModel)]="form.contact_mobile" name="m">
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>{{ 'form.notes' | t }}</mat-label>
+            <textarea matInput rows="2" [(ngModel)]="form.remarks" name="r"></textarea>
+          </mat-form-field>
+
+          <button mat-flat-button class="brand-btn full-width submit" (click)="submit()" [disabled]="submitting()">
+            @if (submitting()) { <mat-spinner diameter="20" /> } @else { {{ 'vol.register' | t }} }
+          </button>
+        </mat-card>
+      } @else {
+        <mat-card class="card success">
+          <div class="big">✅</div>
+          <h3>{{ 'vol.registered' | t }}</h3>
+          <p class="muted">{{ 'vol.registeredSub' | t }}</p>
+        </mat-card>
+        @if (matches().length) {
+          <h4 class="list-title">{{ 'vol.potentialMatches' | t }}</h4>
+          @for (m of matches(); track m.case_id) {
+            <ng-container [ngTemplateOutlet]="missingCard" [ngTemplateOutletContext]="{ $implicit: m }"></ng-container>
+          }
+        } @else {
+          <p class="muted empty">{{ 'vol.noMatch' | t }}</p>
+        }
+        <button mat-stroked-button class="full-width" (click)="reset()">{{ 'vol.reportAnother' | t }}</button>
+      }
+    }
+
+    <!-- SEARCH -->
+    @if (page() === 'search') {
+      <mat-card class="card">
+        <h3>{{ 'vol.searchTitle' | t }}</h3>
+        <p class="muted">{{ 'vol.searchSub' | t }}</p>
+        <div class="search-box">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>{{ 'common.search' | t }}</mat-label>
+            <input matInput [(ngModel)]="q" (keydown.enter)="search()">
+          </mat-form-field>
+          <button mat-flat-button class="brand-btn" (click)="search()">{{ 'common.go' | t }}</button>
+        </div>
+        <div class="row">
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'common.gender' | t }}</mat-label>
+            <mat-select [(ngModel)]="sGender">
+              <mat-option value="">—</mat-option>
+              <mat-option value="Male">{{ 'common.male' | t }}</mat-option>
+              <mat-option value="Female">{{ 'common.female' | t }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'common.age' | t }}</mat-label>
+            <mat-select [(ngModel)]="sAge">
+              <mat-option value="">—</mat-option>
+              @for (a of ageBands; track a) { <mat-option [value]="a">{{ a }}</mat-option> }
+            </mat-select>
+          </mat-form-field>
+        </div>
+      </mat-card>
+      @for (m of results(); track m.case_id) {
+        <ng-container [ngTemplateOutlet]="missingCard" [ngTemplateOutletContext]="{ $implicit: m }"></ng-container>
+      }
+    }
+
+    <!-- SHARE -->
+    @if (page() === 'share') {
+      <mat-card class="card">
+        <h3>{{ 'vol.shareTitle' | t }}</h3>
+        <p class="muted">{{ 'vol.shareSub' | t }}</p>
+      </mat-card>
+      <mat-card class="card text-center">
+        <h4>📤 {{ 'vol.send' | t }}</h4>
+        @if (lastReportExists()) {
+          <canvas #qrCanvas class="qr"></canvas>
+        } @else {
+          <p class="muted">{{ 'vol.noReportToShare' | t }}</p>
+        }
+      </mat-card>
+      <mat-card class="card text-center">
+        <h4>📥 {{ 'vol.receive' | t }}</h4>
+        @if (!scanning()) {
+          <button mat-flat-button class="brand-btn" (click)="startScan()">{{ 'vol.scanQr' | t }}</button>
+        } @else {
+          <div class="scanner">
+            <video #scanVideo autoplay playsinline></video>
+            <canvas #scanCanvas hidden></canvas>
+          </div>
+          <button mat-stroked-button (click)="cancelScan()">{{ 'common.cancel' | t }}</button>
+        }
+        @if (scanResult(); as sr) {
+          <div class="scan-ok">✅ {{ sr.person_name || ('common.unknown' | t) }} — {{ sr.found_location }}</div>
+        }
+      </mat-card>
+    }
+
+    <!-- NEARBY -->
+    @if (page() === 'nearby') {
+      <mat-card class="card">
+        <h3>{{ 'vol.nearbyTitle' | t }}</h3>
+        <p class="muted">{{ 'vol.nearbySub' | t }}</p>
+      </mat-card>
+      <mat-card class="card">
+        <h4>🚓 {{ 'vol.policeStations' | t }}</h4>
+        @for (p of police(); track $index) {
+          <div class="nearby-item">
+            <span>{{ p.station_name }}</span>
+            <button mat-button (click)="navigateTo(p.latitude, p.longitude)">{{ 'vol.navigate' | t }}</button>
+          </div>
+        }
+      </mat-card>
+      <mat-card class="card">
+        <h4>⚠️ {{ 'vol.highRisk' | t }}</h4>
+        <p class="muted small">{{ 'vol.highRiskSub' | t }}</p>
+        @for (c of chokepoints(); track $index) {
+          <div class="nearby-item">
+            <span>{{ c.location_name }} <small class="muted">({{ c.category }})</small></span>
+            <button mat-button (click)="navigateTo(c.latitude, c.longitude)">{{ 'vol.navigate' | t }}</button>
+          </div>
+        }
+      </mat-card>
+    }
+  </div>
+
+  <nav class="bottom-nav">
+    <button [class.active]="page()==='home'" (click)="nav('home')"><span>🏠</span>{{ 'nav.home' | t }}</button>
+    <button [class.active]="page()==='report'" (click)="nav('report')"><span>🙋</span>{{ 'nav.report' | t }}</button>
+    <button [class.active]="page()==='search'" (click)="nav('search')"><span>🔍</span>{{ 'nav.search' | t }}</button>
+    <button [class.active]="page()==='share'" (click)="nav('share')"><span>📡</span>{{ 'nav.share' | t }}</button>
+    <button [class.active]="page()==='nearby'" (click)="nav('nearby')"><span>📍</span>{{ 'nav.nearby' | t }}</button>
+  </nav>
+</div>
+
+<ng-template #missingCard let-m>
+  <div class="result-card" [class.reunited]="m.status === 'Reunited'">
+    @if (m.photo) { <img class="rc-photo" [src]="m.photo" alt=""> } @else { <div class="rc-photo ph">👤</div> }
+    <div class="rc-body">
+      <div class="rc-head">
+        <b>{{ m.missing_person_name || ('common.unknown' | t) }}</b>
+        @if (m.match_score != null) { <span class="score">{{ m.match_score }}%</span> }
+        @else { <span class="badge" [class]="badgeClass(m.status)">{{ m.status }}</span> }
+      </div>
+      <small class="muted">{{ m.case_id }}</small>
+      <small class="muted">{{ m.gender }} · {{ m.age_band }} · {{ m.language }} · {{ m.state }}</small>
+      <small class="muted">{{ m.last_seen_location }} — {{ m.reporting_center }}</small>
+      @if (m.match_reasons?.length) {
+        <div class="reasons">@for (r of m.match_reasons; track r) { <span class="reason">{{ r }}</span> }</div>
+      }
+    </div>
+  </div>
+</ng-template>

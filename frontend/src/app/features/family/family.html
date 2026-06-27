@@ -1,0 +1,282 @@
+<div class="portal portal-family">
+  <mat-toolbar class="hdr">
+    <div class="hdr-title">
+      <span class="t">{{ 'app.name' | t }}</span>
+      <span class="s">{{ 'family.title' | t }}</span>
+    </div>
+    <span class="spacer"></span>
+    <app-lang-toggle />
+    @if (auth.isAuthenticated()) {
+      <button mat-icon-button (click)="logout()" title="Logout"><mat-icon>logout</mat-icon></button>
+    }
+    <button mat-button (click)="exit()">{{ 'common.exit' | t }}</button>
+  </mat-toolbar>
+
+  <div class="content">
+    <!-- HOME -->
+    @if (page() === 'home') {
+      <div class="hero">
+        <h2>{{ 'family.heroTitle' | t }}</h2>
+        <p>{{ 'family.heroSub' | t }}</p>
+      </div>
+      <div class="quick-stats">
+        <div class="qs"><div class="v">{{ total() }}</div><div class="l">{{ 'landing.statTotal' | t }}</div></div>
+        <div class="qs"><div class="v green">{{ reunited() }}</div><div class="l">{{ 'landing.statReunited' | t }}</div></div>
+      </div>
+      <div class="actions">
+        @if (!isGuest()) {
+          <button class="action" (click)="nav('report')">
+            <span class="ai red">📝</span>
+            <span><b>{{ 'family.actReport' | t }}</b><small>{{ 'family.actReportD' | t }}</small></span>
+          </button>
+        }
+        <button class="action" (click)="nav('search')">
+          <span class="ai blue">🔍</span>
+          <span><b>{{ 'family.actSearch' | t }}</b><small>{{ 'family.actSearchD' | t }}</small></span>
+        </button>
+        @if (!isGuest()) {
+          <button class="action" (click)="nav('track')">
+            <span class="ai orange">📋</span>
+            <span><b>{{ 'family.actTrack' | t }}</b><small>{{ 'family.actTrackD' | t }}</small></span>
+          </button>
+        }
+      </div>
+      <mat-card class="helplines">
+        <h4>{{ 'family.helplines' | t }}</h4>
+        @for (h of helplines; track h.number) {
+          <div class="hl" (click)="call(h.number)"><span>{{ h.label }}</span><b>{{ h.number }}</b></div>
+        }
+      </mat-card>
+    }
+
+    <!-- REPORT -->
+    @if (page() === 'report') {
+      @if (!caseRef()) {
+        <mat-card class="card">
+          <h3>{{ 'family.reportTitle' | t }}</h3>
+          <p class="muted">{{ 'family.reportSub' | t }}</p>
+
+          <label class="fld-label">{{ 'form.photo' | t }}</label>
+          <app-photo-capture [(photo)]="reportPhoto" />
+
+          <h4 class="sect">{{ 'family.personDetails' | t }}</h4>
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>{{ 'form.name' | t }}</mat-label>
+            <input matInput [(ngModel)]="form.person_name" name="pn">
+          </mat-form-field>
+          <div class="row">
+            <mat-form-field appearance="outline">
+              <mat-label>{{ 'common.gender' | t }}</mat-label>
+              <mat-select [(ngModel)]="form.gender" name="g">
+                @for (g of genders; track g) { <mat-option [value]="g">{{ g }}</mat-option> }
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>{{ 'common.age' | t }}</mat-label>
+              <mat-select [(ngModel)]="form.age_band" name="a">
+                @for (a of ageBands; track a) { <mat-option [value]="a">{{ ('ageBand.' + a) | t }}</mat-option> }
+              </mat-select>
+            </mat-form-field>
+          </div>
+          <div class="row">
+            <mat-form-field appearance="outline">
+              <mat-label>{{ 'common.language' | t }}</mat-label>
+              <input matInput [(ngModel)]="form.language" name="l">
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>{{ 'common.state' | t }}</mat-label>
+              <input matInput [(ngModel)]="form.state" name="s">
+            </mat-form-field>
+          </div>
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>{{ 'form.description' | t }}</mat-label>
+            <textarea matInput rows="2" [(ngModel)]="form.physical_description" name="d"></textarea>
+          </mat-form-field>
+
+          <h4 class="sect">{{ 'family.lastSeen' | t }}</h4>
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>{{ 'family.lastSeenLocation' | t }}</mat-label>
+            <input matInput [(ngModel)]="form.last_seen_location" name="lsl">
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>{{ 'family.lastSeenTime' | t }}</mat-label>
+            <input matInput type="datetime-local" [(ngModel)]="form.last_seen_time" name="lst">
+          </mat-form-field>
+
+          <h4 class="sect">{{ 'family.specialNeeds' | t }}</h4>
+          <div class="checks">
+            <mat-checkbox [(ngModel)]="form.medical" name="m">{{ 'family.medical' | t }}</mat-checkbox>
+            <mat-checkbox [(ngModel)]="form.disability" name="dis">{{ 'family.disability' | t }}</mat-checkbox>
+            <mat-checkbox [(ngModel)]="form.elderly" name="eld">{{ 'family.elderly' | t }}</mat-checkbox>
+          </div>
+
+          <h4 class="sect">{{ 'family.reporterDetails' | t }}</h4>
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>{{ 'family.reporterName' | t }}</mat-label>
+            <input matInput [(ngModel)]="form.reporter_name" name="rn">
+          </mat-form-field>
+          <div class="row">
+            <mat-form-field appearance="outline">
+              <mat-label>{{ 'form.mobile' | t }}</mat-label>
+              <input matInput type="tel" [(ngModel)]="form.reporter_mobile" name="rm">
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>{{ 'family.relationship' | t }}</mat-label>
+              <mat-select [(ngModel)]="form.reporter_relationship" name="rel">
+                @for (r of relationships; track r) { <mat-option [value]="r">{{ r }}</mat-option> }
+              </mat-select>
+            </mat-form-field>
+          </div>
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>{{ 'family.aadhaar' | t }}</mat-label>
+            <input matInput maxlength="4" [(ngModel)]="form.aadhaar_last4" name="aad">
+          </mat-form-field>
+
+          <button mat-flat-button class="brand-btn full-width submit" (click)="submitReport()" [disabled]="submitting()">
+            @if (submitting()) { <mat-spinner diameter="20" /> } @else { {{ 'family.submitReport' | t }} }
+          </button>
+        </mat-card>
+      } @else {
+        <mat-card class="card success">
+          <div class="big">✅</div>
+          <h3>{{ 'family.reportSuccess' | t }}</h3>
+          <p class="muted">{{ 'family.saveCaseRef' | t }}</p>
+          <div class="case-ref">{{ 'family.caseRef' | t }}: <b>{{ caseRef() }}</b></div>
+        </mat-card>
+        @if (reportMatches().length) {
+          <h4 class="list-title">{{ 'family.possibleMatches' | t }}</h4>
+          @for (m of reportMatches(); track m.id) {
+            <ng-container [ngTemplateOutlet]="foundCard" [ngTemplateOutletContext]="{ $implicit: m }"></ng-container>
+          }
+        }
+        <button mat-stroked-button class="full-width" (click)="resetReport()">{{ 'vol.reportAnother' | t }}</button>
+      }
+    }
+
+    <!-- SEARCH -->
+    @if (page() === 'search') {
+      <mat-card class="card">
+        <h3>{{ 'family.actSearch' | t }}</h3>
+        <mat-tab-group [selectedIndex]="searchTab()" (selectedIndexChange)="searchTab.set($event)">
+          <mat-tab [label]="'family.searchByPhoto' | t">
+            <p class="muted pad">{{ 'family.uploadToCompare' | t }}</p>
+            <div class="grid">
+              @for (p of foundGrid(); track p.id) {
+                <div class="grid-card">
+                  @if (p.photo) { <img [src]="p.photo" alt=""> } @else { <div class="ph">👤</div> }
+                  <div class="gc-body">
+                    <b>{{ p.person_name || ('common.unknown' | t) }}</b>
+                    <small>{{ p.gender }} · {{ p.age_band }}</small>
+                    <small class="muted">{{ p.found_location }}</small>
+                    <button mat-button (click)="contact(p)">{{ 'family.isMyPerson' | t }}</button>
+                  </div>
+                </div>
+              }
+            </div>
+          </mat-tab>
+          <mat-tab [label]="'family.searchByDetails' | t">
+            <div class="pad">
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>{{ 'form.name' | t }}</mat-label>
+                <input matInput [(ngModel)]="detailsName" (keydown.enter)="searchDetails()">
+              </mat-form-field>
+              <div class="row">
+                <mat-form-field appearance="outline">
+                  <mat-label>{{ 'common.gender' | t }}</mat-label>
+                  <mat-select [(ngModel)]="detailsGender">
+                    <mat-option value="">—</mat-option>
+                    <mat-option value="Male">{{ 'common.male' | t }}</mat-option>
+                    <mat-option value="Female">{{ 'common.female' | t }}</mat-option>
+                  </mat-select>
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>{{ 'common.age' | t }}</mat-label>
+                  <mat-select [(ngModel)]="detailsAge">
+                    <mat-option value="">—</mat-option>
+                    @for (a of ageBands; track a) { <mat-option [value]="a">{{ a }}</mat-option> }
+                  </mat-select>
+                </mat-form-field>
+              </div>
+              <button mat-flat-button class="brand-btn full-width" (click)="searchDetails()" [disabled]="searching()">
+                {{ 'common.search' | t }}
+              </button>
+              @if (detailMatches().length) {
+                @for (m of detailMatches(); track m.id) {
+                  <ng-container [ngTemplateOutlet]="foundCard" [ngTemplateOutletContext]="{ $implicit: m }"></ng-container>
+                }
+              } @else if (!searching()) {
+                <p class="muted empty">{{ 'family.noResults' | t }}</p>
+              }
+            </div>
+          </mat-tab>
+        </mat-tab-group>
+      </mat-card>
+    }
+
+    <!-- TRACK -->
+    @if (page() === 'track') {
+      <mat-card class="card">
+        <h3>{{ 'family.trackTitle' | t }}</h3>
+        <p class="muted">{{ 'family.trackSub' | t }}</p>
+        <div class="track-box">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>{{ 'family.caseRefOrMobile' | t }}</mat-label>
+            <input matInput [(ngModel)]="trackQuery" (keydown.enter)="doTrack()">
+          </mat-form-field>
+          <button mat-flat-button class="brand-btn" (click)="doTrack()">{{ 'common.search' | t }}</button>
+        </div>
+        @for (r of trackResults(); track r.case_ref) {
+          <div class="track-result">
+            <div class="tr-head">
+              <b>{{ r.person_name || r.missing_person_name || ('common.unknown' | t) }}</b>
+              <span class="badge" [class]="badgeClass(r.status)">{{ r.status }}</span>
+            </div>
+            <small class="muted">{{ r.case_ref }}</small>
+            <div class="timeline">
+              @for (step of ['reported','searching','matched','reunited']; track step; let i = $index) {
+                <div class="tl-step" [class.done]="timelineStep(r.status) >= i + 1">
+                  <span class="dot"></span>
+                  <small>{{ ('family.timeline.' + step) | t }}</small>
+                </div>
+              }
+            </div>
+          </div>
+        }
+        @if (!trackResults().length && !tracking()) {
+          <p class="muted empty">{{ 'family.noResults' | t }}</p>
+        }
+      </mat-card>
+    }
+  </div>
+
+  <!-- bottom nav -->
+  <nav class="bottom-nav">
+    <button [class.active]="page()==='home'" (click)="nav('home')"><span>🏠</span>{{ 'nav.home' | t }}</button>
+    @if (!isGuest()) {
+      <button [class.active]="page()==='report'" (click)="nav('report')"><span>📝</span>{{ 'nav.report' | t }}</button>
+    }
+    <button [class.active]="page()==='search'" (click)="nav('search')"><span>🔍</span>{{ 'nav.search' | t }}</button>
+    @if (!isGuest()) {
+      <button [class.active]="page()==='track'" (click)="nav('track')"><span>📋</span>{{ 'nav.track' | t }}</button>
+    }
+  </nav>
+</div>
+
+<!-- reusable found-person card -->
+<ng-template #foundCard let-p>
+  <div class="result-card">
+    @if (p.photo) { <img class="rc-photo" [src]="p.photo" alt=""> } @else { <div class="rc-photo ph">👤</div> }
+    <div class="rc-body">
+      <div class="rc-head">
+        <b>{{ p.person_name || ('common.unknown' | t) }}</b>
+        @if (p.match_score != null) { <span class="score">{{ p.match_score }}%</span> }
+      </div>
+      <small class="muted">{{ p.gender }} · {{ p.age_band }} · {{ p.language }}</small>
+      <small class="muted">{{ p.found_location }} — {{ p.reporting_center }}</small>
+      @if (p.match_reasons?.length) {
+        <div class="reasons">@for (r of p.match_reasons; track r) { <span class="reason">{{ r }}</span> }</div>
+      }
+      <button mat-stroked-button (click)="contact(p)">{{ 'family.isMyPerson' | t }}</button>
+    </div>
+  </div>
+</ng-template>

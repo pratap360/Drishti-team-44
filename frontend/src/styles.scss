@@ -1,0 +1,75 @@
+@use '@angular/material' as mat;
+
+// ─── Drishti brand theme (Material 3) ──────────────────────────────────────
+html {
+  @include mat.theme((
+    color: (
+      theme-type: light,
+      primary: mat.$orange-palette,
+      tertiary: mat.$red-palette,
+    ),
+    typography: Roboto,
+    density: 0,
+  ));
+
+  // Brand tokens (mirror the static :root variables)
+  --brand-primary: #e65100;
+  --brand-primary-light: #ff833a;
+  --brand-primary-dark: #ac1900;
+  --brand-success: #2e7d32;
+  --brand-warning: #f57f17;
+  --brand-danger: #c62828;
+  --brand-info: #1565c0;
+  --brand-bg: #f5f5f5;
+  --brand-card: #ffffff;
+  --brand-text: #212121;
+  --brand-text-sec: #757575;
+  --brand-border: #e0e0e0;
+  --brand-radius: 14px;
+  --brand-gradient: linear-gradient(135deg, #e65100 0%, #ac1900 50%, #880e4f 100%);
+  --brand-gradient-header: linear-gradient(135deg, #e65100, #ac1900);
+
+  // Nudge Material primary toward brand orange
+  --mat-sys-primary: #e65100;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--brand-bg);
+  color: var(--brand-text);
+  color-scheme: light;
+}
+
+a { color: var(--brand-primary); }
+
+// Brand-colored Material buttons used across portals
+.brand-btn.mat-mdc-raised-button,
+.brand-btn.mat-mdc-unelevated-button {
+  --mdc-filled-button-container-color: var(--brand-primary);
+  --mdc-protected-button-container-color: var(--brand-primary);
+  background-color: var(--brand-primary);
+  color: #fff;
+}
+
+// Utility helpers
+.full-width { width: 100%; }
+.text-center { text-align: center; }
+.muted { color: var(--brand-text-sec); }
+.spacer { flex: 1 1 auto; }
+
+// Status badge colors
+.badge { display: inline-block; padding: 3px 10px; border-radius: 10px; font-size: 11px; font-weight: 700; }
+.badge-pending { background: #fff3e0; color: #e65100; }
+.badge-searching { background: #f3e5f5; color: #6a1b9a; }
+.badge-matched { background: #e8f5e9; color: #2e7d32; }
+.badge-reunited { background: #e3f2fd; color: #1565c0; }
+.badge-unresolved { background: #ffebee; color: #c62828; }
+.badge-hospital { background: #e3f2fd; color: #1565c0; }
+
+// Material snackbar variants
+.snack-success { --mdc-snackbar-container-color: #2e7d32; --mat-snack-bar-button-color: #fff; color: #fff; }
+.snack-error { --mdc-snackbar-container-color: #c62828; --mat-snack-bar-button-color: #fff; color: #fff; }
+.snack-info { --mdc-snackbar-container-color: #1565c0; --mat-snack-bar-button-color: #fff; color: #fff; }
