@@ -1,0 +1,561 @@
+{
+  "generated_at": "2026-06-27 16:18:57",
+  "dataset_summary": {
+    "total_missing_persons": 2500,
+    "total_cctv_cameras": 1280,
+    "total_zones": 32,
+    "total_police_stations": 14,
+    "total_chokepoints": 85,
+    "total_reporting_centers": 10
+  },
+  "status_breakdown": {
+    "Reunited": 2150,
+    "Unresolved": 67,
+    "Pending": 210,
+    "Transferred to hospital": 73
+  },
+  "reunification_rate_pct": 86.0,
+  "resolution_time": {
+    "avg_hours": 4.0,
+    "median_hours": 2.7,
+    "min_hours": 0.1,
+    "max_hours": 28.9,
+    "within_1h_pct": 23.2,
+    "within_6h_pct": 78.6,
+    "within_24h_pct": 99.7
+  },
+  "age_distribution": {
+    "0-12": 201,
+    "13-17": 87,
+    "18-40": 252,
+    "41-60": 506,
+    "61-70": 697,
+    "71-80": 532,
+    "80+": 225
+  },
+  "gender_distribution": {
+    "Female": 1187,
+    "Male": 1293,
+    "Unknown": 20
+  },
+  "data_quality": {
+    "missing_name_pct": 14.8,
+    "missing_mobile_pct": 19.7,
+    "missing_description_pct": 4.2,
+    "duplicate_reports_pct": 8.1
+  },
+  "top_reporting_centers": [
+    {
+      "center": "Adgaon Kho-Ya-Paya",
+      "cases": 289,
+      "reunited": 241,
+      "reunification_rate_pct": 83.4,
+      "avg_resolution_hours": 4.0
+    },
+    {
+      "center": "Rajur Bahula Center",
+      "cases": 268,
+      "reunited": 228,
+      "reunification_rate_pct": 85.1,
+      "avg_resolution_hours": 3.6
+    },
+    {
+      "center": "Panchavati Center",
+      "cases": 266,
+      "reunited": 235,
+      "reunification_rate_pct": 88.3,
+      "avg_resolution_hours": 3.8
+    },
+    {
+      "center": "Ramkund Kho-Ya-Paya Kendra",
+      "cases": 256,
+      "reunited": 223,
+      "reunification_rate_pct": 87.1,
+      "avg_resolution_hours": 4.5
+    },
+    {
+      "center": "Bharat Bharati Control Room",
+      "cases": 252,
+      "reunited": 220,
+      "reunification_rate_pct": 87.3,
+      "avg_resolution_hours": 3.7
+    },
+    {
+      "center": "Trimbakeshwar Kho-Ya-Paya Kendra",
+      "cases": 246,
+      "reunited": 208,
+      "reunification_rate_pct": 84.6,
+      "avg_resolution_hours": 4.3
+    },
+    {
+      "center": "Central Control Room",
+      "cases": 245,
+      "reunited": 202,
+      "reunification_rate_pct": 82.4,
+      "avg_resolution_hours": 3.9
+    },
+    {
+      "center": "Nashik Road Center",
+      "cases": 237,
+      "reunited": 206,
+      "reunification_rate_pct": 86.9,
+      "avg_resolution_hours": 4.3
+    },
+    {
+      "center": "Sadhugram Lost Found",
+      "cases": 224,
+      "reunited": 202,
+      "reunification_rate_pct": 90.2,
+      "avg_resolution_hours": 4.1
+    },
+    {
+      "center": "Police Main Control Room",
+      "cases": 217,
+      "reunited": 185,
+      "reunification_rate_pct": 85.3,
+      "avg_resolution_hours": 4.0
+    }
+  ],
+  "temporal_patterns": {
+    "date_range": "2027-07-01 to 2027-08-14",
+    "total_days": 45,
+    "avg_daily_cases": 55.6,
+    "peak_day": "2027-07-29",
+    "peak_day_cases": 78,
+    "peak_to_avg_ratio": 1.4,
+    "daily_cases": {
+      "2027-07-01": 55,
+      "2027-07-02": 55,
+      "2027-07-03": 48,
+      "2027-07-04": 64,
+      "2027-07-05": 41,
+      "2027-07-06": 57,
+      "2027-07-07": 52,
+      "2027-07-08": 56,
+      "2027-07-09": 57,
+      "2027-07-10": 51,
+      "2027-07-11": 41,
+      "2027-07-12": 57,
+      "2027-07-13": 53,
+      "2027-07-14": 57,
+      "2027-07-15": 48,
+      "2027-07-16": 69,
+      "2027-07-17": 59,
+      "2027-07-18": 57,
+      "2027-07-19": 60,
+      "2027-07-20": 40,
+      "2027-07-21": 61,
+      "2027-07-22": 61,
+      "2027-07-23": 58,
+      "2027-07-24": 41,
+      "2027-07-25": 50,
+      "2027-07-26": 63,
+      "2027-07-27": 53,
+      "2027-07-28": 56,
+      "2027-07-29": 78,
+      "2027-07-30": 49,
+      "2027-07-31": 47,
+      "2027-08-01": 58,
+      "2027-08-02": 46,
+      "2027-08-03": 56,
+      "2027-08-04": 70,
+      "2027-08-05": 54,
+      "2027-08-06": 50,
+      "2027-08-07": 57,
+      "2027-08-08": 71,
+      "2027-08-09": 56,
+      "2027-08-10": 56,
+      "2027-08-11": 55,
+      "2027-08-12": 48,
+      "2027-08-13": 62,
+      "2027-08-14": 67
+    },
+    "hourly_distribution": {
+      "05:00": 156,
+      "06:00": 132,
+      "07:00": 154,
+      "08:00": 134,
+      "09:00": 161,
+      "10:00": 149,
+      "11:00": 137,
+      "12:00": 154,
+      "13:00": 126,
+      "14:00": 155,
+      "15:00": 166,
+      "16:00": 147,
+      "17:00": 147,
+      "18:00": 142,
+      "19:00": 129,
+      "20:00": 163,
+      "21:00": 148
+    }
+  },
+  "top_languages": {
+    "Hindi": 271,
+    "Bengali": 261,
+    "Kannada": 261,
+    "Maithili": 256,
+    "Gujarati": 250,
+    "Telugu": 248,
+    "Bhojpuri": 245,
+    "Awadhi": 241,
+    "Tamil": 234,
+    "Marathi": 233
+  },
+  "top_states": {
+    "Tamil Nadu": 150,
+    "Rajasthan": 145,
+    "Kerala": 142,
+    "Uttar Pradesh": 135,
+    "Bihar": 134,
+    "Telangana": 133,
+    "Odisha": 132,
+    "Maharashtra": 130,
+    "Madhya Pradesh": 128,
+    "Delhi": 127,
+    "Assam": 123,
+    "Gujarat": 121,
+    "Chhattisgarh": 118,
+    "Haryana": 117,
+    "Karnataka": 116
+  },
+  "hotspots": [
+    {
+      "location": "Madsangvi Transit",
+      "total_cases": 149,
+      "active_cases": 18
+    },
+    {
+      "location": "Sadhugram Gate 2",
+      "total_cases": 148,
+      "active_cases": 18
+    },
+    {
+      "location": "Ramkund Ghat",
+      "total_cases": 141,
+      "active_cases": 17
+    },
+    {
+      "location": "Nashik Road Station",
+      "total_cases": 134,
+      "active_cases": 14
+    },
+    {
+      "location": "Trimbak Road",
+      "total_cases": 128,
+      "active_cases": 16
+    },
+    {
+      "location": "Gauri Patangan",
+      "total_cases": 127,
+      "active_cases": 12
+    },
+    {
+      "location": "Dasak Ghat",
+      "total_cases": 127,
+      "active_cases": 9
+    },
+    {
+      "location": "Adgaon Parking",
+      "total_cases": 126,
+      "active_cases": 14
+    },
+    {
+      "location": "Nandur Ghat",
+      "total_cases": 125,
+      "active_cases": 13
+    },
+    {
+      "location": "Laxmi Narayan Ghat",
+      "total_cases": 125,
+      "active_cases": 15
+    },
+    {
+      "location": "Takli Sangam",
+      "total_cases": 124,
+      "active_cases": 16
+    },
+    {
+      "location": "Bus Stand Nashik",
+      "total_cases": 122,
+      "active_cases": 16
+    },
+    {
+      "location": "Kushavart Kund",
+      "total_cases": 120,
+      "active_cases": 15
+    },
+    {
+      "location": "Sadhugram Gate 1",
+      "total_cases": 119,
+      "active_cases": 12
+    },
+    {
+      "location": "Main Police Chowki",
+      "total_cases": 118,
+      "active_cases": 14
+    },
+    {
+      "location": "Kapila Sangam",
+      "total_cases": 118,
+      "active_cases": 9
+    },
+    {
+      "location": "Dindori Road Crossing",
+      "total_cases": 118,
+      "active_cases": 15
+    },
+    {
+      "location": "Panchavati Circle",
+      "total_cases": 114,
+      "active_cases": 8
+    },
+    {
+      "location": "Trimbakeshwar Approach",
+      "total_cases": 112,
+      "active_cases": 17
+    },
+    {
+      "location": "Rajur Bahula",
+      "total_cases": 105,
+      "active_cases": 9
+    }
+  ],
+  "cross_center_duplicate_groups": 12,
+  "duplicate_group_details": [
+    [
+      {
+        "case_id": "KMP-2027-00007",
+        "name": "Savita Rao",
+        "center": "Central Control Room",
+        "gender": "Female",
+        "age_band": "61-70"
+      },
+      {
+        "case_id": "KMP-2027-01181",
+        "name": "Savita Mishra",
+        "center": "Ramkund Kho-Ya-Paya Kendra",
+        "gender": "Female",
+        "age_band": "61-70"
+      }
+    ],
+    [
+      {
+        "case_id": "KMP-2027-00045",
+        "name": "Kamla Sharma",
+        "center": "Ramkund Kho-Ya-Paya Kendra",
+        "gender": "Female",
+        "age_band": "61-70"
+      },
+      {
+        "case_id": "KMP-2027-01431",
+        "name": "Kamla Verma",
+        "center": "Adgaon Kho-Ya-Paya",
+        "gender": "Female",
+        "age_band": "61-70"
+      }
+    ],
+    [
+      {
+        "case_id": "KMP-2027-00184",
+        "name": "Asha Verma",
+        "center": "Sadhugram Lost Found",
+        "gender": "Female",
+        "age_band": "71-80"
+      },
+      {
+        "case_id": "KMP-2027-01242",
+        "name": "Asha Sharma",
+        "center": "Central Control Room",
+        "gender": "Female",
+        "age_band": "71-80"
+      }
+    ],
+    [
+      {
+        "case_id": "KMP-2027-00230",
+        "name": "Ajay Roy",
+        "center": "Nashik Road Center",
+        "gender": "Male",
+        "age_band": "61-70"
+      },
+      {
+        "case_id": "KMP-2027-01308",
+        "name": "Ajay Roy",
+        "center": "Ramkund Kho-Ya-Paya Kendra",
+        "gender": "Male",
+        "age_band": "61-70"
+      }
+    ],
+    [
+      {
+        "case_id": "KMP-2027-00234",
+        "name": "Manju Shah",
+        "center": "Nashik Road Center",
+        "gender": "Female",
+        "age_band": "71-80"
+      },
+      {
+        "case_id": "KMP-2027-01480",
+        "name": "Manju Shah",
+        "center": "Adgaon Kho-Ya-Paya",
+        "gender": "Female",
+        "age_band": "71-80"
+      }
+    ],
+    [
+      {
+        "case_id": "KMP-2027-00321",
+        "name": "Ashok Patil",
+        "center": "Bharat Bharati Control Room",
+        "gender": "Male",
+        "age_band": "61-70"
+      },
+      {
+        "case_id": "KMP-2027-02407",
+        "name": "Ashok Patel",
+        "center": "Central Control Room",
+        "gender": "Male",
+        "age_band": "61-70"
+      }
+    ],
+    [
+      {
+        "case_id": "KMP-2027-00425",
+        "name": "Saroj Desai",
+        "center": "Central Control Room",
+        "gender": "Female",
+        "age_band": "41-60"
+      },
+      {
+        "case_id": "KMP-2027-00977",
+        "name": "Saroj Desai",
+        "center": "Trimbakeshwar Kho-Ya-Paya Kendra",
+        "gender": "Female",
+        "age_band": "41-60"
+      }
+    ],
+    [
+      {
+        "case_id": "KMP-2027-00511",
+        "name": "Ramesh Singh",
+        "center": "Bharat Bharati Control Room",
+        "gender": "Male",
+        "age_band": "71-80"
+      },
+      {
+        "case_id": "KMP-2027-01481",
+        "name": "Mahesh Singh",
+        "center": "Sadhugram Lost Found",
+        "gender": "Male",
+        "age_band": "71-80"
+      }
+    ],
+    [
+      {
+        "case_id": "KMP-2027-00736",
+        "name": "Savita Mishra",
+        "center": "Panchavati Center",
+        "gender": "Female",
+        "age_band": "71-80"
+      },
+      {
+        "case_id": "KMP-2027-01777",
+        "name": "Savita Mishra",
+        "center": "Central Control Room",
+        "gender": "Female",
+        "age_band": "71-80"
+      }
+    ],
+    [
+      {
+        "case_id": "KMP-2027-00943",
+        "name": "Amit Krishnan",
+        "center": "Adgaon Kho-Ya-Paya",
+        "gender": "Male",
+        "age_band": "80+"
+      },
+      {
+        "case_id": "KMP-2027-02328",
+        "name": "Ankit Krishnan",
+        "center": "Police Main Control Room",
+        "gender": "Male",
+        "age_band": "80+"
+      }
+    ],
+    [
+      {
+        "case_id": "KMP-2027-01221",
+        "name": "Manoj Mehta",
+        "center": "Adgaon Kho-Ya-Paya",
+        "gender": "Male",
+        "age_band": "61-70"
+      },
+      {
+        "case_id": "KMP-2027-02324",
+        "name": "Manoj Shah",
+        "center": "Sadhugram Lost Found",
+        "gender": "Male",
+        "age_band": "61-70"
+      }
+    ],
+    [
+      {
+        "case_id": "KMP-2027-02100",
+        "name": "Shanti Das",
+        "center": "Central Control Room",
+        "gender": "Female",
+        "age_band": "61-70"
+      },
+      {
+        "case_id": "KMP-2027-02162",
+        "name": "Shanti Shah",
+        "center": "Rajur Bahula Center",
+        "gender": "Female",
+        "age_band": "61-70"
+      }
+    ]
+  ],
+  "cctv_coverage_by_zone": {
+    "Zone Area 1": 40,
+    "Zone Area 2": 102,
+    "Zone Area 3": 112,
+    "Zone Area 4": 96,
+    "Zone Area 5": 83,
+    "Zone Area 6": 80,
+    "Zone Area 7": 40,
+    "Zone Area 8": 80,
+    "Zone Area 9": 80,
+    "Zone Area 10": 40,
+    "Zone Area 11": 88,
+    "Zone Area 12": 80,
+    "Zone Area 13": 40,
+    "Zone Area 14": 80,
+    "Zone Area 15": 80,
+    "Zone Area 16": 120,
+    "Zone Area 17": 80,
+    "Zone Area 18": 40,
+    "Zone Area 19": 120,
+    "Zone Area 20": 84,
+    "Zone Area 21": 80,
+    "Zone Area 22": 80,
+    "Zone Area 23": 80,
+    "Zone Area 24": 40,
+    "Zone Area 25": 40,
+    "Zone Area 26": 120,
+    "Zone Area 27": 120,
+    "Zone Area 28": 120,
+    "Zone Area 29": 80,
+    "Zone Area 30": 70,
+    "Zone Area 31": 60,
+    "Zone Area 32": 40
+  },
+  "chokepoint_categories": {
+    "Traffic choke point": 26,
+    "No-vehicle pressure zone": 3,
+    "Transfer node": 11,
+    "Parking": 30,
+    "Outer parking": 10,
+    "Parking belt": 5
+  }
+}

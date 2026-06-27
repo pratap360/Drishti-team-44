@@ -48,7 +48,7 @@ app.config.update(
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "kumbh.db")
 SUPABASE_DB_URL = os.environ.get("SUPABASE_DB_URL")
-DATA_DIR = os.path.join(os.path.dirname(__file__), "data-repo", "claude-impact-lab-mumbai-2026", "data")
+DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 
 # ---------------------------------------------------------------------------
 # Rate limiter config — env-var driven

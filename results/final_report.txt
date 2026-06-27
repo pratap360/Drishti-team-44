@@ -1,0 +1,68 @@
+DRISHTI KUMBH FINDER — FINAL ANALYSIS REPORT
+Generated: 2026-06-27 16:18:57
+======================================================================
+
+Total Missing Persons Records: 2,500
+Reunification Rate: 86.0%
+Average Resolution Time: 4.0 hours
+Median Resolution Time: 2.7 hours
+Cross-Center Duplicate Groups Found: 12
+CCTV Cameras: 1,280
+Zones: 32
+Police Stations: 14
+Chokepoints: 85
+Reporting Centers: 10
+
+STATUS BREAKDOWN:
+  Reunited: 2150 (86.0%)
+  Pending: 210 (8.4%)
+  Transferred to hospital: 73 (2.9%)
+  Unresolved: 67 (2.7%)
+
+AGE DISTRIBUTION:
+  0-12: 201 (8.0%)
+  13-17: 87 (3.5%)
+  18-40: 252 (10.1%)
+  41-60: 506 (20.2%)
+  61-70: 697 (27.9%)
+  71-80: 532 (21.3%)
+  80+: 225 (9.0%)
+
+GENDER DISTRIBUTION:
+  Male: 1293 (51.7%)
+  Female: 1187 (47.5%)
+  Unknown: 20 (0.8%)
+
+DATA QUALITY:
+  Missing name: 371 (14.8%)
+  Missing mobile: 492 (19.7%)
+  Duplicates: 202 (8.1%)
+
+TOP 15 HOTSPOTS:
+  Madsangvi Transit: 149 total (18 active)
+  Sadhugram Gate 2: 148 total (18 active)
+  Ramkund Ghat: 141 total (17 active)
+  Nashik Road Station: 134 total (14 active)
+  Trimbak Road: 128 total (16 active)
+  Gauri Patangan: 127 total (12 active)
+  Dasak Ghat: 127 total (9 active)
+  Adgaon Parking: 126 total (14 active)
+  Nandur Ghat: 125 total (13 active)
+  Laxmi Narayan Ghat: 125 total (15 active)
+  Takli Sangam: 124 total (16 active)
+  Bus Stand Nashik: 122 total (16 active)
+  Kushavart Kund: 120 total (15 active)
+  Sadhugram Gate 1: 119 total (12 active)
+  Main Police Chowki: 118 total (14 active)
+
+TOP REPORTING CENTERS:
+  Adgaon Kho-Ya-Paya: 289 cases, 241 reunited (83.4%)
+  Rajur Bahula Center: 268 cases, 228 reunited (85.1%)
+  Panchavati Center: 266 cases, 235 reunited (88.3%)
+  Ramkund Kho-Ya-Paya Kendra: 256 cases, 223 reunited (87.1%)
+  Bharat Bharati Control Room: 252 cases, 220 reunited (87.3%)
+  Trimbakeshwar Kho-Ya-Paya Kendra: 246 cases, 208 reunited (84.6%)
+  Central Control Room: 245 cases, 202 reunited (82.4%)
+  Nashik Road Center: 237 cases, 206 reunited (86.9%)
+  Sadhugram Lost Found: 224 cases, 202 reunited (90.2%)
+  Police Main Control Room: 217 cases, 185 reunited (85.3%)
