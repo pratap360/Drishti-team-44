@@ -6,5 +6,11 @@ __pycache__/
 .DS_Store
 data-repo/
 .claude/
-
-.env
+*.log
+*.pid
+venv/
+env/
+.venv/
+*.egg-info/
+dist/
+build/

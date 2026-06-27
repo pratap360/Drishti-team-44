@@ -2,28 +2,13 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Kumbh Reunite — Volunteer</title>
+<link rel="stylesheet" href="/static/base.css">
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <style>
-:root {
-  --primary: #e65100;
-  --primary-light: #ff833a;
-  --primary-dark: #ac1900;
-  --success: #2e7d32;
-  --warning: #f57f17;
-  --danger: #c62828;
-  --bg: #f5f5f5;
-  --card: #ffffff;
-  --text: #212121;
-  --text-sec: #757575;
-  --border: #e0e0e0;
-  --radius: 14px;
-}
-* { margin: 0; padding: 0; box-sizing: border-box; }
+/* Volunteer-specific layout overrides */
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: var(--bg); color: var(--text);
   max-width: 480px; margin: 0 auto; min-height: 100vh;
   padding-bottom: 80px;
 }
@@ -232,15 +217,6 @@ header h1 { font-size: 18px; font-weight: 700; }
   font-size: 20px; color: var(--border); flex-shrink: 0;
 }
 
-.badge {
-  display: inline-block; padding: 3px 10px; border-radius: 10px;
-  font-size: 11px; font-weight: 700;
-}
-.badge-pending { background: #fff3e0; color: #e65100; }
-.badge-reunited { background: #e8f5e9; color: #2e7d32; }
-.badge-unresolved { background: #ffebee; color: #c62828; }
-.badge-hospital { background: #e3f2fd; color: #1565c0; }
-
 .match-card {
   background: var(--card); border: 2px solid var(--border); border-radius: var(--radius);
   padding: 16px; margin-bottom: 12px; transition: all 0.2s;
@@ -385,23 +361,26 @@ header h1 { font-size: 18px; font-weight: 700; }
 </head>
 <body>
 
+<div id="toast-container" aria-live="polite"></div>
+
 <!-- LOGIN OVERLAY -->
-<div class="login-overlay show" id="login-overlay">
+<div class="login-overlay show" id="login-overlay" role="dialog" aria-modal="true" aria-label="Volunteer Login">
   <div class="login-card">
     <h2>&#x1f6e1;&#xfe0f; Kumbh Reunite</h2>
-    <div class="login-sub">Volunteer Field App — Sign in to continue</div>
+    <div class="login-sub" id="login-sub">Volunteer Field App — Sign in to continue</div>
     <div class="login-error" id="login-error"></div>
     <div class="form-field">
-      <label style="display:block;font-size:13px;font-weight:600;color:var(--text-sec);margin-bottom:6px">Username</label>
+      <label id="lbl-login-user" style="display:block;font-size:13px;font-weight:600;color:var(--text-sec);margin-bottom:6px">Username</label>
       <input type="text" id="login-username" placeholder="Volunteer username" autocomplete="username"
              style="width:100%;padding:14px;border:2px solid var(--border);border-radius:10px;font-size:16px;outline:none">
     </div>
     <div class="form-field">
-      <label style="display:block;font-size:13px;font-weight:600;color:var(--text-sec);margin-bottom:6px">Password</label>
+      <label id="lbl-login-pass" style="display:block;font-size:13px;font-weight:600;color:var(--text-sec);margin-bottom:6px">Password</label>
       <input type="password" id="login-password" placeholder="Password" autocomplete="current-password"
              style="width:100%;padding:14px;border:2px solid var(--border);border-radius:10px;font-size:16px;outline:none">
     </div>
-    <button class="btn btn-primary" id="login-btn" onclick="doLogin()" style="margin-top:8px">Sign In</button>
+    <button class="btn btn-primary" id="login-btn" onclick="auth.doLogin()" style="margin-top:8px">Sign In</button>
+    <button type="button" class="lang-toggle" id="loginLangBtn" onclick="toggleLang()" style="margin-top:12px;background:rgba(0,0,0,0.08);color:var(--text-sec);font-size:13px;padding:6px 16px;border:none;border-radius:16px;cursor:pointer">हिंदी</button>
   </div>
 </div>
 
@@ -411,11 +390,11 @@ header h1 { font-size: 18px; font-weight: 700; }
 <header>
   <div>
     <h1 id="hdr-title">Kumbh Reunite</h1>
-    <div class="header-sub" id="hdr-sub">Volunteer Field App</div>
+    <div class="header-sub" id="hdr-sub">Volunteer Portal</div>
   </div>
   <div class="header-right">
     <button class="lang-toggle" id="langToggleBtn" onclick="toggleLang()">हिं</button>
-    <button class="logout-btn" onclick="doLogout()" title="Logout">&#x23cf;&#xfe0f;</button>
+    <button class="logout-btn" id="logout-btn" onclick="auth.doLogout()" title="Logout">&#x23cf;&#xfe0f;</button>
     <a href="/" class="back-btn" id="hdr-exit">Exit</a>
   </div>
 </header>
@@ -586,7 +565,7 @@ header h1 { font-size: 18px; font-weight: 700; }
     <div class="subtitle" id="search-sub">Search across ALL centers at once</div>
 
     <div class="search-box">
-      <input type="text" id="v-search-q" placeholder="Name, description, or case ID...">
+      <input type="text" id="v-search-q" placeholder="Name, description, or case ID..." aria-label="Search missing persons">
       <button onclick="volSearch()" id="btn-search-go">Go</button>
     </div>
 
@@ -697,643 +676,147 @@ header h1 { font-size: 18px; font-weight: 700; }
   </button>
 </div>
 
+<script src="/static/i18n.js"></script>
+<script src="/static/auth.js"></script>
+<script src="/static/ui-utils.js"></script>
+
 <script>
+'use strict';
 // ========== LANGUAGE SYSTEM ==========
-const lang = {
-  en: {
-    langToggle: 'हिं',
-    hdrTitle: 'Kumbh Reunite',
-    hdrSub: 'Volunteer Field App',
-    hdrExit: 'Exit',
-    offlineBar: 'Offline — Reports saved locally, will sync when connected',
-    syncBar: 'Tap to sync pending reports',
-
-    // home
-    homeHeroTitle: 'Welcome, Volunteer',
-    homeHeroSub: 'Help reunite families. Report found persons or search for missing people across all centers.',
-    homeAct1T: 'Report Found Person',
-    homeAct1D: 'Register someone you found — get instant matches',
-    homeAct2T: 'Search Missing Person',
-    homeAct2D: 'Search by name, description, age, or language',
-    homeAct3T: 'Share via QR (No Network)',
-    homeAct3D: 'Share found person data with nearby volunteers — works offline',
-    homeAct4T: 'Nearby Help Points',
-    homeAct4D: 'Find closest police station or lost-and-found center',
-
-    // report form
-    rpTitle: 'Report a Found Person',
-    rpSub: 'Fill in whatever you know — even partial info helps matching',
-    lblPhoto: 'Photo (crucial for identification)',
-    btnTakePhoto: 'Take Photo',
-    btnChooseFile: 'Choose File',
-    btnRemovePhoto: 'Remove',
-    lblName: "Person's Name (if known)",
-    lblGender: 'Gender',
-    lblAge: 'Age Group',
-    lblLanguage: 'Language They Speak',
-    lblState: 'State of Origin',
-    lblLocation: 'Where Found',
-    lblCenter: 'Your Center',
-    lblDesc: 'Physical Description',
-    lblMobile: 'Your Mobile (for coordination)',
-    lblRemarks: 'Notes',
-    btnRegister: 'Register & Find Matches',
-    voptUnknown: 'Unknown',
-    voptMale: 'Male',
-    voptFemale: 'Female',
-    voptAgeUnknown: 'Unknown',
-    voptChild: 'Child (0-12)',
-    voptTeen: 'Teen (13-17)',
-    voptAdult: 'Adult (18-40)',
-    voptMiddle: 'Middle-aged (41-60)',
-    voptSenior: 'Senior (61-70)',
-    voptElderly: 'Elderly (71-80)',
-    voptVeryElderly: 'Very elderly (80+)',
-
-    // report success
-    successTitle: 'Person Registered Successfully',
-    successSubtitle: 'The record is now visible to all centers. Checking for matches...',
-    btnGenQR: 'Generate QR to Share with Nearby Volunteers',
-    btnReportAnother: 'Report Another Person',
-
-    // search
-    searchTitle: 'Search Missing Persons',
-    searchSub: 'Search across ALL centers at once',
-    btnSearchGo: 'Go',
-    sfoptGender: 'Gender',
-    sfoptMale: 'Male',
-    sfoptFemale: 'Female',
-    sfoptAge: 'Age',
-    sfoptLang: 'Language',
-    sfoptState: 'State',
-    searchEmpty: 'No results. Try different search terms or filters.',
-    searchOffline: 'Search unavailable offline',
-
-    // share
-    shareTitle: 'Share Data Without Network',
-    shareSub: 'Generate a QR code from your last report so nearby volunteers can scan it — no internet required',
-    shareSendTitle: 'Send',
-    shareSendSub: "Show this QR to another volunteer's camera",
-    shareNoReport: 'No recent report to share. Report a found person first.',
-    shareRecvTitle: 'Receive',
-    shareRecvSub: "Scan another volunteer's QR code to import their report",
-    btnScanQR: 'Open Camera to Scan QR',
-    shareHowTitle: 'How it works',
-    shareHowBody: 'When network is down, volunteers can still share found-person data by showing a QR code to each other. The receiving volunteer\'s app saves it locally and syncs to the server when connectivity returns. This way, multiple centers stay coordinated even without internet.',
-
-    // nearby
-    nearbyTitle: 'Nearby Help Points',
-    nearbySub: 'Police stations and key locations in the mela area',
-    nearbyOffline: 'Location data unavailable offline',
-
-    // scanner modal
-    modalScanTitle: 'Scan QR Code',
-    modalScanHint: "Point camera at another volunteer's QR code",
-    modalScanCancel: 'Cancel',
-
-    // nav
-    navHome: 'Home',
-    navReport: 'Report',
-    navSearch: 'Search',
-    navShare: 'Share',
-    navNearby: 'Nearby',
-
-    // dynamic strings (used in JS)
-    statsPending: 'Pending',
-    statsReunited: 'Reunited',
-    statsUnresolved: 'Unresolved',
-    statsUnavailable: 'Stats unavailable offline',
-    savedOffline: 'Saved Offline',
-    savedOfflineSub: 'Report queued locally. It will sync to the server when you get connectivity.',
-    matchesOfflineSub: 'Matches will be checked when online. Use the QR share button to share this report with nearby volunteers now.',
-    networkErrSub: 'Network error — report queued locally. Will sync when connected.',
-    pendingQueueLabel: 'reports queued offline',
-    pendingOnlineHint: 'Tap the green bar above to sync now.',
-    pendingOfflineHint: 'Will auto-sync when connectivity returns.',
-    syncStillOffline: 'Still offline. Cannot sync yet.',
-    syncNoPending: 'No pending reports to sync.',
-    syncDone: 'reports to the server.',
-    syncFailed: 'Sync failed. Will retry when possible.',
-    confirmMatchBtn: 'Confirm Match',
-    confirmMatch: 'Confirm this is the same person? This will mark them as reunited.',
-    reuniteConfirmed: 'Reunification confirmed! Family will be notified.',
-    confirmError: 'Error confirming. Try again.',
-    noReportToShare: 'No report to share',
-    cameraError: 'Camera access denied. You can also receive data by asking the sender to read out the details.',
-    invalidQR: 'Invalid QR code — not a Kumbh Reunite share code.',
-    importedSynced: 'Report Imported & Synced',
-    savedLocallyTitle: 'Saved Locally',
-    savedLocallySub: 'saved offline. Will sync when connected.',
-    registeredInDB: 'Registered in the central database (ID: ',
-    nameUnknown: 'Unknown',
-    potentialMatch: 'Potential Match',
-    potentialMatches: 'Potential Matches',
-    lastSeen: 'Last seen',
-    center: 'Center',
-    desc: 'Desc',
-    familyContact: 'Family contact',
-    noFamilyContact: 'No family contact on file',
-    noMatchFound: 'No immediate matches found. The person is now registered and searchable by all centers.',
-    navigate: 'Navigate',
-    highRiskZones: 'High-Risk Zones',
-    highRiskSub: 'Crowd chokepoints — people most likely to separate here',
-
-    // nearby (dynamic)
-    nearbyPolice: 'Police Stations',
-    nearbyHighRisk: 'High-Risk Zones',
-    nearbyChokeDesc: 'Crowd chokepoints — people most likely to separate here',
-    nearbyNavigate: 'Navigate',
-    nearbyOfflineMsg: 'Location data unavailable offline',
-
-    // QR / share (dynamic)
-    qrNoReport: 'No recent report to share. Report a found person first.',
-    qrNoReportShort: 'No report to share',
-    qrPerson: 'Person:',
-    qrImported: 'Report Imported & Synced',
-    qrRegistered: 'Registered in the central database',
-    qrSavedLocal: 'Saved Locally',
-    qrSavedOfflineSub: 'saved offline. Will sync when connected.',
-    qrInvalid: 'Invalid QR code — not a Kumbh Reunite share code.',
-    qrCameraDenied: 'Camera access denied. You can also receive data by asking the sender to read out the details.',
-
-    // sync (dynamic)
-    syncQueued: 'queued offline',
-    syncTapGreen: 'Tap the green bar above to sync now.',
-    syncAutoSync: 'Will auto-sync when connectivity returns.',
-    syncStillOfflineMsg: 'Still offline. Cannot sync yet.',
-    syncNoPendingMsg: 'No pending reports to sync.',
-    syncCompletePrefix: 'Synced',
-    syncCompleteOf: 'of',
-    syncCompletesuffix: 'reports to the server.',
-
-    // login
-    loginTitle: 'Kumbh Reunite',
-    loginSub: 'Volunteer Field App — Sign in to continue',
-    loginUserLabel: 'Username',
-    loginPassLabel: 'Password',
-    loginBtn: 'Sign In',
-    loginError: 'Invalid credentials. Please try again.',
-  },
-  hi: {
-    langToggle: 'मरा',
-    hdrTitle: 'कुम्भ रीयूनाइट',
-    hdrSub: 'स्वयंसेवक फील्ड ऐप',
-    hdrExit: 'बाहर',
-    offlineBar: 'ऑफलाइन — रिपोर्ट स्थानीय रूप से सहेजी गई, कनेक्ट होने पर सिंक होगी',
-    syncBar: 'लंबित रिपोर्ट सिंक करने के लिए टैप करें',
-
-    // home
-    homeHeroTitle: 'स्वागत है, स्वयंसेवक',
-    homeHeroSub: 'परिवारों को मिलाने में मदद करें। मिले हुए व्यक्तियों की रिपोर्ट करें या लापता लोगों को खोजें।',
-    homeAct1T: 'मिले हुए व्यक्ति की रिपोर्ट करें',
-    homeAct1D: 'किसी मिले व्यक्ति को दर्ज करें — तुरंत मिलान पाएं',
-    homeAct2T: 'लापता व्यक्ति को खोजें',
-    homeAct2D: 'नाम, विवरण, उम्र या भाषा से खोजें',
-    homeAct3T: 'QR से शेयर करें (बिना नेटवर्क)',
-    homeAct3D: 'मिले व्यक्ति का डेटा पास के स्वयंसेवकों से शेयर करें — ऑफलाइन काम करता है',
-    homeAct4T: 'नज़दीकी सहायता केंद्र',
-    homeAct4D: 'नजदीकी पुलिस स्टेशन या खोया-पाया केंद्र खोजें',
-
-    // report form
-    rpTitle: 'मिले हुए व्यक्ति की रिपोर्ट करें',
-    rpSub: 'जो भी पता हो वह भरें — आंशिक जानकारी भी मिलान में सहायक है',
-    lblPhoto: 'फोटो (पहचान के लिए अत्यंत जरूरी)',
-    btnTakePhoto: 'फोटो खींचें',
-    btnChooseFile: 'फाइल चुनें',
-    btnRemovePhoto: 'हटाएं',
-    lblName: 'व्यक्ति का नाम (यदि पता हो)',
-    lblGender: 'लिंग',
-    lblAge: 'आयु वर्ग',
-    lblLanguage: 'बोली जाने वाली भाषा',
-    lblState: 'मूल राज्य',
-    lblLocation: 'कहां मिले',
-    lblCenter: 'आपका केंद्र',
-    lblDesc: 'शारीरिक विवरण',
-    lblMobile: 'आपका मोबाइल (समन्वय के लिए)',
-    lblRemarks: 'नोट्स',
-    btnRegister: 'दर्ज करें और मिलान खोजें',
-    voptUnknown: 'अज्ञात',
-    voptMale: 'पुरुष',
-    voptFemale: 'महिला',
-    voptAgeUnknown: 'अज्ञात',
-    voptChild: 'बच्चा (0-12)',
-    voptTeen: 'किशोर (13-17)',
-    voptAdult: 'वयस्क (18-40)',
-    voptMiddle: 'अधेड़ (41-60)',
-    voptSenior: 'वरिष्ठ (61-70)',
-    voptElderly: 'बुजुर्ग (71-80)',
-    voptVeryElderly: 'अति बुजुर्ग (80+)',
-
-    // report success
-    successTitle: 'व्यक्ति सफलतापूर्वक दर्ज हुआ',
-    successSubtitle: 'रिकॉर्ड अब सभी केंद्रों को दिखाई दे रहा है। मिलान की जांच हो रही है...',
-    btnGenQR: 'पास के स्वयंसेवकों से शेयर करने के लिए QR बनाएं',
-    btnReportAnother: 'एक और व्यक्ति की रिपोर्ट करें',
-
-    // search
-    searchTitle: 'लापता व्यक्तियों को खोजें',
-    searchSub: 'सभी केंद्रों में एक साथ खोजें',
-    btnSearchGo: 'जाएं',
-    sfoptGender: 'लिंग',
-    sfoptMale: 'पुरुष',
-    sfoptFemale: 'महिला',
-    sfoptAge: 'उम्र',
-    sfoptLang: 'भाषा',
-    sfoptState: 'राज्य',
-    searchEmpty: 'कोई परिणाम नहीं। अलग शब्द या फ़िल्टर आज़माएं।',
-    searchOffline: 'ऑफलाइन में खोज उपलब्ध नहीं',
-
-    // share
-    shareTitle: 'बिना नेटवर्क डेटा शेयर करें',
-    shareSub: 'अपनी अंतिम रिपोर्ट से QR कोड बनाएं — इंटरनेट की जरूरत नहीं',
-    shareSendTitle: 'भेजें',
-    shareSendSub: 'यह QR दूसरे स्वयंसेवक के कैमरे को दिखाएं',
-    shareNoReport: 'शेयर करने के लिए कोई रिपोर्ट नहीं। पहले किसी मिले व्यक्ति की रिपोर्ट करें।',
-    shareRecvTitle: 'प्राप्त करें',
-    shareRecvSub: 'दूसरे स्वयंसेवक का QR कोड स्कैन करें',
-    btnScanQR: 'QR स्कैन करने के लिए कैमरा खोलें',
-    shareHowTitle: 'यह कैसे काम करता है',
-    shareHowBody: 'जब नेटवर्क नहीं होता, स्वयंसेवक QR कोड दिखाकर डेटा शेयर कर सकते हैं। प्राप्तकर्ता का ऐप इसे स्थानीय रूप से सहेजता है और कनेक्ट होने पर सर्वर से सिंक करता है।',
-
-    // nearby
-    nearbyTitle: 'नज़दीकी सहायता केंद्र',
-    nearbySub: 'मेला क्षेत्र में पुलिस स्टेशन और प्रमुख स्थान',
-    nearbyOffline: 'ऑफलाइन में स्थान डेटा उपलब्ध नहीं',
-
-    // scanner modal
-    modalScanTitle: 'QR कोड स्कैन करें',
-    modalScanHint: 'दूसरे स्वयंसेवक के QR कोड पर कैमरा लगाएं',
-    modalScanCancel: 'रद्द करें',
-
-    // nav
-    navHome: 'होम',
-    navReport: 'रिपोर्ट',
-    navSearch: 'खोजें',
-    navShare: 'शेयर',
-    navNearby: 'नज़दीक',
-
-    // dynamic strings
-    statsPending: 'लंबित',
-    statsReunited: 'पुनर्मिलन',
-    statsUnresolved: 'अनसुलझे',
-    statsUnavailable: 'ऑफलाइन में आंकड़े उपलब्ध नहीं',
-    savedOffline: 'ऑफलाइन सहेजा गया',
-    savedOfflineSub: 'रिपोर्ट स्थानीय रूप से कतारबद्ध। कनेक्ट होने पर सर्वर से सिंक होगी।',
-    matchesOfflineSub: 'ऑनलाइन होने पर मिलान जांचा जाएगा। अभी QR शेयर बटन से पास के स्वयंसेवकों से शेयर करें।',
-    networkErrSub: 'नेटवर्क त्रुटि — रिपोर्ट स्थानीय रूप से कतारबद्ध। कनेक्ट होने पर सिंक होगी।',
-    pendingQueueLabel: 'रिपोर्ट ऑफलाइन कतार में',
-    pendingOnlineHint: 'अभी सिंक करने के लिए हरी पट्टी पर टैप करें।',
-    pendingOfflineHint: 'कनेक्टिविटी मिलने पर स्वतः सिंक होगी।',
-    syncStillOffline: 'अभी भी ऑफलाइन। सिंक नहीं हो सकता।',
-    syncNoPending: 'सिंक करने के लिए कोई लंबित रिपोर्ट नहीं।',
-    syncDone: 'रिपोर्ट सर्वर पर सिंक हुईं।',
-    syncFailed: 'सिंक विफल। जल्द पुनः प्रयास होगा।',
-    confirmMatchBtn: 'मिलान की पुष्टि करें',
-    confirmMatch: 'क्या यह वही व्यक्ति है? इससे उन्हें पुनर्मिलित चिह्नित किया जाएगा।',
-    reuniteConfirmed: 'पुनर्मिलन की पुष्टि हुई! परिवार को सूचित किया जाएगा।',
-    confirmError: 'पुष्टि में त्रुटि। पुनः प्रयास करें।',
-    noReportToShare: 'शेयर करने के लिए कोई रिपोर्ट नहीं',
-    cameraError: 'कैमरा अनुमति अस्वीकृत। प्रेषक से विवरण पढ़वाकर भी डेटा प्राप्त किया जा सकता है।',
-    invalidQR: 'अमान्य QR कोड — यह कुम्भ रीयूनाइट का शेयर कोड नहीं है।',
-    importedSynced: 'रिपोर्ट आयात और सिंक हुई',
-    savedLocallyTitle: 'स्थानीय रूप से सहेजा गया',
-    savedLocallySub: 'ऑफलाइन सहेजा गया। कनेक्ट होने पर सिंक होगा।',
-    registeredInDB: 'केंद्रीय डेटाबेस में दर्ज (ID: ',
-    nameUnknown: 'अज्ञात',
-    potentialMatch: 'संभावित मिलान',
-    potentialMatches: 'संभावित मिलान',
-    lastSeen: 'अंतिम बार देखा',
-    center: 'केंद्र',
-    desc: 'विवरण',
-    familyContact: 'परिवार संपर्क',
-    noFamilyContact: 'परिवार का कोई संपर्क नहीं',
-    noMatchFound: 'तत्काल कोई मिलान नहीं मिला। व्यक्ति अब सभी केंद्रों में खोजा जा सकता है।',
-    navigate: 'मार्ग',
-    highRiskZones: 'उच्च जोखिम क्षेत्र',
-    highRiskSub: 'भीड़ वाले संकरे स्थान — यहां बिछड़ने की संभावना सबसे अधिक',
-
-    // nearby (dynamic)
-    nearbyPolice: 'पुलिस स्टेशन',
-    nearbyHighRisk: 'उच्च जोखिम क्षेत्र',
-    nearbyChokeDesc: 'भीड़ वाले संकरे स्थान — यहां बिछड़ने की संभावना सबसे अधिक',
-    nearbyNavigate: 'मार्ग',
-    nearbyOfflineMsg: 'ऑफलाइन में स्थान डेटा उपलब्ध नहीं',
-
-    // QR / share (dynamic)
-    qrNoReport: 'शेयर करने के लिए कोई हालिया रिपोर्ट नहीं। पहले किसी मिले व्यक्ति की रिपोर्ट करें।',
-    qrNoReportShort: 'शेयर करने के लिए कोई रिपोर्ट नहीं',
-    qrPerson: 'व्यक्ति:',
-    qrImported: 'रिपोर्ट आयात और सिंक हुई',
-    qrRegistered: 'केंद्रीय डेटाबेस में दर्ज',
-    qrSavedLocal: 'स्थानीय रूप से सहेजा गया',
-    qrSavedOfflineSub: 'ऑफलाइन सहेजा गया। कनेक्ट होने पर सिंक होगा।',
-    qrInvalid: 'अमान्य QR कोड — यह कुम्भ रीयूनाइट का शेयर कोड नहीं है।',
-    qrCameraDenied: 'कैमरा अनुमति अस्वीकृत। प्रेषक से विवरण पढ़वाकर भी डेटा प्राप्त किया जा सकता है।',
-
-    // sync (dynamic)
-    syncQueued: 'ऑफलाइन कतार में',
-    syncTapGreen: 'अभी सिंक करने के लिए हरी पट्टी पर टैप करें।',
-    syncAutoSync: 'कनेक्टिविटी मिलने पर स्वतः सिंक होगी।',
-    syncStillOfflineMsg: 'अभी भी ऑफलाइन। सिंक नहीं हो सकता।',
-    syncNoPendingMsg: 'सिंक करने के लिए कोई लंबित रिपोर्ट नहीं।',
-    syncCompletePrefix: 'सिंक हुईं',
-    syncCompleteOf: 'में से',
-    syncCompletesuffix: 'रिपोर्ट सर्वर पर।',
-
-    // login
-    loginTitle: 'कुम्भ रीयूनाइट',
-    loginSub: 'स्वयंसेवक फील्ड ऐप — जारी रखने के लिए साइन इन करें',
-    loginUserLabel: 'उपयोगकर्ता नाम',
-    loginPassLabel: 'पासवर्ड',
-    loginBtn: 'साइन इन करें',
-    loginError: 'अमान्य क्रेडेंशियल। कृपया पुनः प्रयास करें।',
-  },
-  mr: {
-    langToggle: 'EN',
-    hdrTitle: 'कुंभ रियुनाइट',
-    hdrSub: 'स्वयंसेवक फील्ड अॅप',
-    hdrExit: 'बाहर पडा',
-    offlineBar: 'ऑफलाइन — तक्रारी स्थानिक पातळीवर सेव्ह झाल्या, कनेक्ट झाल्यावर सिंक होतील',
-    syncBar: 'प्रलंबित तक्रारी सिंक करण्यासाठी टॅप करा',
-
-    // home
-    homeHeroTitle: 'स्वागत आहे, स्वयंसेवक',
-    homeHeroSub: 'कुटुंबांना एकत्र आणण्यास मदत करा. सापडलेल्या व्यक्तींची नोंद करा किंवा हरवलेल्यांना शोधा.',
-    homeAct1T: 'सापडलेल्या व्यक्तीची नोंद करा',
-    homeAct1D: 'सापडलेल्या व्यक्तीची नोंदणी करा — तात्काळ जुळणी मिळवा',
-    homeAct2T: 'हरवलेल्या व्यक्तीला शोधा',
-    homeAct2D: 'नाव, वर्णन, वय किंवा भाषेने शोधा',
-    homeAct3T: 'QR ने शेअर करा (नेटवर्क नसताना)',
-    homeAct3D: 'जवळच्या स्वयंसेवकांना डेटा शेअर करा — ऑफलाइन काम करते',
-    homeAct4T: 'जवळचे मदत केंद्र',
-    homeAct4D: 'जवळचे पोलीस ठाणे किंवा हरवले-सापडले केंद्र शोधा',
-
-    // report form
-    rpTitle: 'सापडलेल्या व्यक्तीची नोंद करा',
-    rpSub: 'जे माहित असेल ते भरा — अर्धवट माहितीही जुळणीत उपयुक्त ठरते',
-    lblPhoto: 'फोटो (ओळखीसाठी अत्यंत महत्त्वाचा)',
-    btnTakePhoto: 'फोटो काढा',
-    btnChooseFile: 'फाइल निवडा',
-    btnRemovePhoto: 'काढा',
-    lblName: 'व्यक्तीचे नाव (माहित असल्यास)',
-    lblGender: 'लिंग',
-    lblAge: 'वयोगट',
-    lblLanguage: 'बोलली जाणारी भाषा',
-    lblState: 'मूळ राज्य',
-    lblLocation: 'कुठे सापडले',
-    lblCenter: 'तुमचे केंद्र',
-    lblDesc: 'शारीरिक वर्णन',
-    lblMobile: 'तुमचा मोबाइल (समन्वयासाठी)',
-    lblRemarks: 'नोंदी',
-    btnRegister: 'नोंदणी करा आणि जुळणी शोधा',
-    voptUnknown: 'अज्ञात',
-    voptMale: 'पुरुष',
-    voptFemale: 'स्त्री',
-    voptAgeUnknown: 'अज्ञात',
-    voptChild: 'बालक (0-12)',
-    voptTeen: 'किशोर (13-17)',
-    voptAdult: 'प्रौढ (18-40)',
-    voptMiddle: 'मध्यमवयीन (41-60)',
-    voptSenior: 'ज्येष्ठ (61-70)',
-    voptElderly: 'वृद्ध (71-80)',
-    voptVeryElderly: 'अतिवृद्ध (80+)',
-
-    // report success
-    successTitle: 'व्यक्ती यशस्वीरित्या नोंदवली',
-    successSubtitle: 'नोंद आता सर्व केंद्रांना दिसत आहे. जुळणी तपासली जात आहे...',
-    btnGenQR: 'जवळच्या स्वयंसेवकांसाठी QR तयार करा',
-    btnReportAnother: 'आणखी एका व्यक्तीची नोंद करा',
-
-    // search
-    searchTitle: 'हरवलेल्या व्यक्तींना शोधा',
-    searchSub: 'सर्व केंद्रांमध्ये एकाच वेळी शोधा',
-    btnSearchGo: 'जा',
-    sfoptGender: 'लिंग',
-    sfoptMale: 'पुरुष',
-    sfoptFemale: 'स्त्री',
-    sfoptAge: 'वय',
-    sfoptLang: 'भाषा',
-    sfoptState: 'राज्य',
-    searchEmpty: 'कोणतेही परिणाम नाहीत. वेगळे शब्द किंवा फिल्टर वापरून पहा.',
-    searchOffline: 'ऑफलाइनमध्ये शोध उपलब्ध नाही',
-
-    // share
-    shareTitle: 'नेटवर्कशिवाय डेटा शेअर करा',
-    shareSub: 'शेवटच्या तक्रारीचा QR कोड तयार करा — इंटरनेट लागत नाही',
-    shareSendTitle: 'पाठवा',
-    shareSendSub: 'हा QR दुसऱ्या स्वयंसेवकाच्या कॅमेऱ्याला दाखवा',
-    shareNoReport: 'शेअर करण्यासाठी कोणतीही नोंद नाही. आधी एखाद्या सापडलेल्या व्यक्तीची नोंद करा.',
-    shareRecvTitle: 'प्राप्त करा',
-    shareRecvSub: 'दुसऱ्या स्वयंसेवकाचा QR कोड स्कॅन करा',
-    btnScanQR: 'QR स्कॅन करण्यासाठी कॅमेरा उघडा',
-    shareHowTitle: 'हे कसे काम करते',
-    shareHowBody: 'नेटवर्क नसताना, स्वयंसेवक QR कोड दाखवून डेटा शेअर करू शकतात. प्राप्तकर्त्याचे अॅप तो स्थानिक पातळीवर सेव्ह करते आणि कनेक्ट झाल्यावर सर्व्हरला सिंक करते.',
-
-    // nearby
-    nearbyTitle: 'जवळचे मदत केंद्र',
-    nearbySub: 'मेळा परिसरातील पोलीस ठाणी आणि महत्त्वाची ठिकाणे',
-    nearbyOffline: 'ऑफलाइनमध्ये स्थान डेटा उपलब्ध नाही',
-
-    // scanner modal
-    modalScanTitle: 'QR कोड स्कॅन करा',
-    modalScanHint: 'दुसऱ्या स्वयंसेवकाच्या QR कोडवर कॅमेरा धरा',
-    modalScanCancel: 'रद्द करा',
-
-    // nav
-    navHome: 'मुख्यपृष्ठ',
-    navReport: 'नोंद',
-    navSearch: 'शोधा',
-    navShare: 'शेअर',
-    navNearby: 'जवळचे',
-
-    // dynamic strings
-    statsPending: 'प्रलंबित',
-    statsReunited: 'पुनर्मिलन',
-    statsUnresolved: 'अनिर्णीत',
-    statsUnavailable: 'ऑफलाइनमध्ये आकडेवारी उपलब्ध नाही',
-    savedOffline: 'ऑफलाइन सेव्ह झाले',
-    savedOfflineSub: 'तक्रार स्थानिक पातळीवर रांगेत आहे. कनेक्ट झाल्यावर सर्व्हरला सिंक होईल.',
-    matchesOfflineSub: 'ऑनलाइन झाल्यावर जुळणी तपासली जाईल. आत्ता QR शेअर बटणाने जवळच्या स्वयंसेवकांना शेअर करा.',
-    networkErrSub: 'नेटवर्क त्रुटी — तक्रार स्थानिक पातळीवर रांगेत. कनेक्ट झाल्यावर सिंक होईल.',
-    pendingQueueLabel: 'तक्रारी ऑफलाइन रांगेत',
-    pendingOnlineHint: 'आत्ता सिंक करण्यासाठी हिरव्या पट्टीवर टॅप करा.',
-    pendingOfflineHint: 'कनेक्टिव्हिटी मिळाल्यावर आपोआप सिंक होईल.',
-    syncStillOffline: 'अजूनही ऑफलाइन. सिंक करणे शक्य नाही.',
-    syncNoPending: 'सिंक करण्यासाठी कोणत्याही प्रलंबित तक्रारी नाहीत.',
-    syncDone: 'तक्रारी सर्व्हरवर सिंक झाल्या.',
-    syncFailed: 'सिंक अयशस्वी. लवकरच पुन्हा प्रयत्न होईल.',
-    confirmMatchBtn: 'जुळणी निश्चित करा',
-    confirmMatch: 'हीच ती व्यक्ती आहे याची पुष्टी करायची? यामुळे त्यांना पुनर्मिलित म्हणून चिन्हांकित केले जाईल.',
-    reuniteConfirmed: 'पुनर्मिलन निश्चित! कुटुंबाला कळवले जाईल.',
-    confirmError: 'पुष्टी करताना त्रुटी. पुन्हा प्रयत्न करा.',
-    noReportToShare: 'शेअर करण्यासाठी कोणतीही नोंद नाही',
-    cameraError: 'कॅमेरा परवानगी नाकारली. प्रेषकाकडून तपशील वाचून घेऊनही डेटा मिळवता येतो.',
-    invalidQR: 'अवैध QR कोड — हा कुंभ रियुनाइट शेअर कोड नाही.',
-    importedSynced: 'तक्रार आयात आणि सिंक झाली',
-    savedLocallyTitle: 'स्थानिक पातळीवर सेव्ह झाले',
-    savedLocallySub: 'ऑफलाइन सेव्ह झाले. कनेक्ट झाल्यावर सिंक होईल.',
-    registeredInDB: 'केंद्रीय डेटाबेसमध्ये नोंदवले (ID: ',
-    nameUnknown: 'अज्ञात',
-    potentialMatch: 'संभाव्य जुळणी',
-    potentialMatches: 'संभाव्य जुळण्या',
-    lastSeen: 'शेवटी दिसले',
-    center: 'केंद्र',
-    desc: 'वर्णन',
-    familyContact: 'कुटुंब संपर्क',
-    noFamilyContact: 'कुटुंबाचा कोणताही संपर्क नाही',
-    noMatchFound: 'तत्काळ कोणतीही जुळणी सापडली नाही. व्यक्ती आता सर्व केंद्रांमध्ये शोधता येईल.',
-    navigate: 'मार्ग दाखवा',
-    highRiskZones: 'उच्च-जोखीम क्षेत्र',
-    highRiskSub: 'गर्दीचे संकुचित ठिकाणे — येथे सर्वाधिक बिछडण्याची शक्यता',
-
-    // nearby (dynamic)
-    nearbyPolice: 'पोलीस ठाणी',
-    nearbyHighRisk: 'उच्च-जोखीम क्षेत्र',
-    nearbyChokeDesc: 'गर्दीचे संकुचित ठिकाणे — येथे सर्वाधिक बिछडण्याची शक्यता',
-    nearbyNavigate: 'मार्ग दाखवा',
-    nearbyOfflineMsg: 'ऑफलाइनमध्ये स्थान डेटा उपलब्ध नाही',
-
-    // QR / share (dynamic)
-    qrNoReport: 'शेअर करण्यासाठी कोणतीही अलीकडील नोंद नाही. आधी सापडलेल्या व्यक्तीची नोंद करा.',
-    qrNoReportShort: 'शेअर करण्यासाठी कोणतीही नोंद नाही',
-    qrPerson: 'व्यक्ती:',
-    qrImported: 'नोंद आयात आणि सिंक झाली',
-    qrRegistered: 'केंद्रीय डेटाबेसमध्ये नोंदवले',
-    qrSavedLocal: 'स्थानिक पातळीवर सेव्ह झाले',
-    qrSavedOfflineSub: 'ऑफलाइन सेव्ह झाले. कनेक्ट झाल्यावर सिंक होईल.',
-    qrInvalid: 'अवैध QR कोड — हा कुंभ रियुनाइट शेअर कोड नाही.',
-    qrCameraDenied: 'कॅमेरा परवानगी नाकारली. प्रेषकाकडून तपशील वाचून घेऊनही डेटा मिळवता येतो.',
-
-    // sync (dynamic)
-    syncQueued: 'ऑफलाइन रांगेत',
-    syncTapGreen: 'आत्ता सिंक करण्यासाठी हिरव्या पट्टीवर टॅप करा.',
-    syncAutoSync: 'कनेक्टिव्हिटी मिळाल्यावर आपोआप सिंक होईल.',
-    syncStillOfflineMsg: 'अजूनही ऑफलाइन. सिंक करणे शक्य नाही.',
-    syncNoPendingMsg: 'सिंक करण्यासाठी कोणत्याही प्रलंबित तक्रारी नाहीत.',
-    syncCompletePrefix: 'सिंक झाल्या',
-    syncCompleteOf: 'पैकी',
-    syncCompletesuffix: 'तक्रारी सर्व्हरवर.',
-
-    // login
-    loginTitle: 'कुंभ रियुनाइट',
-    loginSub: 'स्वयंसेवक फील्ड अॅप — सुरू ठेवण्यासाठी साइन इन करा',
-    loginUserLabel: 'वापरकर्ता नाव',
-    loginPassLabel: 'पासवर्ड',
-    loginBtn: 'साइन इन करा',
-    loginError: 'अवैध क्रेडेन्शियल. कृपया पुन्हा प्रयत्न करा.',
-  }
-};
-
-let currentLang = localStorage.getItem('kumbh_lang') || 'en';
+// Translations now provided by /static/i18n.js (t(), setLang(), getLang())
 
 function toggleLang() {
   const cycle = { en: 'hi', hi: 'mr', mr: 'en' };
-  currentLang = cycle[currentLang] || 'en';
-  localStorage.setItem('kumbh_lang', currentLang);
+  setLang(cycle[getLang()] || 'en');
   applyLang();
 }
-
-function t(key) {
-  return (lang[currentLang] && lang[currentLang][key]) || (lang['en'] && lang['en'][key]) || key;
-}
-
 function applyLang() {
-  const L = lang[currentLang];
   // header
-  document.getElementById('langToggleBtn').textContent = L.langToggle;
-  document.getElementById('hdr-title').textContent = L.hdrTitle;
-  document.getElementById('hdr-sub').textContent = L.hdrSub;
-  document.getElementById('hdr-exit').textContent = L.hdrExit;
-  document.getElementById('offline-bar').textContent = '⚠️ ' + L.offlineBar;
-  document.getElementById('sync-bar').textContent = '🔄 ' + L.syncBar;
+  const langToggleLabels = { en: 'हिं', hi: 'मरा', mr: 'EN' };
+  const loginLangLabels = { en: 'हिंदी', hi: 'मराठी', mr: 'English' };
+  document.getElementById('langToggleBtn').textContent = langToggleLabels[getLang()] || 'हिं';
+  var loginLangBtn = document.getElementById('loginLangBtn');
+  if (loginLangBtn) loginLangBtn.textContent = loginLangLabels[getLang()] || 'हिंदी';
+  document.getElementById('hdr-title').textContent = t('hdrTitle');
+  document.getElementById('hdr-sub').textContent = t('volHdrSub');
+  document.getElementById('hdr-exit').textContent = t('hdrExit');
+  // login overlay
+  const loginSubEl = document.getElementById('login-sub');
+  if (loginSubEl) loginSubEl.textContent = t('loginSub');
+  const lblLoginUser = document.getElementById('lbl-login-user');
+  if (lblLoginUser) lblLoginUser.textContent = t('loginUserLbl');
+  const lblLoginPass = document.getElementById('lbl-login-pass');
+  if (lblLoginPass) lblLoginPass.textContent = t('loginPassLbl');
+  const loginBtn = document.getElementById('login-btn');
+  if (loginBtn) loginBtn.textContent = t('loginBtnFamily');
+  document.getElementById('offline-bar').textContent = '⚠️ ' + t('offlineBar');
+  document.getElementById('sync-bar').textContent = '🔄 ' + t('syncBar');
 
   // home
-  document.getElementById('home-hero-title').textContent = L.homeHeroTitle;
-  document.getElementById('home-hero-sub').textContent = L.homeHeroSub;
-  document.getElementById('home-act1-t').textContent = L.homeAct1T;
-  document.getElementById('home-act1-d').textContent = L.homeAct1D;
-  document.getElementById('home-act2-t').textContent = L.homeAct2T;
-  document.getElementById('home-act2-d').textContent = L.homeAct2D;
-  document.getElementById('home-act3-t').textContent = L.homeAct3T;
-  document.getElementById('home-act3-d').textContent = L.homeAct3D;
-  document.getElementById('home-act4-t').textContent = L.homeAct4T;
-  document.getElementById('home-act4-d').textContent = L.homeAct4D;
+  document.getElementById('home-hero-title').textContent = t('homeHeroTitle');
+  document.getElementById('home-hero-sub').textContent = t('homeHeroSub');
+  document.getElementById('home-act1-t').textContent = t('homeAct1T');
+  document.getElementById('home-act1-d').textContent = t('homeAct1D');
+  document.getElementById('home-act2-t').textContent = t('homeAct2T');
+  document.getElementById('home-act2-d').textContent = t('homeAct2D');
+  document.getElementById('home-act3-t').textContent = t('homeAct3T');
+  document.getElementById('home-act3-d').textContent = t('homeAct3D');
+  document.getElementById('home-act4-t').textContent = t('homeAct4T');
+  document.getElementById('home-act4-d').textContent = t('homeAct4D');
 
   // report form
-  document.getElementById('rp-title').textContent = L.rpTitle;
-  document.getElementById('rp-sub').textContent = L.rpSub;
-  document.getElementById('lbl-photo').textContent = L.lblPhoto;
-  document.getElementById('btn-take-photo').textContent = L.btnTakePhoto;
-  document.getElementById('btn-choose-file').textContent = L.btnChooseFile;
-  document.getElementById('btn-remove-photo').textContent = L.btnRemovePhoto;
-  document.getElementById('lbl-name').textContent = L.lblName;
-  document.getElementById('lbl-gender').textContent = L.lblGender;
-  document.getElementById('lbl-age').textContent = L.lblAge;
-  document.getElementById('lbl-language').textContent = L.lblLanguage;
-  document.getElementById('lbl-state').textContent = L.lblState;
-  document.getElementById('lbl-location').textContent = L.lblLocation;
-  document.getElementById('lbl-center').textContent = L.lblCenter;
-  document.getElementById('lbl-desc').textContent = L.lblDesc;
-  document.getElementById('lbl-mobile').textContent = L.lblMobile;
-  document.getElementById('lbl-remarks').textContent = L.lblRemarks;
-  document.getElementById('btn-register').textContent = L.btnRegister;
-  document.getElementById('vopt-unknown').textContent = L.voptUnknown;
-  document.getElementById('vopt-male').textContent = L.voptMale;
-  document.getElementById('vopt-female').textContent = L.voptFemale;
-  document.getElementById('vopt-age-unknown').textContent = L.voptAgeUnknown;
-  document.getElementById('vopt-child').textContent = L.voptChild;
-  document.getElementById('vopt-teen').textContent = L.voptTeen;
-  document.getElementById('vopt-adult').textContent = L.voptAdult;
-  document.getElementById('vopt-middle').textContent = L.voptMiddle;
-  document.getElementById('vopt-senior').textContent = L.voptSenior;
-  document.getElementById('vopt-elderly').textContent = L.voptElderly;
-  document.getElementById('vopt-very-elderly').textContent = L.voptVeryElderly;
+  document.getElementById('rp-title').textContent = t('lblName') ? t('rpTitle') : 'Report a Found Person';
+  document.getElementById('rp-sub').textContent = t('rpSub') || t('lblRemarks');
+  document.getElementById('lbl-photo').textContent = t('lblPhoto');
+  document.getElementById('btn-take-photo').textContent = t('btnTakePhoto');
+  document.getElementById('btn-choose-file').textContent = t('btnChooseFile');
+  document.getElementById('btn-remove-photo').textContent = t('btnRemovePhoto');
+  document.getElementById('lbl-name').textContent = t('lblName');
+  document.getElementById('lbl-gender').textContent = t('lblGender');
+  document.getElementById('lbl-age').textContent = t('lblAge');
+  document.getElementById('lbl-language').textContent = t('lblLanguage');
+  document.getElementById('lbl-state').textContent = t('lblState');
+  document.getElementById('lbl-location').textContent = t('lblLocation');
+  document.getElementById('lbl-center').textContent = t('lblCenter');
+  document.getElementById('lbl-desc').textContent = t('lblDesc');
+  document.getElementById('lbl-mobile').textContent = t('lblMobile');
+  document.getElementById('lbl-remarks').textContent = t('lblRemarks');
+  document.getElementById('btn-register').textContent = t('btnRegister');
+  document.getElementById('vopt-unknown').textContent = t('voptUnknown');
+  const voptMaleEl = document.getElementById('vopt-male');
+  if (voptMaleEl) voptMaleEl.textContent = t('sfoptMale');
+  const voptFemaleEl = document.getElementById('vopt-female');
+  if (voptFemaleEl) voptFemaleEl.textContent = t('sfoptFemale');
+  document.getElementById('vopt-age-unknown').textContent = t('voptUnknown');
+  document.getElementById('vopt-child').textContent = t('voptChild');
+  document.getElementById('vopt-teen').textContent = t('voptTeen');
+  document.getElementById('vopt-adult').textContent = t('voptAdult');
+  const voptMiddle = document.getElementById('vopt-middle');
+  if (voptMiddle) voptMiddle.textContent = t('voptAdult');
+  const voptSenior = document.getElementById('vopt-senior');
+  if (voptSenior) voptSenior.textContent = t('voptElderly');
+  document.getElementById('vopt-elderly').textContent = t('voptElderly');
+  document.getElementById('vopt-very-elderly').textContent = t('voptVeryElderly');
 
   // report success
-  document.getElementById('success-title').textContent = L.successTitle;
-  document.getElementById('success-subtitle').textContent = L.successSubtitle;
-  document.getElementById('btn-gen-qr').textContent = L.btnGenQR;
-  document.getElementById('btn-report-another').textContent = L.btnReportAnother;
+  document.getElementById('success-title').textContent = t('successTitle');
+  document.getElementById('success-subtitle').textContent = t('successSubtitle');
+  document.getElementById('btn-gen-qr').textContent = t('btnGenQR');
+  document.getElementById('btn-report-another').textContent = t('btnReportAnother');
 
   // search
-  document.getElementById('search-title').textContent = L.searchTitle;
-  document.getElementById('search-sub').textContent = L.searchSub;
-  document.getElementById('btn-search-go').textContent = L.btnSearchGo;
-  document.getElementById('sfopt-gender').textContent = L.sfoptGender;
-  document.getElementById('sfopt-male').textContent = L.sfoptMale;
-  document.getElementById('sfopt-female').textContent = L.sfoptFemale;
-  document.getElementById('sfopt-age').textContent = L.sfoptAge;
-  document.getElementById('sfopt-lang').textContent = L.sfoptLang;
-  document.getElementById('sfopt-state').textContent = L.sfoptState;
+  document.getElementById('search-title').textContent = t('searchTitle');
+  document.getElementById('search-sub').textContent = t('searchSub');
+  document.getElementById('btn-search-go').textContent = t('btnSearchGo');
+  document.getElementById('sfopt-gender').textContent = t('sfoptGender');
+  document.getElementById('sfopt-male').textContent = t('sfoptMale');
+  document.getElementById('sfopt-female').textContent = t('sfoptFemale');
+  document.getElementById('sfopt-age').textContent = t('sfoptAge');
+  document.getElementById('sfopt-lang').textContent = t('sfoptLang');
+  document.getElementById('sfopt-state').textContent = t('sfoptState');
 
   // share
-  document.getElementById('share-title').textContent = L.shareTitle;
-  document.getElementById('share-sub').textContent = L.shareSub;
-  document.getElementById('share-send-title').textContent = L.shareSendTitle;
-  document.getElementById('share-send-sub').textContent = L.shareSendSub;
-  document.getElementById('share-no-report').textContent = L.shareNoReport;
-  document.getElementById('share-recv-title').textContent = L.shareRecvTitle;
-  document.getElementById('share-recv-sub').textContent = L.shareRecvSub;
-  document.getElementById('btn-scan-qr').textContent = L.btnScanQR;
-  document.getElementById('share-how-title').textContent = L.shareHowTitle;
-  document.getElementById('share-how-body').textContent = L.shareHowBody;
+  document.getElementById('share-title').textContent = t('shareTitle');
+  document.getElementById('share-sub').textContent = t('shareSub');
+  document.getElementById('share-send-title').textContent = t('shareSendTitle');
+  document.getElementById('share-send-sub').textContent = t('shareSendSub');
+  document.getElementById('share-no-report').textContent = t('shareNoReport');
+  document.getElementById('share-recv-title').textContent = t('shareRecvTitle');
+  document.getElementById('share-recv-sub').textContent = t('shareRecvSub');
+  document.getElementById('btn-scan-qr').textContent = t('btnScanQR');
+  document.getElementById('share-how-title').textContent = t('shareHowTitle');
+  document.getElementById('share-how-body').textContent = t('shareHowBody');
 
   // nearby
-  document.getElementById('nearby-title').textContent = L.nearbyTitle;
-  document.getElementById('nearby-sub').textContent = L.nearbySub;
+  document.getElementById('nearby-title').textContent = t('nearbyTitle');
+  document.getElementById('nearby-sub').textContent = t('nearbySub');
 
   // scanner modal
-  document.getElementById('modal-scan-title').textContent = L.modalScanTitle;
-  document.getElementById('modal-scan-hint').textContent = L.modalScanHint;
-  document.getElementById('modal-scan-cancel').textContent = L.modalScanCancel;
+  document.getElementById('modal-scan-title').textContent = t('modalScanTitle');
+  document.getElementById('modal-scan-hint').textContent = t('modalScanHint');
+  document.getElementById('modal-scan-cancel').textContent = t('modalScanCancel');
 
   // nav
-  document.getElementById('nav-home-lbl').textContent = L.navHome;
-  document.getElementById('nav-report-lbl').textContent = L.navReport;
-  document.getElementById('nav-search-lbl').textContent = L.navSearch;
-  document.getElementById('nav-share-lbl').textContent = L.navShare;
-  document.getElementById('nav-nearby-lbl').textContent = L.navNearby;
+  document.getElementById('nav-home-lbl').textContent = t('navHome');
+  document.getElementById('nav-report-lbl').textContent = t('navReport');
+  document.getElementById('nav-search-lbl').textContent = t('navSearch');
+  document.getElementById('nav-share-lbl').textContent = t('navShare');
+  document.getElementById('nav-nearby-lbl').textContent = t('navNearby');
+
+  // placeholders
+  document.getElementById('login-username').placeholder = t('phVolUsername');
+  document.getElementById('login-password').placeholder = t('phPassword');
+  document.getElementById('v-name').placeholder = t('phAskName');
+  document.getElementById('v-language').placeholder = t('phLangExample');
+  document.getElementById('v-state').placeholder = t('phStateExample');
+  document.getElementById('v-location').placeholder = t('phLocationLandmark');
+  document.getElementById('v-center').placeholder = t('phCenterName');
+  document.getElementById('v-desc').placeholder = t('phVolDesc');
+  document.getElementById('v-mobile').placeholder = t('phVolMobile');
+  document.getElementById('v-remarks').placeholder = t('phVolRemarks');
+  document.getElementById('v-search-q').placeholder = t('phVolSearch');
 }
+
 
 // ========== IndexedDB for offline queue ==========
 const DB_NAME = 'kumbh_offline';
@@ -1384,35 +867,28 @@ function clearPendingReports() {
   });
 }
 
+function deleteOnePendingReport(id) {
+  return new Promise((resolve, reject) => {
+    const tx = offlineDB.transaction('pending_reports', 'readwrite');
+    tx.objectStore('pending_reports').delete(id);
+    tx.oncomplete = () => resolve();
+    tx.onerror = e => reject(e);
+  });
+}
+
 // ========== Photo handling ==========
 let currentPhotoData = '';
 
 function handlePhoto(input) {
   if (!input.files || !input.files[0]) return;
-  const file = input.files[0];
-  const reader = new FileReader();
-  reader.onload = e => {
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      const MAX = 400;
-      let w = img.width, h = img.height;
-      if (w > h) { if (w > MAX) { h = h * MAX / w; w = MAX; } }
-      else { if (h > MAX) { w = w * MAX / h; h = MAX; } }
-      canvas.width = w;
-      canvas.height = h;
-      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      currentPhotoData = canvas.toDataURL('image/jpeg', 0.6);
-
-      document.getElementById('v-photo-img').src = currentPhotoData;
-      document.getElementById('v-photo-img').style.display = 'block';
-      document.getElementById('photo-placeholder').style.display = 'none';
-      document.getElementById('photo-preview-box').classList.add('has-photo');
-      document.getElementById('clear-photo-btn').style.display = 'flex';
-    };
-    img.src = e.target.result;
-  };
-  reader.readAsDataURL(file);
+  compressImage(input.files[0], 400, 0.6, function(dataUri) {
+    currentPhotoData = dataUri;
+    document.getElementById('v-photo-img').src = currentPhotoData;
+    document.getElementById('v-photo-img').style.display = 'block';
+    document.getElementById('photo-placeholder').style.display = 'none';
+    document.getElementById('photo-preview-box').classList.add('has-photo');
+    document.getElementById('clear-photo-btn').style.display = 'flex';
+  });
 }
 
 function clearPhoto() {
@@ -1438,28 +914,19 @@ function navTo(page) {
   if (page === 'share') updateShareQR();
 }
 
-function statusBadge(s) {
-  const m = {'Reunited':'badge-reunited','Pending':'badge-pending','Unresolved':'badge-unresolved','Transferred to hospital':'badge-hospital'};
-  return `<span class="badge ${m[s]||'badge-pending'}">${s}</span>`;
-}
+// statusBadge() now provided by /static/ui-utils.js
 
 function statusClass(s) {
   return {'Reunited':'reunited','Pending':'pending','Unresolved':'unresolved'}[s] || '';
 }
 
 // ========== Stats ==========
-async function loadVolStats() {
-  try {
-    const res = await fetch('/api/stats');
-    const d = await res.json();
-    document.getElementById('vol-stats').innerHTML = `
-      <div class="qs-card"><div class="qs-value orange">${d.pending}</div><div class="qs-label">${t('statsPending')}</div></div>
-      <div class="qs-card"><div class="qs-value green">${d.reunited}</div><div class="qs-label">${t('statsReunited')}</div></div>
-      <div class="qs-card"><div class="qs-value red">${d.unresolved}</div><div class="qs-label">${t('statsUnresolved')}</div></div>
-    `;
-  } catch(e) {
-    document.getElementById('vol-stats').innerHTML = `<div class="qs-card" style="grid-column:1/-1"><div class="qs-label">${t('statsUnavailable')}</div></div>`;
-  }
+function loadVolStats() {
+  loadStats('vol-stats', [
+    { key: 'pending',    label: t('statsPending') },
+    { key: 'reunited',   label: t('statsReunited') },
+    { key: 'unresolved', label: t('statsUnresolved') },
+  ]);
 }
 
 async function loadVolFilters() {
@@ -1467,10 +934,10 @@ async function loadVolFilters() {
     const res = await fetch('/api/filters');
     const d = await res.json();
     const langSel = document.getElementById('v-search-lang');
-    langSel.innerHTML = '<option value="">Language</option>' + d.languages.map(l => `<option value="${l}">${l}</option>`).join('');
+    langSel.innerHTML = '<option value="">' + t('sfoptLang') + '</option>' + d.languages.map(l => `<option value="${esc(l)}">${esc(l)}</option>`).join('');
     const stateSel = document.getElementById('v-search-state');
-    stateSel.innerHTML = '<option value="">State</option>' + d.states.map(s => `<option value="${s}">${s}</option>`).join('');
-  } catch(e) {}
+    stateSel.innerHTML = '<option value="">' + t('sfoptState') + '</option>' + d.states.map(s => `<option value="${esc(s)}">${esc(s)}</option>`).join('');
+  } catch(e) { console.error('Filter load failed:', e); }
 }
 
 // ========== Report Found ==========
@@ -1539,28 +1006,31 @@ async function volSubmitFound() {
     }
 
     const matchLabel = matches.matches.length > 1 ? t('potentialMatches') : t('potentialMatch');
-    container.innerHTML = `<h3 style="margin-bottom:12px;color:var(--primary-dark)">${matches.matches.length} ${matchLabel}</h3>` +
+    container.innerHTML = `<h3 style="margin-bottom:12px;color:var(--primary-dark)">${esc(String(matches.matches.length))} ${matchLabel}</h3>` +
       matches.matches.map(m => `
         <div class="match-card">
           <div class="match-top">
             <div>
-              <div style="font-weight:700;font-size:16px">${m.missing_person_name || t('nameUnknown')}</div>
-              <div style="font-size:11px;color:var(--text-sec);font-family:monospace">${m.case_id}</div>
+              <div style="font-weight:700;font-size:16px">${m.missing_person_name ? esc(m.missing_person_name) : t('nameUnknown')}</div>
+              <div style="font-size:11px;color:var(--text-sec);font-family:monospace">${esc(m.case_id)}</div>
             </div>
-            <div class="match-score-big">${m.match_score}%</div>
+            <div class="match-score-big">${esc(String(m.match_score))}%</div>
           </div>
           <div class="match-info">
-            ${m.gender} &middot; ${m.age_band} &middot; ${m.state || '?'} &middot; ${m.language || '?'}<br>
-            <strong>${t('lastSeen')}:</strong> ${m.last_seen_location || '—'}<br>
-            <strong>${t('center')}:</strong> ${m.reporting_center}<br>
-            <strong>${t('desc')}:</strong> ${m.physical_description || '—'}<br>
-            ${m.reporter_mobile ? `<strong>${t('familyContact')}:</strong> ${m.reporter_mobile}` : `<em>${t('noFamilyContact')}</em>`}
+            ${esc(m.gender)} &middot; ${esc(m.age_band)} &middot; ${esc(m.state || '?')} &middot; ${esc(m.language || '?')}<br>
+            <strong>${t('lastSeen')}:</strong> ${esc(m.last_seen_location || '—')}<br>
+            <strong>${t('center')}:</strong> ${esc(m.reporting_center)}<br>
+            <strong>${t('desc')}:</strong> ${esc(m.physical_description || '—')}<br>
+            ${m.reporter_mobile ? `<strong>${t('familyContact')}:</strong> ${esc(m.reporter_mobile)}` : `<em>${t('noFamilyContact')}</em>`}
           </div>
           <div class="match-reasons">
-            ${m.match_reasons.map(r => `<span class="match-reason">${r}</span>`).join('')}
+            ${m.match_reasons.map(r => `<span class="match-reason">${esc(r)}</span>`).join('')}
           </div>
           <div class="match-actions">
-            <button class="btn btn-success" onclick="volConfirmMatch(${reg.id},'${m.case_id}')">${t('confirmMatchBtn')}</button>
+            <button class="btn btn-success"
+              data-found-id="${esc(String(reg.id))}"
+              data-case-id="${esc(m.case_id)}"
+              onclick="volConfirmMatch(Number(this.dataset.foundId), this.dataset.caseId)">${t('confirmMatchBtn')}</button>
           </div>
         </div>
       `).join('');
@@ -1578,14 +1048,18 @@ async function volSubmitFound() {
 async function volConfirmMatch(foundId, caseId) {
   if (!confirm(t('confirmMatch'))) return;
   try {
-    await fetch('/api/confirm-match', {
+    const res = await fetch('/api/confirm-match', {
       method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ found_id: foundId, case_id: caseId })
     });
-    alert(t('reuniteConfirmed'));
-    loadVolStats();
+    if (res.ok) {
+      showToast(t('reuniteConfirmed'), 'success');
+      loadVolStats();
+    } else {
+      showToast(t('confirmError'), 'error');
+    }
   } catch(e) {
-    alert(t('confirmError'));
+    showToast(t('confirmError'), 'error');
   }
 }
 
@@ -1615,27 +1089,27 @@ async function volSearch() {
   try {
     const res = await fetch('/api/search?' + params);
     const d = await res.json();
-    document.getElementById('v-search-count').textContent = `${d.count} results`;
+    document.getElementById('v-search-count').textContent = `${d.count} ${t('searchResultsSuffix')}`;
     document.getElementById('v-search-results').innerHTML = d.results.length === 0
       ? `<div class="empty-state"><div class="icon">&#x1f50d;</div><p>${t('searchEmpty')}</p></div>`
       : d.results.map(r => `
         <div class="result-card ${statusClass(r.status)}">
           <div class="result-header">
             <div style="display:flex;gap:10px;align-items:center">
-              ${r.photo ? `<img class="result-photo" src="${r.photo}">` : '<div class="result-photo-placeholder">&#x1f464;</div>'}
+              ${r.photo ? `<img class="result-photo" src="${esc(r.photo)}">` : '<div class="result-photo-placeholder">&#x1f464;</div>'}
               <div>
-                <div class="result-name">${r.missing_person_name || t('nameUnknown')}</div>
-                <div class="result-case">${r.case_id} &middot; ${r.reported_at}</div>
+                <div class="result-name">${r.missing_person_name ? esc(r.missing_person_name) : t('nameUnknown')}</div>
+                <div class="result-case">${esc(r.case_id)} &middot; ${esc(r.reported_at)}</div>
               </div>
             </div>
-            ${r.match_score ? `<div class="result-score">${Math.round(r.match_score)}%</div>` : ''}
+            ${r.match_score ? `<div class="result-score">${esc(String(Math.round(r.match_score)))}%</div>` : ''}
           </div>
           <div class="result-meta">
-            ${r.gender} &middot; ${r.age_band} &middot; ${r.state || '?'} &middot; ${r.language || '?'}<br>
-            <strong>${t('lastSeen')}:</strong> ${r.last_seen_location || '—'}<br>
-            <strong>${t('center')}:</strong> ${r.reporting_center}<br>
-            ${r.physical_description ? `<strong>${t('desc')}:</strong> ${r.physical_description}` : ''}
-            ${r.reporter_mobile ? `<br><strong>${t('familyContact')}:</strong> ${r.reporter_mobile}` : ''}
+            ${esc(r.gender)} &middot; ${esc(r.age_band)} &middot; ${esc(r.state || '?')} &middot; ${esc(r.language || '?')}<br>
+            <strong>${t('lastSeen')}:</strong> ${esc(r.last_seen_location || '—')}<br>
+            <strong>${t('center')}:</strong> ${esc(r.reporting_center)}<br>
+            ${r.physical_description ? `<strong>${t('desc')}:</strong> ${esc(r.physical_description)}` : ''}
+            ${r.reporter_mobile ? `<br><strong>${t('familyContact')}:</strong> ${esc(r.reporter_mobile)}` : ''}
           </div>
         </div>
       `).join('');
@@ -1726,6 +1200,7 @@ let scannerStream = null;
 let scannerInterval = null;
 
 function startQRScanner() {
+  if (scannerInterval) return;  // guard: already running
   const modal = document.getElementById('scanner-modal');
   modal.classList.add('show');
   const video = document.getElementById('scanner-video');
@@ -1749,7 +1224,7 @@ function startQRScanner() {
             const code = jsQR(imageData.data, imageData.width, imageData.height);
             if (code) handleScannedQR(code.data);
           }
-        } catch(e) {}
+        } catch(e) { console.warn('QR decode error:', e); }
       }, 300);
     })
     .catch(err => {
@@ -1764,7 +1239,7 @@ function startQRScanner() {
 
 function stopQRScanner() {
   if (scannerInterval) { clearInterval(scannerInterval); scannerInterval = null; }
-  if (scannerStream) { scannerStream.getTracks().forEach(t => t.stop()); scannerStream = null; }
+  if (scannerStream) { scannerStream.getTracks().forEach(track => track.stop()); scannerStream = null; }
   document.getElementById('scanner-modal').classList.remove('show');
 }
 
@@ -1839,112 +1314,62 @@ async function updatePendingBanner() {
 }
 
 async function syncPendingReports() {
-  if (!navigator.onLine) { alert(t('syncStillOfflineMsg')); return; }
+  if (!navigator.onLine) { showToast(t('syncStillOfflineMsg'), 'warning'); return; }
   try {
     const pending = await getPendingReports();
-    if (pending.length === 0) { alert(t('syncNoPendingMsg')); return; }
+    if (pending.length === 0) { showToast(t('syncNoPendingMsg'), 'info'); return; }
 
-    let synced = 0;
+    let synced = 0, failed = 0;
     for (const report of pending) {
       const { id, queued_at, ...data } = report;
-      const res = await fetch('/api/report-found', {
-        method: 'POST', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify(data)
-      });
-      if (res.ok) synced++;
+      try {
+        const res = await fetch('/api/report-found', {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify(data)
+        });
+        if (res.ok) {
+          await deleteOnePendingReport(id);
+          synced++;
+        } else {
+          failed++;
+        }
+      } catch(e) {
+        failed++;
+      }
     }
 
-    await clearPendingReports();
-    alert(`${t('syncCompletePrefix')} ${synced} ${t('syncCompleteOf')} ${pending.length} ${t('syncCompletesuffix')}`);
+    const msg = `${t('syncCompletePrefix')} ${synced} ${t('syncOf')} ${pending.length} ${t('syncSuffix')}`
+      + (failed > 0 ? ` (${failed} failed)` : '');
+    showToast(msg, failed > 0 ? 'warning' : 'success');
     updatePendingBanner();
     loadVolStats();
   } catch(e) {
-    alert(t('syncFailed'));
+    showToast(t('syncFailed'), 'error');
   }
 }
 
 // ========== Auth ==========
-async function checkAuth() {
-  try {
-    const res = await fetch('/api/me');
-    if (res.status === 401) { showLoginOverlay(); return; }
-    const d = await res.json();
-    if (d.role !== 'volunteer') { showLoginOverlay(); return; }
-    hideLoginOverlay();
-  } catch(e) {
-    // If offline and no auth check possible, allow through (service worker may serve cached app)
-    hideLoginOverlay();
+const auth = createAuthModule('volunteer', {
+  onSuccess: () => {
+    loadVolStats();
+    loadVolFilters();
+    openOfflineDB().then(() => updatePendingBanner());
   }
-}
-
-function showLoginOverlay() {
-  document.getElementById('login-overlay').classList.add('show');
-}
-
-function hideLoginOverlay() {
-  document.getElementById('login-overlay').classList.remove('show');
-}
-
-async function doLogin() {
-  const username = document.getElementById('login-username').value.trim();
-  const password = document.getElementById('login-password').value;
-  const errEl = document.getElementById('login-error');
-  const btn = document.getElementById('login-btn');
-
-  if (!username || !password) {
-    errEl.textContent = t('loginError');
-    errEl.classList.add('show');
-    return;
-  }
-
-  btn.disabled = true;
-  btn.textContent = '...';
-  errEl.classList.remove('show');
-
-  try {
-    const res = await fetch('/api/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password, role: 'volunteer' })
-    });
-    if (res.ok) {
-      hideLoginOverlay();
-      loadVolStats();
-      loadVolFilters();
-      openOfflineDB().then(() => updatePendingBanner());
-    } else {
-      errEl.textContent = t('loginError');
-      errEl.classList.add('show');
-    }
-  } catch(e) {
-    errEl.textContent = t('loginError');
-    errEl.classList.add('show');
-  } finally {
-    btn.disabled = false;
-    btn.textContent = t('loginBtn');
-  }
-}
-
-async function doLogout() {
-  try {
-    await fetch('/api/logout', { method: 'POST' });
-  } catch(e) {}
-  window.location.href = '/';
-}
+});
 
 // Allow Enter key in login form
 document.getElementById('login-password').addEventListener('keydown', e => {
-  if (e.key === 'Enter') doLogin();
+  if (e.key === 'Enter') auth.doLogin();
 });
 document.getElementById('login-username').addEventListener('keydown', e => {
-  if (e.key === 'Enter') doLogin();
+  if (e.key === 'Enter') auth.doLogin();
 });
 
 // ========== GPS Geolocation ==========
 function fillGPS() {
   const btn = document.getElementById('btn-gps');
   if (!navigator.geolocation) {
-    alert('Geolocation is not supported by your browser.');
+    showToast(t('geoNotSupported'), 'error');
     return;
   }
   btn.textContent = '⏳';
@@ -1954,12 +1379,12 @@ function fillGPS() {
       const lat = pos.coords.latitude.toFixed(4);
       const lng = pos.coords.longitude.toFixed(4);
       document.getElementById('v-location').value = `Lat: ${lat}, Lng: ${lng}`;
-      btn.textContent = '📍 GPS';
+      btn.textContent = t('gpsUseBtn');
       btn.disabled = false;
     },
     err => {
-      alert('Could not get location: ' + err.message);
-      btn.textContent = '📍 GPS';
+      showToast(t('geoFailed'), 'error');
+      btn.textContent = t('gpsUseBtn');
       btn.disabled = false;
     },
     { enableHighAccuracy: true, timeout: 10000 }
@@ -1986,11 +1411,7 @@ window.addEventListener('offline', () => {
 
 applyLang();
 
-checkAuth().then(() => {
-  openOfflineDB().then(() => updatePendingBanner());
-  loadVolStats();
-  loadVolFilters();
-});
+auth.checkAuth();
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>

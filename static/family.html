@@ -2,28 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Kumbh Reunite — Family Portal</title>
-<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<link rel="stylesheet" href="/static/base.css">
 <style>
-:root {
-  --primary: #e65100;
-  --primary-light: #ff833a;
-  --primary-dark: #ac1900;
-  --success: #2e7d32;
-  --warning: #f57f17;
-  --danger: #c62828;
-  --bg: #f5f5f5;
-  --card: #ffffff;
-  --text: #212121;
-  --text-sec: #757575;
-  --border: #e0e0e0;
-  --radius: 14px;
-}
-* { margin: 0; padding: 0; box-sizing: border-box; }
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: var(--bg); color: var(--text);
   max-width: 480px; margin: 0 auto; min-height: 100vh;
   padding-bottom: 80px;
 }
@@ -256,16 +239,6 @@ header {
 .result-meta strong { color: var(--text); }
 .match-score { background: #e8eaf6; color: #283593; padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 700; }
 
-/* ───── BADGES ───── */
-.badge {
-  display: inline-block; padding: 3px 10px; border-radius: 10px; font-size: 11px; font-weight: 700;
-}
-.badge-pending { background: #fff3e0; color: #e65100; }
-.badge-found { background: #e8f5e9; color: #2e7d32; }
-.badge-reunited { background: #e1f5fe; color: #0277bd; }
-.badge-hospital { background: #e3f2fd; color: #1565c0; }
-.badge-searching { background: #f3e5f5; color: #6a1b9a; }
-
 /* ───── TRACK TIMELINE ───── */
 .timeline {
   position: relative; padding-left: 28px; margin: 16px 0;
@@ -376,7 +349,8 @@ header {
 
 .result-count { font-size: 13px; color: var(--text-sec); margin-bottom: 12px; }
 
-canvas { display: block; }
+/* Scoped canvas — hidden compression canvas, not all canvases */
+#compressCanvas { display: none; }
 
 /* ───── LOGIN OVERLAY ───── */
 .login-overlay {
@@ -416,11 +390,11 @@ canvas { display: block; }
 .logout-btn {
   background: rgba(255,255,255,0.15); border: none; color: white;
   font-size: 18px; width: 34px; height: 34px; border-radius: 50%;
-  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; align-items: center; justify-content: center;
   transition: background 0.2s; flex-shrink: 0;
+  display: none;
 }
 .logout-btn:hover { background: rgba(255,255,255,0.3); }
-.logout-btn { display: none; }
 .logout-btn.visible { display: flex; }
 
 /* ───── LOADING ───── */
@@ -435,9 +409,12 @@ canvas { display: block; }
 <body>
 
 <!-- ===== HIDDEN CANVAS FOR IMAGE COMPRESSION ===== -->
-<canvas id="compressCanvas" style="display:none"></canvas>
+<canvas id="compressCanvas"></canvas>
 <input type="file" id="photoInputReport" accept="image/*" capture="environment" style="display:none">
 <input type="file" id="photoInputSearch" accept="image/*" style="display:none">
+
+<!-- ===== TOAST CONTAINER ===== -->
+<div id="toast-container" aria-live="polite"></div>
 
 <!-- ===== HEADER ===== -->
 <header>
@@ -478,28 +455,28 @@ canvas { display: block; }
   </div>
 
   <div class="action-btns">
-    <button class="action-btn" onclick="switchTab('report')">
+    <button class="action-btn" id="home-act1-btn">
       <div class="action-icon orange">📝</div>
       <div>
         <div class="action-title" id="home-act1-t">Report Missing Person</div>
         <div class="action-desc" id="home-act1-d">File a report with photo and details</div>
       </div>
     </button>
-    <button class="action-btn" onclick="switchTab('search'); switchSubTab('photo')">
+    <button class="action-btn" id="home-act2-btn">
       <div class="action-icon blue">📷</div>
       <div>
         <div class="action-title" id="home-act2-t">Search by Photo</div>
         <div class="action-desc" id="home-act2-d">Browse found persons by appearance</div>
       </div>
     </button>
-    <button class="action-btn" onclick="switchTab('search'); switchSubTab('details')">
+    <button class="action-btn" id="home-act3-btn">
       <div class="action-icon green">🔍</div>
       <div>
         <div class="action-title" id="home-act3-t">Search by Details</div>
         <div class="action-desc" id="home-act3-d">Filter by name, age, gender, language</div>
       </div>
     </button>
-    <button class="action-btn" onclick="switchTab('track')">
+    <button class="action-btn" id="home-act4-btn">
       <div class="action-icon purple">📋</div>
       <div>
         <div class="action-title" id="home-act4-t">Track My Case</div>
@@ -551,7 +528,7 @@ canvas { display: block; }
       <h4 id="match-title">🔎 Possible Matches Found</h4>
       <div id="matchList"></div>
     </div>
-    <button class="btn btn-outline" onclick="resetReportForm()" style="margin-top:12px;" id="succ-new">Report Another Person</button>
+    <button class="btn btn-outline" style="margin-top:12px;" id="succ-new">Report Another Person</button>
   </div>
 
   <div id="reportFormWrap">
@@ -561,9 +538,9 @@ canvas { display: block; }
 
       <div class="section-label" id="rp-sec-photo">Photo</div>
       <div class="photo-capture">
-        <div class="photo-preview" id="reportPhotoPreview" onclick="document.getElementById('photoInputReport').click()">📷</div>
+        <div class="photo-preview" id="reportPhotoPreview">📷</div>
         <div class="photo-btns">
-          <button class="photo-btn" onclick="document.getElementById('photoInputReport').click()">
+          <button class="photo-btn" id="report-photo-btn">
             📷 <span id="rp-cam">Take / Upload Photo</span>
           </button>
           <p style="font-size:12px;color:var(--text-sec);" id="rp-cam-hint">Helps volunteers identify the person faster</p>
@@ -574,7 +551,7 @@ canvas { display: block; }
 
       <div class="form-field">
         <label for="rpName" id="lbl-rpName">Full Name <span class="required">*</span></label>
-        <input type="text" id="rpName" placeholder="As known locally" autocomplete="off">
+        <input type="text" id="rpName" placeholder="As known locally" autocomplete="off" aria-label="Full name of missing person">
       </div>
 
       <div class="form-row">
@@ -628,7 +605,7 @@ canvas { display: block; }
 
       <div class="form-field">
         <label for="rpAadhaar" id="lbl-rpAadhaar">Aadhaar Last 4 Digits</label>
-        <input type="tel" id="rpAadhaar" maxlength="4" placeholder="XXXX" pattern="[0-9]{4}">
+        <input type="tel" id="rpAadhaar" maxlength="4" placeholder="XXXX" pattern="[0-9]{4}" aria-label="Last 4 digits of Aadhaar">
         <div class="hint" id="hint-aadhaar">Only last 4 digits — helps with identity verification without storing full ID</div>
       </div>
 
@@ -691,7 +668,7 @@ canvas { display: block; }
 
       <div class="error-msg" id="reportError">Please fill in at least one of: name, photo, or description, plus your contact details.</div>
 
-      <button class="btn btn-primary" onclick="submitReport()" id="rp-submit">📝 Submit Report</button>
+      <button class="btn btn-primary" id="rp-submit">📝 Submit Report</button>
     </div>
   </div>
 
@@ -702,13 +679,13 @@ canvas { display: block; }
 <div class="page" id="page-search">
 
   <div class="sub-tabs">
-    <button class="sub-tab active" id="stab-photo" onclick="switchSubTab('photo')" id="stab-photo-btn">
+    <button class="sub-tab active" id="stab-photo">
       <span id="stab-photo-t">📷 By Photo</span>
     </button>
-    <button class="sub-tab" id="stab-details" onclick="switchSubTab('details')">
+    <button class="sub-tab" id="stab-details">
       <span id="stab-details-t">🔍 By Details</span>
     </button>
-    <button class="sub-tab" id="stab-caseid" onclick="switchSubTab('caseid')">
+    <button class="sub-tab" id="stab-caseid">
       <span id="stab-caseid-t">🆔 Case / Aadhaar</span>
     </button>
   </div>
@@ -719,9 +696,9 @@ canvas { display: block; }
       <h3 id="sp-photo-title">Search by Photo</h3>
       <div class="subtitle" id="sp-photo-sub">Upload a photo — we'll show all found persons for visual comparison</div>
       <div class="photo-capture">
-        <div class="photo-preview" id="searchPhotoPreview" onclick="document.getElementById('photoInputSearch').click()">📷</div>
+        <div class="photo-preview" id="searchPhotoPreview">📷</div>
         <div class="photo-btns">
-          <button class="photo-btn" onclick="document.getElementById('photoInputSearch').click()">
+          <button class="photo-btn" id="search-photo-btn">
             📷 <span id="sp-upload-btn">Upload Photo to Compare</span>
           </button>
           <p style="font-size:12px;color:var(--text-sec);" id="sp-upload-hint">Family member's photo from home works too</p>
@@ -730,7 +707,7 @@ canvas { display: block; }
     </div>
 
     <div id="foundPersonsGrid">
-      <p class="result-count" id="sp-found-count">Loading found persons…</p>
+      <p class="result-count" id="sp-found-count"></p>
       <div class="result-grid" id="foundGrid"></div>
       <div class="empty-state" id="foundEmpty" style="display:none;">
         <div class="icon">🔍</div>
@@ -742,8 +719,8 @@ canvas { display: block; }
   <!-- SEARCH: Details -->
   <div class="sub-page" id="sub-details">
     <div class="search-bar">
-      <input type="text" id="searchName" placeholder="Name (optional)" id="searchNameInput">
-      <button onclick="runSearch()" id="btn-search-go">Go</button>
+      <input type="text" id="searchName" placeholder="Name (optional)" aria-label="Search by name">
+      <button id="btn-search-go">Go</button>
     </div>
     <div class="filter-row">
       <select id="filterGender">
@@ -761,16 +738,16 @@ canvas { display: block; }
     </div>
     <div class="filter-row">
       <select id="filterLang">
-        <option value="">All Languages</option>
+        <option value="" id="fl-all">All Languages</option>
         <option>Hindi</option><option>Bhojpuri</option><option>Bengali</option>
         <option>Marathi</option><option>Gujarati</option><option>Punjabi</option><option>Tamil</option>
-        <option>Telugu</option><option>Other</option>
+        <option>Telugu</option><option id="fl-other">Other</option>
       </select>
       <select id="filterState">
-        <option value="">All States</option>
+        <option value="" id="fs-all">All States</option>
         <option>Uttar Pradesh</option><option>Bihar</option><option>Madhya Pradesh</option>
         <option>Rajasthan</option><option>Maharashtra</option><option>West Bengal</option>
-        <option>Delhi</option><option>Gujarat</option><option>Other</option>
+        <option>Delhi</option><option>Gujarat</option><option id="fs-other">Other</option>
       </select>
     </div>
     <div id="searchResultsWrap">
@@ -789,9 +766,9 @@ canvas { display: block; }
       <div class="subtitle" id="sc-sub">Enter a case ID (e.g. KR-123456) or Aadhaar last 4 digits</div>
       <div class="form-field">
         <label for="directLookupInput" id="lbl-directLookup">Case ID / Aadhaar last 4</label>
-        <input type="text" id="directLookupInput" placeholder="KR-123456 or 1234" style="font-size:20px;letter-spacing:1px;font-family:monospace;">
+        <input type="text" id="directLookupInput" placeholder="KR-123456 or 1234" style="font-size:20px;letter-spacing:1px;font-family:monospace;" aria-label="Case ID or Aadhaar last 4 digits">
       </div>
-      <button class="btn btn-primary" onclick="runDirectLookup()" id="sc-btn">🔍 Look Up</button>
+      <button class="btn btn-primary" id="sc-btn">🔍 Look Up</button>
     </div>
     <div id="directResultWrap"></div>
   </div>
@@ -806,8 +783,8 @@ canvas { display: block; }
     <h3 id="tk-title">Track Your Case</h3>
     <div class="subtitle" id="tk-sub">Enter your Case ID or registered mobile number</div>
     <div class="track-search">
-      <input type="text" id="trackInput" placeholder="KR-XXXXXX or 10-digit mobile">
-      <button onclick="runTrack()" id="tk-btn">Go</button>
+      <input type="text" id="trackInput" placeholder="KR-XXXXXX or 10-digit mobile" aria-label="Case ID or mobile number">
+      <button id="tk-btn">Go</button>
     </div>
   </div>
 
@@ -823,589 +800,256 @@ canvas { display: block; }
 
 <!-- ===== BOTTOM NAV ===== -->
 <nav class="bottom-nav">
-  <button class="active" onclick="switchTab('home')" id="nav-home">
+  <button class="active" id="nav-home">
     <span class="nav-icon">🏠</span>
     <span id="nav-home-lbl">Home</span>
   </button>
-  <button onclick="switchTab('report')" id="nav-report">
+  <button id="nav-report">
     <span class="nav-icon">📝</span>
     <span id="nav-report-lbl">Report</span>
   </button>
-  <button onclick="switchTab('search')" id="nav-search">
+  <button id="nav-search">
     <span class="nav-icon">🔍</span>
     <span id="nav-search-lbl">Search</span>
   </button>
-  <button onclick="switchTab('track')" id="nav-track">
+  <button id="nav-track">
     <span class="nav-icon">📋</span>
     <span id="nav-track-lbl">Track</span>
   </button>
 </nav>
 
 <!-- ===== CONTACT MODAL ===== -->
-<div class="modal-overlay" id="contactModal">
+<div class="modal-overlay" id="contactModal" role="dialog" aria-modal="true">
   <div class="modal-sheet">
     <div class="modal-handle"></div>
     <h3 id="modal-title">Contact About This Person</h3>
     <p id="modal-body">If this is your missing person, please contact us via the helpline. Volunteers will connect you.</p>
     <div class="modal-actions">
-      <button class="btn btn-call" onclick="window.location='tel:18001801234'">
+      <button class="btn btn-call" id="modal-call-link">
         📞 <span id="modal-call-btn">Call Kumbh Reunite Helpline</span>
       </button>
-      <button class="btn btn-outline" onclick="requestCallback()" id="modal-callback-btn">
+      <button class="btn btn-outline" id="modal-callback-btn">
         📲 Request Callback
       </button>
-      <button class="btn" style="background:#f5f5f5;color:var(--text);" onclick="closeContactModal()" id="modal-cancel">Cancel</button>
+      <button class="btn" style="background:#f5f5f5;color:var(--text);" id="modal-cancel">Cancel</button>
     </div>
   </div>
 </div>
 
 <!-- ===== LOGIN OVERLAY ===== -->
-<div class="login-overlay" id="loginOverlay">
+<div class="login-overlay" id="loginOverlay" role="dialog" aria-modal="true">
   <div class="login-card">
     <div class="login-icon">🙏</div>
     <h2>Kumbh Reunite</h2>
-    <div class="login-sub">Family Portal — Please sign in to continue</div>
+    <div class="login-sub" id="login-sub-fam">Family Portal — Please sign in to continue</div>
     <div class="login-error" id="loginError"></div>
     <div class="form-field">
-      <label for="loginUsername">Username</label>
+      <label id="lbl-login-user-fam" for="loginUsername">Username</label>
       <input type="text" id="loginUsername" placeholder="Username" autocomplete="username">
     </div>
     <div class="form-field" style="margin-bottom:20px;">
-      <label for="loginPassword">Password</label>
+      <label id="lbl-login-pass-fam" for="loginPassword">Password</label>
       <input type="password" id="loginPassword" placeholder="Password" autocomplete="current-password">
     </div>
-    <button class="btn btn-login" id="loginBtn" onclick="doLogin()">🔐 Sign In</button>
-    <button class="btn-guest" onclick="doGuest()">👁 Continue as Guest</button>
+    <button class="btn btn-login" id="loginBtn">🔐 Sign In</button>
+    <button class="btn-guest" id="guestBtn">👁 Continue as Guest</button>
+    <button type="button" id="loginLangBtn" onclick="toggleLang()" style="margin-top:12px;background:rgba(0,0,0,0.08);color:var(--text-sec);font-size:13px;padding:6px 16px;border:none;border-radius:16px;cursor:pointer">हिंदी</button>
   </div>
 </div>
 
+<script src="/static/i18n.js"></script>
+<script src="/static/auth.js"></script>
+<script src="/static/ui-utils.js"></script>
 <script>
-// ═══════════════════════════════════════════════════════════
-//  LANGUAGE STRINGS
-// ═══════════════════════════════════════════════════════════
-const lang = {
-  en: {
-    hdrTitle: 'Kumbh Reunite',
-    hdrSub: 'Family Portal',
-    langToggle: 'हिं',
-
-    // home
-    homeHeroTitle: 'Find Your Loved One',
-    homeHeroSub: "India's first self-serve missing person reunification platform for Kumbh Mela. Available 24×7 in Hindi, Marathi & English.",
-    statReportsLbl: 'Reports',
-    statReunitedLbl: 'Reunited',
-    statTimeLbl: 'Avg Hours',
-    homeAct1T: 'Report Missing Person',
-    homeAct1D: 'File a report with photo and details',
-    homeAct2T: 'Search by Photo',
-    homeAct2D: 'Browse found persons by appearance',
-    homeAct3T: 'Search by Details',
-    homeAct3D: 'Filter by name, age, gender, language',
-    homeAct4T: 'Track My Case',
-    homeAct4D: 'Check status using Case ID or mobile',
-    helplineTitle: 'Emergency Helplines',
-    hlKumbh: 'Kumbh Control Room',
-    hlPolice: 'Police Emergency',
-    hlChild: 'Child Helpline',
-    hlWomen: 'Women Helpline',
-    hlReunite: 'Kumbh Reunite',
-
-    // report
-    rpTitle: 'Report Missing Person',
-    rpSub: 'Fill as many details as possible to improve match accuracy',
-    rpSecPhoto: 'Photo',
-    rpCam: 'Take / Upload Photo',
-    rpCamHint: 'Helps volunteers identify the person faster',
-    rpSecPerson: 'Person Details',
-    lblRpName: 'Full Name',
-    lblRpGender: 'Gender',
-    lblRpAge: 'Age Group',
-    lblRpState: 'Home State',
-    lblRpLang: 'Language Spoken',
-    lblRpAadhaar: 'Aadhaar Last 4 Digits',
-    hintAadhaar: 'Only last 4 digits — helps with identity verification without storing full ID',
-    rpSecSeen: 'Last Seen',
-    lblRpLastLoc: 'Last Seen Location',
-    lblRpLastTime: 'Last Seen Date & Time',
-    lblRpDesc: 'Physical Description',
-    rpSecSpecial: 'Special Needs',
-    lblRpMedical: 'Has medical condition or requires medication',
-    lblRpDisability: 'Has disability or mobility impairment',
-    lblRpElderly: 'Elderly — may be confused or disoriented',
-    rpSecReporter: 'Your Details (Reporter)',
-    lblRpReporterName: 'Your Name',
-    lblRpMobile: 'Mobile Number',
-    lblRpRelation: 'Relationship',
-    rpSubmit: '📝 Submit Report',
-    succTitle: 'Report Filed Successfully!',
-    succSub: 'Your case ID is:',
-    succTip: 'Save this ID to track your case. We will call you if we find a match.',
-    succNew: 'Report Another Person',
-    matchTitle: '🔎 Possible Matches Found',
-    optMale: 'Male', optFemale: 'Female', optOther: 'Other',
-    optChild: 'Child (0–12)', optTeen: 'Teen (13–17)', optAdult: 'Adult (18–59)', optSenior: 'Senior (60+)',
-    optParent: 'Parent', optSpouse: 'Spouse', optChildRel: 'Child', optSibling: 'Sibling',
-    optRelative: 'Relative', optFriend: 'Friend', optGuardian: 'Guardian',
-
-    // search
-    stabPhotoT: '📷 By Photo',
-    stabDetailsT: '🔍 By Details',
-    stabCaseidT: '🆔 Case / Aadhaar',
-    spPhotoTitle: 'Search by Photo',
-    spPhotoSub: 'Upload a photo — we will show all found persons for visual comparison',
-    spUploadBtn: 'Upload Photo to Compare',
-    spUploadHint: 'Family member photo from home works too',
-    spFoundCount: 'Loading found persons…',
-    spEmptyMsg: 'No found persons recorded yet. Check back soon or file a report.',
-    scTitle: 'Search by Case ID or Aadhaar',
-    scSub: 'Enter a case ID (e.g. KR-123456) or Aadhaar last 4 digits',
-    lblDirectLookup: 'Case ID / Aadhaar last 4',
-    scBtn: '🔍 Look Up',
-    sdEmptyMsg: 'Enter a name or choose filters above, then tap Go.',
-    fgAll: 'All Genders', fgMale: 'Male / पुरुष', fgFemale: 'Female / महिला',
-    faAll: 'All Ages', faChild: 'Child', faTeen: 'Teen', faAdult: 'Adult', faSenior: 'Senior 60+',
-    btnSearchGo: 'Go',
-
-    // track
-    tkTitle: 'Track Your Case',
-    tkSub: 'Enter your Case ID or registered mobile number',
-    tkBtn: 'Go',
-    tkEmptyMsg: 'Enter your Case ID or mobile to see the latest status.',
-
-    // nav
-    navHome: 'Home',
-    navReport: 'Report',
-    navSearch: 'Search',
-    navTrack: 'Track',
-
-    // modal
-    modalTitle: 'Contact About This Person',
-    modalBody: 'If this is your missing person, please contact us via the helpline. Volunteers will connect you.',
-    modalCallBtn: 'Call Kumbh Reunite Helpline',
-    modalCallbackBtn: 'Request Callback',
-    modalCancel: 'Cancel',
-
-    // timeline
-    tlReported: 'Report Filed',
-    tlSearching: 'Being Searched',
-    tlMatch: 'Match Found',
-    tlReunited: 'Reunited',
-    tlReportedSub: 'Your report has been received',
-    tlSearchingSub: 'Volunteers are actively looking',
-    tlMatchSub: 'A possible match has been identified',
-    tlReunitedSub: 'Your loved one has been found',
-    statusPending: 'Pending',
-    statusSearching: 'Searching',
-    statusMatched: 'Match Found',
-    statusReunited: 'Reunited',
-
-    // generic
-    thisIsMyPerson: 'This is my person!',
-    caseId: 'Case ID',
-    foundAt: 'Found at',
-    gender: 'Gender',
-    age: 'Age',
-    language: 'Language',
-    male: 'Male', female: 'Female',
-    noResults: 'No results found. Try different filters.',
-    errorForm: 'Please fill in at least one of: name, photo, or description, plus your contact details.',
-    callbackSent: 'Callback requested! We will call you within 30 minutes.',
-  },
-  hi: {
-    hdrTitle: 'कुम्भ रीयूनाइट',
-    hdrSub: 'परिवार पोर्टल',
-    langToggle: 'मरा',
-
-    // home
-    homeHeroTitle: 'अपने प्रियजन को खोजें',
-    homeHeroSub: 'कुम्भ मेले के लिए भारत का पहला स्व-सेवा लापता व्यक्ति पुनर्मिलन पोर्टल। हिंदी, मराठी और अंग्रेजी में 24×7 उपलब्ध।',
-    statReportsLbl: 'रिपोर्ट',
-    statReunitedLbl: 'पुनर्मिलन',
-    statTimeLbl: 'औसत घंटे',
-    homeAct1T: 'लापता व्यक्ति रिपोर्ट करें',
-    homeAct1D: 'फोटो और विवरण के साथ रिपोर्ट दर्ज करें',
-    homeAct2T: 'फोटो से खोजें',
-    homeAct2D: 'मिले हुए व्यक्तियों को फोटो से देखें',
-    homeAct3T: 'विवरण से खोजें',
-    homeAct3D: 'नाम, उम्र, लिंग, भाषा से फ़िल्टर करें',
-    homeAct4T: 'मेरी स्थिति देखें',
-    homeAct4D: 'केस आईडी या मोबाइल से स्थिति जांचें',
-    helplineTitle: 'आपातकालीन हेल्पलाइन',
-    hlKumbh: 'कुम्भ कंट्रोल रूम',
-    hlPolice: 'पुलिस आपातकाल',
-    hlChild: 'बाल हेल्पलाइन',
-    hlWomen: 'महिला हेल्पलाइन',
-    hlReunite: 'कुम्भ रीयूनाइट',
-
-    // report
-    rpTitle: 'लापता व्यक्ति रिपोर्ट करें',
-    rpSub: 'मिलान की सटीकता बढ़ाने के लिए अधिक से अधिक जानकारी भरें',
-    rpSecPhoto: 'फोटो',
-    rpCam: 'फोटो खींचें / अपलोड करें',
-    rpCamHint: 'स्वयंसेवकों को व्यक्ति को पहचानने में मदद करता है',
-    rpSecPerson: 'व्यक्ति का विवरण',
-    lblRpName: 'पूरा नाम',
-    lblRpGender: 'लिंग',
-    lblRpAge: 'आयु वर्ग',
-    lblRpState: 'गृह राज्य',
-    lblRpLang: 'बोली जाने वाली भाषा',
-    lblRpAadhaar: 'आधार के अंतिम 4 अंक',
-    hintAadhaar: 'केवल अंतिम 4 अंक — पूरी आईडी संग्रहीत किए बिना पहचान सत्यापन में सहायक',
-    rpSecSeen: 'अंतिम बार देखा गया',
-    lblRpLastLoc: 'अंतिम बार देखा गया स्थान',
-    lblRpLastTime: 'अंतिम बार देखी गई तारीख और समय',
-    lblRpDesc: 'शारीरिक विवरण',
-    rpSecSpecial: 'विशेष जरूरतें',
-    lblRpMedical: 'कोई बीमारी है या दवा की जरूरत है',
-    lblRpDisability: 'विकलांगता या चलने-फिरने में कठिनाई है',
-    lblRpElderly: 'बुजुर्ग — भ्रमित या दिशाहीन हो सकते हैं',
-    rpSecReporter: 'आपका विवरण (रिपोर्टकर्ता)',
-    lblRpReporterName: 'आपका नाम',
-    lblRpMobile: 'मोबाइल नंबर',
-    lblRpRelation: 'संबंध',
-    rpSubmit: '📝 जमा करें',
-    succTitle: 'रिपोर्ट सफलतापूर्वक दर्ज हुई!',
-    succSub: 'आपका केस आईडी है:',
-    succTip: 'इस आईडी को सहेजें। मिलान मिलने पर हम आपको कॉल करेंगे।',
-    succNew: 'एक और व्यक्ति की रिपोर्ट करें',
-    matchTitle: '🔎 संभावित मिलान मिले',
-    optMale: 'पुरुष', optFemale: 'महिला', optOther: 'अन्य',
-    optChild: 'बच्चा (0–12)', optTeen: 'किशोर (13–17)', optAdult: 'वयस्क (18–59)', optSenior: 'वरिष्ठ (60+)',
-    optParent: 'माता/पिता', optSpouse: 'जीवनसाथी', optChildRel: 'बच्चा', optSibling: 'भाई/बहन',
-    optRelative: 'रिश्तेदार', optFriend: 'मित्र', optGuardian: 'अभिभावक',
-
-    // search
-    stabPhotoT: '📷 फोटो से',
-    stabDetailsT: '🔍 विवरण से',
-    stabCaseidT: '🆔 केस / आधार',
-    spPhotoTitle: 'फोटो से खोजें',
-    spPhotoSub: 'फोटो अपलोड करें — हम सभी मिले हुए व्यक्तियों की तुलना के लिए दिखाएंगे',
-    spUploadBtn: 'तुलना के लिए फोटो अपलोड करें',
-    spUploadHint: 'घर से लाई गई परिवार की फोटो भी काम करती है',
-    spFoundCount: 'मिले हुए व्यक्तियों को लोड हो रहा है…',
-    spEmptyMsg: 'अभी तक कोई मिला हुआ व्यक्ति दर्ज नहीं। जल्द जांचें या रिपोर्ट करें।',
-    scTitle: 'केस आईडी या आधार से खोजें',
-    scSub: 'केस आईडी (जैसे KR-123456) या आधार के अंतिम 4 अंक दर्ज करें',
-    lblDirectLookup: 'केस आईडी / आधार के अंतिम 4 अंक',
-    scBtn: '🔍 खोजें',
-    sdEmptyMsg: 'नाम दर्ज करें या ऊपर फ़िल्टर चुनें, फिर जाएं पर टैप करें।',
-    fgAll: 'सभी लिंग', fgMale: 'पुरुष', fgFemale: 'महिला',
-    faAll: 'सभी आयु', faChild: 'बच्चा', faTeen: 'किशोर', faAdult: 'वयस्क', faSenior: 'वरिष्ठ 60+',
-    btnSearchGo: 'जाएं',
-
-    // track
-    tkTitle: 'आपकी केस की स्थिति देखें',
-    tkSub: 'अपना केस आईडी या पंजीकृत मोबाइल नंबर दर्ज करें',
-    tkBtn: 'जाएं',
-    tkEmptyMsg: 'नवीनतम स्थिति देखने के लिए केस आईडी या मोबाइल दर्ज करें।',
-
-    // nav
-    navHome: 'होम',
-    navReport: 'रिपोर्ट',
-    navSearch: 'खोजें',
-    navTrack: 'स्थिति',
-
-    // modal
-    modalTitle: 'इस व्यक्ति के बारे में संपर्क करें',
-    modalBody: 'यदि यह आपका लापता व्यक्ति है, तो कृपया हेल्पलाइन से संपर्क करें। स्वयंसेवक आपको जोड़ेंगे।',
-    modalCallBtn: 'कुम्भ रीयूनाइट हेल्पलाइन पर कॉल करें',
-    modalCallbackBtn: 'कॉलबैक अनुरोध करें',
-    modalCancel: 'रद्द करें',
-
-    // timeline
-    tlReported: 'रिपोर्ट दर्ज',
-    tlSearching: 'खोज जारी',
-    tlMatch: 'मिलान मिला',
-    tlReunited: 'पुनर्मिलन',
-    tlReportedSub: 'आपकी रिपोर्ट प्राप्त हुई',
-    tlSearchingSub: 'स्वयंसेवक सक्रिय रूप से खोज रहे हैं',
-    tlMatchSub: 'एक संभावित मिलान की पहचान हुई',
-    tlReunitedSub: 'आपके प्रियजन को पाया गया',
-    statusPending: 'लंबित',
-    statusSearching: 'खोज जारी',
-    statusMatched: 'मिलान मिला',
-    statusReunited: 'पुनर्मिलन',
-
-    // generic
-    thisIsMyPerson: 'यही मेरा व्यक्ति है!',
-    caseId: 'केस आईडी',
-    foundAt: 'मिला',
-    gender: 'लिंग',
-    age: 'उम्र',
-    language: 'भाषा',
-    male: 'पुरुष', female: 'महिला',
-    noResults: 'कोई परिणाम नहीं मिला। अलग फ़िल्टर आज़माएं।',
-    errorForm: 'कृपया नाम, फोटो, या विवरण में से कम से कम एक भरें, साथ ही अपना संपर्क विवरण।',
-    callbackSent: 'कॉलबैक अनुरोध भेजा गया! हम 30 मिनट में कॉल करेंगे।',
-  },
-  mr: {
-    hdrTitle: 'कुंभ रियुनाइट',
-    hdrSub: 'कुटुंब पोर्टल',
-    langToggle: 'EN',
-
-    // home
-    homeHeroTitle: 'तुमच्या प्रियजनांना शोधा',
-    homeHeroSub: 'कुंभमेळ्यासाठी भारतातील पहिले स्वयं-सेवा हरवलेल्या व्यक्तीचे पुनर्मिलन पोर्टल। हिंदी, मराठी आणि इंग्रजीमध्ये 24×7 उपलब्ध.',
-    statReportsLbl: 'तक्रारी',
-    statReunitedLbl: 'पुनर्मिलन',
-    statTimeLbl: 'सरासरी तास',
-    homeAct1T: 'हरवलेल्या व्यक्तीची तक्रार करा',
-    homeAct1D: 'फोटो आणि तपशीलांसह तक्रार नोंदवा',
-    homeAct2T: 'फोटोने शोधा',
-    homeAct2D: 'सापडलेल्या व्यक्तींचे फोटो पहा',
-    homeAct3T: 'तपशीलांनी शोधा',
-    homeAct3D: 'नाव, वय, लिंग, भाषा फिल्टर करा',
-    homeAct4T: 'माझी स्थिती पहा',
-    homeAct4D: 'केस आयडी किंवा मोबाइलने स्थिती तपासा',
-    helplineTitle: 'आपत्कालीन हेल्पलाइन',
-    hlKumbh: 'कुंभ कंट्रोल रूम',
-    hlPolice: 'पोलीस आपत्कालीन',
-    hlChild: 'बाल हेल्पलाइन',
-    hlWomen: 'महिला हेल्पलाइन',
-    hlReunite: 'कुंभ रियुनाइट',
-
-    // report
-    rpTitle: 'हरवलेल्या व्यक्तीची तक्रार करा',
-    rpSub: 'जुळणी अचूकता वाढवण्यासाठी शक्य तितकी माहिती भरा',
-    rpSecPhoto: 'फोटो',
-    rpCam: 'फोटो काढा / अपलोड करा',
-    rpCamHint: 'स्वयंसेवकांना व्यक्ती ओळखण्यात मदत होते',
-    rpSecPerson: 'व्यक्तीचा तपशील',
-    lblRpName: 'पूर्ण नाव',
-    lblRpGender: 'लिंग',
-    lblRpAge: 'वयोगट',
-    lblRpState: 'मूळ राज्य',
-    lblRpLang: 'बोलली जाणारी भाषा',
-    lblRpAadhaar: 'आधार शेवटचे 4 अंक',
-    hintAadhaar: 'फक्त शेवटचे 4 अंक — संपूर्ण आयडी साठवल्याशिवाय ओळख पडताळणीसाठी उपयुक्त',
-    rpSecSeen: 'शेवटी कुठे दिसले',
-    lblRpLastLoc: 'शेवटी दिसलेले ठिकाण',
-    lblRpLastTime: 'शेवटी दिसल्याची तारीख आणि वेळ',
-    lblRpDesc: 'शारीरिक वर्णन',
-    rpSecSpecial: 'विशेष गरजा',
-    lblRpMedical: 'वैद्यकीय स्थिती आहे किंवा औषधांची गरज आहे',
-    lblRpDisability: 'अपंगत्व किंवा चालण्यात अडचण आहे',
-    lblRpElderly: 'वृद्ध — गोंधळलेले किंवा भरकटलेले असू शकतात',
-    rpSecReporter: 'तुमचा तपशील (तक्रारदार)',
-    lblRpReporterName: 'तुमचे नाव',
-    lblRpMobile: 'मोबाइल नंबर',
-    lblRpRelation: 'नाते',
-    rpSubmit: '📝 तक्रार सादर करा',
-    succTitle: 'तक्रार यशस्वीरित्या नोंदवली!',
-    succSub: 'तुमचा केस आयडी आहे:',
-    succTip: 'हा आयडी जपून ठेवा. जुळणी मिळाल्यास आम्ही तुम्हाला कॉल करू.',
-    succNew: 'आणखी एका व्यक्तीची तक्रार करा',
-    matchTitle: '🔎 संभाव्य जुळणी सापडल्या',
-    optMale: 'पुरुष', optFemale: 'स्त्री', optOther: 'इतर',
-    optChild: 'बालक (0–12)', optTeen: 'किशोर (13–17)', optAdult: 'प्रौढ (18–59)', optSenior: 'ज्येष्ठ (60+)',
-    optParent: 'आई/वडील', optSpouse: 'जोडीदार', optChildRel: 'मूल', optSibling: 'भाऊ/बहीण',
-    optRelative: 'नातेवाईक', optFriend: 'मित्र', optGuardian: 'पालक',
-
-    // search
-    stabPhotoT: '📷 फोटोने',
-    stabDetailsT: '🔍 तपशीलांनी',
-    stabCaseidT: '🆔 केस / आधार',
-    spPhotoTitle: 'फोटोने शोधा',
-    spPhotoSub: 'फोटो अपलोड करा — आम्ही सर्व सापडलेल्या व्यक्तींशी तुलना दाखवू',
-    spUploadBtn: 'तुलनेसाठी फोटो अपलोड करा',
-    spUploadHint: 'घरचा कुटुंबाचा फोटो देखील चालतो',
-    spFoundCount: 'सापडलेल्या व्यक्ती लोड होत आहेत…',
-    spEmptyMsg: 'अजून कोणतीही सापडलेली व्यक्ती नोंदवलेली नाही. लवकरच तपासा किंवा तक्रार करा.',
-    scTitle: 'केस आयडी किंवा आधारने शोधा',
-    scSub: 'केस आयडी (उदा. KR-123456) किंवा आधार शेवटचे 4 अंक टाका',
-    lblDirectLookup: 'केस आयडी / आधार शेवटचे 4',
-    scBtn: '🔍 शोधा',
-    sdEmptyMsg: 'नाव टाका किंवा वरील फिल्टर निवडा, नंतर जा दाबा.',
-    fgAll: 'सर्व लिंग', fgMale: 'पुरुष', fgFemale: 'स्त्री',
-    faAll: 'सर्व वये', faChild: 'बालक', faTeen: 'किशोर', faAdult: 'प्रौढ', faSenior: 'ज्येष्ठ 60+',
-    btnSearchGo: 'जा',
-
-    // track
-    tkTitle: 'तुमच्या केसची स्थिती पहा',
-    tkSub: 'तुमचा केस आयडी किंवा नोंदणीकृत मोबाइल नंबर टाका',
-    tkBtn: 'जा',
-    tkEmptyMsg: 'सध्याची स्थिती पाहण्यासाठी केस आयडी किंवा मोबाइल टाका.',
-
-    // nav
-    navHome: 'मुख्यपृष्ठ',
-    navReport: 'तक्रार',
-    navSearch: 'शोधा',
-    navTrack: 'स्थिती',
-
-    // modal
-    modalTitle: 'या व्यक्तीबद्दल संपर्क साधा',
-    modalBody: 'ही तुमची हरवलेली व्यक्ती असल्यास, कृपया हेल्पलाइनवर संपर्क साधा. स्वयंसेवक तुम्हाला जोडतील.',
-    modalCallBtn: 'कुंभ रियुनाइट हेल्पलाइनवर कॉल करा',
-    modalCallbackBtn: 'कॉलबॅक विनंती करा',
-    modalCancel: 'रद्द करा',
-
-    // timeline
-    tlReported: 'तक्रार नोंदवली',
-    tlSearching: 'शोध सुरू',
-    tlMatch: 'जुळणी सापडली',
-    tlReunited: 'पुनर्मिलन',
-    tlReportedSub: 'तुमची तक्रार प्राप्त झाली',
-    tlSearchingSub: 'स्वयंसेवक सक्रियपणे शोधत आहेत',
-    tlMatchSub: 'एक संभाव्य जुळणी ओळखली गेली',
-    tlReunitedSub: 'तुमच्या प्रियजनांना सापडले',
-    statusPending: 'प्रलंबित',
-    statusSearching: 'शोध सुरू',
-    statusMatched: 'जुळणी सापडली',
-    statusReunited: 'पुनर्मिलन',
-
-    // generic
-    thisIsMyPerson: 'ही माझी व्यक्ती आहे!',
-    caseId: 'केस आयडी',
-    foundAt: 'सापडले',
-    gender: 'लिंग',
-    age: 'वय',
-    language: 'भाषा',
-    male: 'पुरुष', female: 'स्त्री',
-    noResults: 'कोणतेही परिणाम सापडले नाहीत. वेगळे फिल्टर वापरून पहा.',
-    errorForm: 'कृपया नाव, फोटो किंवा वर्णनापैकी किमान एक भरा, तसेच तुमचा संपर्क तपशील.',
-    callbackSent: 'कॉलबॅक विनंती पाठवली! आम्ही 30 मिनिटांत कॉल करू.',
-  }
-};
+'use strict';
 
 // ═══════════════════════════════════════════════════════════
 //  STATE
 // ═══════════════════════════════════════════════════════════
-let currentLang = localStorage.getItem('kumbh_lang') || 'en';
 let reportPhotoData = null;
 let searchPhotoData = null;
 let currentContactPersonId = null;
+let foundPersonsLoaded = false;
 
 // ═══════════════════════════════════════════════════════════
-//  LANG TOGGLE
+//  LANG TOGGLE — delegates to shared i18n.js
 // ═══════════════════════════════════════════════════════════
 function toggleLang() {
   const cycle = { en: 'hi', hi: 'mr', mr: 'en' };
-  currentLang = cycle[currentLang] || 'en';
-  localStorage.setItem('kumbh_lang', currentLang);
+  setLang(cycle[getLang()] || 'en');
   applyLang();
 }
 
-function t(key) {
-  return lang[currentLang][key] || lang['en'][key] || key;
-}
-
 function applyLang() {
-  const L = lang[currentLang];
-  document.getElementById('hdr-title').textContent = L.hdrTitle;
-  document.getElementById('hdr-sub').textContent = L.hdrSub;
-  document.getElementById('langToggleBtn').textContent = L.langToggle;
+  const L = getLang();
+  document.getElementById('hdr-title').textContent = t('famHdrTitle');
+  document.getElementById('hdr-sub').textContent = t('famHdrSub');
+  document.getElementById('langToggleBtn').textContent = L === 'en' ? 'हिं' : L === 'hi' ? 'मरा' : 'EN';
+  var loginLangBtn = document.getElementById('loginLangBtn');
+  if (loginLangBtn) loginLangBtn.textContent = L === 'en' ? 'हिंदी' : L === 'hi' ? 'मराठी' : 'English';
+  // login overlay
+  const loginSubFam = document.getElementById('login-sub-fam');
+  if (loginSubFam) loginSubFam.textContent = t('loginSubFamily');
+  const lblLoginUserFam = document.getElementById('lbl-login-user-fam');
+  if (lblLoginUserFam) lblLoginUserFam.textContent = t('loginUserLbl');
+  const lblLoginPassFam = document.getElementById('lbl-login-pass-fam');
+  if (lblLoginPassFam) lblLoginPassFam.textContent = t('loginPassLbl');
+  const loginBtnEl = document.getElementById('loginBtn');
+  if (loginBtnEl) loginBtnEl.textContent = t('loginBtnFamily');
+  const guestBtnEl = document.getElementById('guestBtn');
+  if (guestBtnEl) guestBtnEl.textContent = t('guestBtnLbl');
+  const logoutBtn = document.getElementById('logout-btn');
+  if (logoutBtn) logoutBtn.title = t('logoutTooltip');
 
   // home
-  document.getElementById('home-hero-title').textContent = L.homeHeroTitle;
-  document.getElementById('home-hero-sub').textContent = L.homeHeroSub;
-  document.getElementById('stat-reports-lbl').textContent = L.statReportsLbl;
-  document.getElementById('stat-reunited-lbl').textContent = L.statReunitedLbl;
-  document.getElementById('stat-time-lbl').textContent = L.statTimeLbl;
-  document.getElementById('home-act1-t').textContent = L.homeAct1T;
-  document.getElementById('home-act1-d').textContent = L.homeAct1D;
-  document.getElementById('home-act2-t').textContent = L.homeAct2T;
-  document.getElementById('home-act2-d').textContent = L.homeAct2D;
-  document.getElementById('home-act3-t').textContent = L.homeAct3T;
-  document.getElementById('home-act3-d').textContent = L.homeAct3D;
-  document.getElementById('home-act4-t').textContent = L.homeAct4T;
-  document.getElementById('home-act4-d').textContent = L.homeAct4D;
-  document.getElementById('helpline-title').textContent = L.helplineTitle;
-  document.getElementById('hl-kumbh').textContent = L.hlKumbh;
-  document.getElementById('hl-police').textContent = L.hlPolice;
-  document.getElementById('hl-child').textContent = L.hlChild;
-  document.getElementById('hl-women').textContent = L.hlWomen;
-  document.getElementById('hl-reunite').textContent = L.hlReunite;
+  document.getElementById('home-hero-title').textContent = t('famHeroTitle');
+  document.getElementById('home-hero-sub').textContent = t('famHeroSub');
+  document.getElementById('stat-reports-lbl').textContent = t('statReportsLbl');
+  document.getElementById('stat-reunited-lbl').textContent = t('statReunitedLbl');
+  document.getElementById('stat-time-lbl').textContent = t('statTimeLbl');
+  document.getElementById('home-act1-t').textContent = t('famAct1T');
+  document.getElementById('home-act1-d').textContent = t('famAct1D');
+  document.getElementById('home-act2-t').textContent = t('famAct2T');
+  document.getElementById('home-act2-d').textContent = t('famAct2D');
+  document.getElementById('home-act3-t').textContent = t('famAct3T');
+  document.getElementById('home-act3-d').textContent = t('famAct3D');
+  document.getElementById('home-act4-t').textContent = t('famAct4T');
+  document.getElementById('home-act4-d').textContent = t('famAct4D');
+  document.getElementById('helpline-title').textContent = t('helplineTitle');
+  document.getElementById('hl-kumbh').textContent = t('hlKumbh');
+  document.getElementById('hl-police').textContent = t('hlPolice');
+  document.getElementById('hl-child').textContent = t('hlChild');
+  document.getElementById('hl-women').textContent = t('hlWomen');
+  document.getElementById('hl-reunite').textContent = t('hlReunite');
 
   // report
-  document.getElementById('rp-title').textContent = L.rpTitle;
-  document.getElementById('rp-sub').textContent = L.rpSub;
-  document.getElementById('rp-sec-photo').textContent = L.rpSecPhoto;
-  document.getElementById('rp-cam').textContent = L.rpCam;
-  document.getElementById('rp-cam-hint').textContent = L.rpCamHint;
-  document.getElementById('rp-sec-person').textContent = L.rpSecPerson;
-  document.getElementById('lbl-rpName').childNodes[0].textContent = L.lblRpName + ' ';
-  document.getElementById('lbl-rpGender').textContent = L.lblRpGender;
-  document.getElementById('lbl-rpAge').textContent = L.lblRpAge;
-  document.getElementById('lbl-rpState').textContent = L.lblRpState;
-  document.getElementById('lbl-rpLang').textContent = L.lblRpLang;
-  document.getElementById('lbl-rpAadhaar').textContent = L.lblRpAadhaar;
-  document.getElementById('hint-aadhaar').textContent = L.hintAadhaar;
-  document.getElementById('rp-sec-seen').textContent = L.rpSecSeen;
-  document.getElementById('lbl-rpLastLoc').textContent = L.lblRpLastLoc;
-  document.getElementById('lbl-rpLastTime').textContent = L.lblRpLastTime;
-  document.getElementById('lbl-rpDesc').textContent = L.lblRpDesc;
-  document.getElementById('rp-sec-special').textContent = L.rpSecSpecial;
-  document.getElementById('lbl-rpMedical').textContent = L.lblRpMedical;
-  document.getElementById('lbl-rpDisability').textContent = L.lblRpDisability;
-  document.getElementById('lbl-rpElderly').textContent = L.lblRpElderly;
-  document.getElementById('rp-sec-reporter').textContent = L.rpSecReporter;
-  document.getElementById('lbl-rpReporterName').childNodes[0].textContent = L.lblRpReporterName + ' ';
-  document.getElementById('lbl-rpMobile').childNodes[0].textContent = L.lblRpMobile + ' ';
-  document.getElementById('lbl-rpRelation').textContent = L.lblRpRelation;
-  document.getElementById('rp-submit').textContent = L.rpSubmit;
-  document.getElementById('succ-title').textContent = L.succTitle;
-  document.getElementById('succ-sub').textContent = L.succSub;
-  document.getElementById('succ-tip').textContent = L.succTip;
-  document.getElementById('succ-new').textContent = L.succNew;
-  document.getElementById('match-title').textContent = L.matchTitle;
-  document.getElementById('opt-male').textContent = L.optMale;
-  document.getElementById('opt-female').textContent = L.optFemale;
-  document.getElementById('opt-other').textContent = L.optOther;
-  document.getElementById('opt-child').textContent = L.optChild;
-  document.getElementById('opt-teen').textContent = L.optTeen;
-  document.getElementById('opt-adult').textContent = L.optAdult;
-  document.getElementById('opt-senior').textContent = L.optSenior;
-  document.getElementById('opt-parent').textContent = L.optParent;
-  document.getElementById('opt-spouse').textContent = L.optSpouse;
-  document.getElementById('opt-child-rel').textContent = L.optChildRel;
-  document.getElementById('opt-sibling').textContent = L.optSibling;
-  document.getElementById('opt-relative').textContent = L.optRelative;
-  document.getElementById('opt-friend').textContent = L.optFriend;
-  document.getElementById('opt-guardian').textContent = L.optGuardian;
+  document.getElementById('rp-title').textContent = t('rpTitle');
+  document.getElementById('rp-sub').textContent = t('rpSub');
+  document.getElementById('rp-sec-photo').textContent = t('rpSecPhoto');
+  document.getElementById('rp-cam').textContent = t('rpSecCam');
+  document.getElementById('rp-cam-hint').textContent = t('rpSecCamHint');
+  document.getElementById('rp-sec-person').textContent = t('rpSecPerson');
+  document.getElementById('lbl-rpName').childNodes[0].textContent = t('lblRpName') + ' ';
+  document.getElementById('lbl-rpGender').textContent = t('lblRpGender');
+  document.getElementById('lbl-rpAge').textContent = t('lblRpAge');
+  document.getElementById('lbl-rpState').textContent = t('lblRpState');
+  document.getElementById('lbl-rpLang').textContent = t('lblRpLang');
+  document.getElementById('lbl-rpAadhaar').textContent = t('lblRpAadhaar');
+  document.getElementById('hint-aadhaar').textContent = t('hintAadhaar');
+  document.getElementById('rp-sec-seen').textContent = t('rpSecSeen');
+  document.getElementById('lbl-rpLastLoc').textContent = t('lblRpLastLoc');
+  document.getElementById('lbl-rpLastTime').textContent = t('lblRpLastTime');
+  document.getElementById('lbl-rpDesc').textContent = t('lblRpDesc');
+  document.getElementById('rp-sec-special').textContent = t('rpSecSpecial');
+  document.getElementById('lbl-rpMedical').textContent = t('lblRpMedical');
+  document.getElementById('lbl-rpDisability').textContent = t('lblRpDisability');
+  document.getElementById('lbl-rpElderly').textContent = t('lblRpElderly');
+  document.getElementById('rp-sec-reporter').textContent = t('rpSecReporter');
+  document.getElementById('lbl-rpReporterName').childNodes[0].textContent = t('lblRpReporterName') + ' ';
+  document.getElementById('lbl-rpMobile').childNodes[0].textContent = t('lblRpMobile') + ' ';
+  document.getElementById('lbl-rpRelation').textContent = t('lblRpRelation');
+  document.getElementById('rp-submit').textContent = t('rpSubmit');
+  document.getElementById('succ-title').textContent = t('succTitle');
+  document.getElementById('succ-sub').textContent = t('succSub');
+  document.getElementById('succ-tip').textContent = t('succTip');
+  document.getElementById('succ-new').textContent = t('succNew');
+  document.getElementById('match-title').textContent = t('matchTitle');
+  document.getElementById('opt-male').textContent = t('optMale');
+  document.getElementById('opt-female').textContent = t('optFemale');
+  document.getElementById('opt-other').textContent = t('optOther');
+  document.getElementById('opt-child').textContent = t('optChild');
+  document.getElementById('opt-teen').textContent = t('optTeen');
+  document.getElementById('opt-adult').textContent = t('optAdult');
+  document.getElementById('opt-senior').textContent = t('optSenior');
+  document.getElementById('opt-parent').textContent = t('optParent');
+  document.getElementById('opt-spouse').textContent = t('optSpouse');
+  document.getElementById('opt-child-rel').textContent = t('optChildRel');
+  document.getElementById('opt-sibling').textContent = t('optSibling');
+  document.getElementById('opt-relative').textContent = t('optRelative');
+  document.getElementById('opt-friend').textContent = t('optFriend');
+  document.getElementById('opt-guardian').textContent = t('optGuardian');
 
   // search
-  document.getElementById('stab-photo-t').textContent = L.stabPhotoT;
-  document.getElementById('stab-details-t').textContent = L.stabDetailsT;
-  document.getElementById('stab-caseid-t').textContent = L.stabCaseidT;
-  document.getElementById('sp-photo-title').textContent = L.spPhotoTitle;
-  document.getElementById('sp-photo-sub').textContent = L.spPhotoSub;
-  document.getElementById('sp-upload-btn').textContent = L.spUploadBtn;
-  document.getElementById('sp-upload-hint').textContent = L.spUploadHint;
-  document.getElementById('sp-empty-msg').textContent = L.spEmptyMsg;
-  document.getElementById('sc-title').textContent = L.scTitle;
-  document.getElementById('sc-sub').textContent = L.scSub;
-  document.getElementById('lbl-directLookup').textContent = L.lblDirectLookup;
-  document.getElementById('sc-btn').textContent = L.scBtn;
-  document.getElementById('sd-empty-msg').textContent = L.sdEmptyMsg;
-  document.getElementById('btn-search-go').textContent = L.btnSearchGo;
-  document.getElementById('fg-all').textContent = L.fgAll;
-  document.getElementById('fg-male').textContent = L.fgMale;
-  document.getElementById('fg-female').textContent = L.fgFemale;
-  document.getElementById('fa-all').textContent = L.faAll;
-  document.getElementById('fa-child').textContent = L.faChild;
-  document.getElementById('fa-teen').textContent = L.faTeen;
-  document.getElementById('fa-adult').textContent = L.faAdult;
-  document.getElementById('fa-senior').textContent = L.faSenior;
+  document.getElementById('stab-photo-t').textContent = t('stabPhotoT');
+  document.getElementById('stab-details-t').textContent = t('stabDetailsT');
+  document.getElementById('stab-caseid-t').textContent = t('stabCaseidT');
+  document.getElementById('sp-photo-title').textContent = t('spPhotoTitle');
+  document.getElementById('sp-photo-sub').textContent = t('spPhotoSub');
+  document.getElementById('sp-upload-btn').textContent = t('spUploadBtn');
+  document.getElementById('sp-upload-hint').textContent = t('spUploadHint');
+  document.getElementById('sp-empty-msg').textContent = t('spEmptyMsg');
+  const spCount = document.getElementById('sp-found-count');
+  if (spCount && !spCount.dataset.loaded) spCount.textContent = t('spFoundCount');
+  document.getElementById('sc-title').textContent = t('scTitle');
+  document.getElementById('sc-sub').textContent = t('scSub');
+  document.getElementById('lbl-directLookup').textContent = t('lblDirectLookup');
+  document.getElementById('sc-btn').textContent = t('scBtn');
+  document.getElementById('sd-empty-msg').textContent = t('sdEmptyMsg');
+  document.getElementById('btn-search-go').textContent = t('scBtn');
+  document.getElementById('fg-all').textContent = t('optAllGenders');
+  document.getElementById('fg-male').textContent = t('sfoptMale');
+  document.getElementById('fg-female').textContent = t('sfoptFemale');
+  document.getElementById('fa-all').textContent = t('optAllAges');
+  document.getElementById('fa-child').textContent = t('voptChild');
+  document.getElementById('fa-teen').textContent = t('voptTeen');
+  document.getElementById('fa-adult').textContent = t('voptAdult');
+  document.getElementById('fa-senior').textContent = t('optSenior');
 
   // track
-  document.getElementById('tk-title').textContent = L.tkTitle;
-  document.getElementById('tk-sub').textContent = L.tkSub;
-  document.getElementById('tk-btn').textContent = L.tkBtn;
-  document.getElementById('tk-empty-msg').textContent = L.tkEmptyMsg;
+  document.getElementById('tk-title').textContent = t('tkTitle');
+  document.getElementById('tk-sub').textContent = t('tkSub');
+  document.getElementById('tk-btn').textContent = t('tkBtn');
+  document.getElementById('tk-empty-msg').textContent = t('tkEmptyMsg');
 
   // nav
-  document.getElementById('nav-home-lbl').textContent = L.navHome;
-  document.getElementById('nav-report-lbl').textContent = L.navReport;
-  document.getElementById('nav-search-lbl').textContent = L.navSearch;
-  document.getElementById('nav-track-lbl').textContent = L.navTrack;
+  document.getElementById('nav-home-lbl').textContent = t('famNavHome');
+  document.getElementById('nav-report-lbl').textContent = t('famNavReport');
+  document.getElementById('nav-search-lbl').textContent = t('famNavSearch');
+  document.getElementById('nav-track-lbl').textContent = t('navTrack');
 
   // modal
-  document.getElementById('modal-title').textContent = L.modalTitle;
-  document.getElementById('modal-body').textContent = L.modalBody;
-  document.getElementById('modal-call-btn').textContent = L.modalCallBtn;
-  document.getElementById('modal-callback-btn').textContent = L.modalCallbackBtn;
-  document.getElementById('modal-cancel').textContent = L.modalCancel;
+  document.getElementById('modal-title').textContent = t('famModalTitle');
+  document.getElementById('modal-body').textContent = t('modalBody');
+  document.getElementById('modal-call-btn').textContent = t('modalCallBtn');
+  document.getElementById('modal-callback-btn').textContent = t('modalCallbackBtn');
+  document.getElementById('modal-cancel').textContent = t('modalCancel');
+
+  // placeholders
+  document.getElementById('rpName').placeholder = t('phNameLocal');
+  document.getElementById('rpAadhaar').placeholder = t('phAadhaar');
+  document.getElementById('rpLastLoc').placeholder = t('phLastLoc');
+  document.getElementById('rpDesc').placeholder = t('phDesc');
+  document.getElementById('rpReporterName').placeholder = t('phReporterName');
+  document.getElementById('rpMobile').placeholder = t('phMobile');
+  document.getElementById('searchName').placeholder = t('phSearchName');
+  document.getElementById('directLookupInput').placeholder = t('phDirectLookup');
+  document.getElementById('trackInput').placeholder = t('phTrackInput');
+  document.getElementById('loginUsername').placeholder = t('phUsername');
+  document.getElementById('loginPassword').placeholder = t('phPassword');
+
+  // filter select first-options (All Languages / All States — gender/age already set above)
+  document.getElementById('fl-all').textContent = t('optAllLanguages');
+  document.getElementById('fs-all').textContent = t('optAllStates');
+  document.getElementById('fl-other').textContent = t('optOtherLang');
+  document.getElementById('fs-other').textContent = t('optOtherState');
+
+  // select default "Select" options
+  const rpGenderSel = document.getElementById('rpGender');
+  if (rpGenderSel && rpGenderSel.options[0] && rpGenderSel.options[0].value === '') {
+    rpGenderSel.options[0].textContent = t('optSelect');
+  }
+  const rpAgeSel = document.getElementById('rpAge');
+  if (rpAgeSel && rpAgeSel.options[0] && rpAgeSel.options[0].value === '') {
+    rpAgeSel.options[0].textContent = t('optSelect');
+  }
+  const rpRelSel = document.getElementById('rpRelation');
+  if (rpRelSel && rpRelSel.options[0] && rpRelSel.options[0].value === '') {
+    rpRelSel.options[0].textContent = t('optSelect');
+  }
 }
+
+// Re-apply when language changes via shared module
+window.addEventListener('langchange', applyLang);
 
 // ═══════════════════════════════════════════════════════════
 //  TAB NAVIGATION
@@ -1426,32 +1070,14 @@ function switchSubTab(sub) {
 }
 
 // ═══════════════════════════════════════════════════════════
-//  IMAGE COMPRESSION (same approach as volunteer.html)
+//  PHOTO INPUT HANDLERS — use shared compressImage()
 // ═══════════════════════════════════════════════════════════
-function compressImage(file, maxDim, quality, cb) {
-  const reader = new FileReader();
-  reader.onload = e => {
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.getElementById('compressCanvas');
-      let w = img.width, h = img.height;
-      if (w > h && w > maxDim) { h = Math.round(h * maxDim / w); w = maxDim; }
-      else if (h > maxDim) { w = Math.round(w * maxDim / h); h = maxDim; }
-      canvas.width = w; canvas.height = h;
-      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      cb(canvas.toDataURL('image/jpeg', quality));
-    };
-    img.src = e.target.result;
-  };
-  reader.readAsDataURL(file);
-}
-
 document.getElementById('photoInputReport').addEventListener('change', function() {
   if (this.files[0]) {
-    compressImage(this.files[0], 400, 0.6, data => {
+    compressImage(this.files[0], 400, 0.6, function(data) {
       reportPhotoData = data;
       const prev = document.getElementById('reportPhotoPreview');
-      prev.innerHTML = `<img src="${data}" alt="preview">`;
+      prev.innerHTML = '<img src="' + esc(data) + '" alt="preview">';
       prev.classList.add('has-photo');
     });
   }
@@ -1459,32 +1085,96 @@ document.getElementById('photoInputReport').addEventListener('change', function(
 
 document.getElementById('photoInputSearch').addEventListener('change', function() {
   if (this.files[0]) {
-    compressImage(this.files[0], 400, 0.6, data => {
+    compressImage(this.files[0], 400, 0.6, function(data) {
       searchPhotoData = data;
       const prev = document.getElementById('searchPhotoPreview');
-      prev.innerHTML = `<img src="${data}" alt="preview">`;
+      prev.innerHTML = '<img src="' + esc(data) + '" alt="preview">';
       prev.classList.add('has-photo');
     });
   }
 });
 
 // ═══════════════════════════════════════════════════════════
-//  STATS
+//  STATS — use shared loadStats()
 // ═══════════════════════════════════════════════════════════
-async function loadStats() {
-  try {
-    const r = await fetch('/api/stats');
-    if (r.ok) {
-      const d = await r.json();
-      document.getElementById('stat-reports').textContent = d.total_reports ?? '—';
-      document.getElementById('stat-reunited').textContent = d.reunited_count ?? '—';
-      document.getElementById('stat-time').textContent = d.avg_resolution_hours != null
-        ? d.avg_resolution_hours.toFixed(1) : '—';
-    }
-  } catch(e) {
+function initStats() {
+  // Family portal has its own stat elements (not a single container),
+  // so we fetch directly rather than using loadStats() container pattern.
+  fetch('/api/stats').then(function(r) {
+    if (!r.ok) throw new Error('API error');
+    return r.json();
+  }).then(function(d) {
+    document.getElementById('stat-reports').textContent = d.total_reports != null ? d.total_reports : '—';
+    document.getElementById('stat-reunited').textContent = d.reunited_count != null ? d.reunited_count : '—';
+    document.getElementById('stat-time').textContent = d.avg_resolution_hours != null
+      ? d.avg_resolution_hours.toFixed(1) : '—';
+  }).catch(function() {
     // silently show dashes — API not yet connected
-  }
+  });
 }
+
+// ═══════════════════════════════════════════════════════════
+//  INDEXEDDB OFFLINE QUEUE
+// ═══════════════════════════════════════════════════════════
+const FAM_DB_NAME = 'kumbh_family_offline';
+const FAM_DB_VERSION = 1;
+
+function openFamilyDB() {
+  return new Promise(function(resolve, reject) {
+    const req = indexedDB.open(FAM_DB_NAME, FAM_DB_VERSION);
+    req.onupgradeneeded = function(e) {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains('pending_reports')) {
+        db.createObjectStore('pending_reports', { keyPath: 'id', autoIncrement: true });
+      }
+    };
+    req.onsuccess = function(e) { resolve(e.target.result); };
+    req.onerror = function(e) { reject(e.target.error); };
+  });
+}
+
+async function saveFamilyReportOffline(data) {
+  const db = await openFamilyDB();
+  return new Promise(function(resolve, reject) {
+    const tx = db.transaction('pending_reports', 'readwrite');
+    tx.objectStore('pending_reports').add({ data: data, timestamp: Date.now() });
+    tx.oncomplete = function() { resolve(); };
+    tx.onerror = function(e) { reject(e.target.error); };
+  });
+}
+
+async function syncFamilyReports() {
+  let db;
+  try {
+    db = await openFamilyDB();
+  } catch(e) { return; }
+  const tx = db.transaction('pending_reports', 'readonly');
+  const store = tx.objectStore('pending_reports');
+  const all = await new Promise(function(r) {
+    const req = store.getAll();
+    req.onsuccess = function() { r(req.result); };
+  });
+  if (!all.length) return;
+  let synced = 0;
+  for (const report of all) {
+    try {
+      const res = await fetch('/api/report-missing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(report.data)
+      });
+      if (res.ok) {
+        synced++;
+        const dtx = db.transaction('pending_reports', 'readwrite');
+        dtx.objectStore('pending_reports').delete(report.id);
+        await new Promise(function(r) { dtx.oncomplete = r; });
+      }
+    } catch(e) { /* will retry next sync */ }
+  }
+  if (synced > 0) showToast(synced + ' ' + t('syncDoneMsg'), 'success');
+}
+
+window.addEventListener('online', syncFamilyReports);
 
 // ═══════════════════════════════════════════════════════════
 //  REPORT SUBMIT
@@ -1511,9 +1201,9 @@ async function submitReport() {
 
   const btn = document.getElementById('rp-submit');
   btn.disabled = true;
-  btn.textContent = '⏳ Submitting…';
+  btn.textContent = t('submittingLbl');
 
-  const payload = {
+  const reportData = {
     photo: reportPhotoData,
     name: document.getElementById('rpName').value.trim(),
     gender: document.getElementById('rpGender').value,
@@ -1534,31 +1224,24 @@ async function submitReport() {
     relationship: document.getElementById('rpRelation').value,
   };
 
-  let caseId;
   try {
     const r = await fetch('/api/report-missing', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(reportData),
     });
     const data = await r.json();
-    caseId = data.case_id || generateLocalCaseId();
-    showReportSuccess(caseId, data.matches || []);
+    if (!r.ok) throw new Error(data.error || 'Server error');
+    foundPersonsLoaded = false;
+    showReportSuccess(data.case_id, data.matches || []);
   } catch(e) {
-    // Offline / API not ready — generate local ID and show success anyway
-    caseId = generateLocalCaseId();
-    showReportSuccess(caseId, []);
+    // Save offline — do NOT generate a fake case ID
+    await saveFamilyReportOffline(reportData);
+    showToast(t('savedOffline') + ' — ' + t('savedOfflineSub'), 'warning');
   }
 
   btn.disabled = false;
   btn.textContent = t('rpSubmit');
-}
-
-function generateLocalCaseId() {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let id = 'KR-';
-  for (let i = 0; i < 6; i++) id += chars[Math.floor(Math.random() * chars.length)];
-  return id;
 }
 
 function showReportSuccess(caseId, matches) {
@@ -1566,13 +1249,13 @@ function showReportSuccess(caseId, matches) {
   const successEl = document.getElementById('reportSuccess');
   successEl.classList.add('show');
 
-  document.getElementById('generatedCaseId').textContent = caseId;
+  document.getElementById('generatedCaseId').textContent = esc(caseId);
 
   // Generate QR
   const qrEl = document.getElementById('reportQR');
   qrEl.innerHTML = '';
   new QRCode(qrEl, {
-    text: window.location.origin + '/family.html#track=' + caseId,
+    text: window.location.origin + '/family#track=' + caseId,
     width: 160, height: 160,
     colorDark: '#ac1900', colorLight: '#ffffff',
     correctLevel: QRCode.CorrectLevel.M,
@@ -1583,7 +1266,7 @@ function showReportSuccess(caseId, matches) {
     const ms = document.getElementById('matchSuggestion');
     const ml = document.getElementById('matchList');
     ml.innerHTML = '';
-    matches.slice(0, 3).forEach(m => {
+    matches.slice(0, 3).forEach(function(m) {
       ml.innerHTML += buildResultCard(m);
     });
     ms.classList.add('show');
@@ -1601,7 +1284,7 @@ function resetReportForm() {
   const prev = document.getElementById('reportPhotoPreview');
   prev.innerHTML = '📷';
   prev.classList.remove('has-photo');
-  document.querySelectorAll('#reportFormWrap input, #reportFormWrap select, #reportFormWrap textarea').forEach(el => {
+  document.querySelectorAll('#reportFormWrap input, #reportFormWrap select, #reportFormWrap textarea').forEach(function(el) {
     if (el.type === 'checkbox') el.checked = false;
     else el.value = '';
   });
@@ -1610,8 +1293,6 @@ function resetReportForm() {
 // ═══════════════════════════════════════════════════════════
 //  FOUND PERSONS (search by photo grid)
 // ═══════════════════════════════════════════════════════════
-let foundPersonsLoaded = false;
-
 async function loadFoundPersons() {
   if (foundPersonsLoaded) return;
   const grid = document.getElementById('foundGrid');
@@ -1630,22 +1311,22 @@ async function loadFoundPersons() {
       empty.style.display = 'block';
       count.textContent = '';
     } else {
-      const suffix = currentLang === 'hi' ? ' मिले हुए व्यक्ति' : currentLang === 'mr' ? ' सापडलेल्या व्यक्ती' : ' found persons';
-      count.textContent = persons.length + suffix;
-      persons.forEach(p => {
+      count.textContent = persons.length + ' ' + t('foundPersonsSuffix');
+      persons.forEach(function(p) {
         const div = document.createElement('div');
         div.className = 'photo-result-card';
-        div.onclick = () => openContactModal(p.id);
-        const imgPart = p.photo
-          ? `<img src="${p.photo}" class="photo-result-img" alt="${p.name||'?'}">`
-          : `<div class="photo-result-img">👤</div>`;
-        div.innerHTML = `
-          ${imgPart}
-          <div class="photo-result-info">
-            <div class="photo-result-name">${p.name || (currentLang==='hi'?'अज्ञात':'Unknown')}</div>
-            <div class="photo-result-sub">${translateGender(p.gender)} · ${translateAge(p.age_group)}</div>
-            <div class="photo-result-sub" style="color:var(--success);font-size:10px;">${p.found_location||''}</div>
-          </div>`;
+        div.addEventListener('click', function() { openContactModal(p.id); });
+        // XSS: validate photo is a data URI before rendering
+        const safePhoto = (p.photo && p.photo.startsWith('data:image/')) ? p.photo : null;
+        const imgPart = safePhoto
+          ? '<img src="' + esc(safePhoto) + '" class="photo-result-img" alt="' + esc(p.name || '?') + '">'
+          : '<div class="photo-result-img">👤</div>';
+        div.innerHTML = imgPart
+          + '<div class="photo-result-info">'
+          + '<div class="photo-result-name">' + esc(p.name || t('nameUnknown')) + '</div>'
+          + '<div class="photo-result-sub">' + esc(translateGender(p.gender)) + ' · ' + esc(translateAge(p.age_group)) + '</div>'
+          + '<div class="photo-result-sub" style="color:var(--success);font-size:10px;">' + esc(p.found_location || '') + '</div>'
+          + '</div>';
         grid.appendChild(div);
       });
     }
@@ -1688,14 +1369,15 @@ async function runSearch() {
       empty.querySelector('p').textContent = t('noResults');
       empty.style.display = 'block';
     } else {
-      list.innerHTML = `<div class="result-count">${results.length} ${currentLang==='hi'?'परिणाम':'results'}</div>`;
-      results.forEach(p => {
+      list.innerHTML = '<div class="result-count">' + esc(String(results.length)) + ' ' + t('searchResultCount') + '</div>';
+      results.forEach(function(p) {
         list.innerHTML += buildResultCard(p);
       });
     }
   } catch(e) {
+    console.error('Search error:', e);
     list.innerHTML = '';
-    empty.querySelector('p').textContent = t('noResults');
+    empty.querySelector('p').textContent = t('networkError');
     empty.style.display = 'block';
   }
 }
@@ -1723,12 +1405,12 @@ async function runDirectLookup() {
     const results = data.results || data || [];
     wrap.innerHTML = '';
     if (results.length === 0) {
-      wrap.innerHTML = `<div class="empty-state"><div class="icon">🔍</div><p>${t('noResults')}</p></div>`;
+      wrap.innerHTML = '<div class="empty-state"><div class="icon">🔍</div><p>' + esc(t('noResults')) + '</p></div>';
     } else {
-      results.forEach(p => { wrap.innerHTML += buildResultCard(p); });
+      results.forEach(function(p) { wrap.innerHTML += buildResultCard(p); });
     }
   } catch(e) {
-    wrap.innerHTML = `<div class="empty-state"><div class="icon">📡</div><p>${currentLang==='hi'?'नेटवर्क त्रुटि':'Network error — please try again.'}</p></div>`;
+    wrap.innerHTML = '<div class="empty-state"><div class="icon">📡</div><p>' + esc(t('networkError')) + '</p></div>';
   }
 }
 
@@ -1753,10 +1435,10 @@ async function runTrack() {
     const data = await r.json();
     wrap.innerHTML = '';
     if (data.error || (!data.case_id && !data.cases)) {
-      wrap.innerHTML = `<div class="empty-state"><div class="icon">📋</div><p>${currentLang==='hi'?'कोई केस नहीं मिला':'No case found with that ID or number.'}</p></div>`;
+      wrap.innerHTML = '<div class="empty-state"><div class="icon">📋</div><p>' + esc(t('noTrackResult')) + '</p></div>';
     } else {
       const cases = data.cases || [data];
-      cases.forEach(c => { wrap.innerHTML += buildTrackCard(c); });
+      cases.forEach(function(c) { wrap.innerHTML += buildTrackCard(c); });
     }
   } catch(e) {
     wrap.innerHTML = '';
@@ -1768,50 +1450,58 @@ async function runTrack() {
 //  CARD BUILDERS
 // ═══════════════════════════════════════════════════════════
 function buildResultCard(p) {
-  const photoHtml = p.photo
-    ? `<img src="${p.photo}" class="result-photo-thumb" alt="${p.name||'?'}">`
-    : `<div class="result-photo-placeholder">👤</div>`;
+  // XSS: validate photo is a data URI before rendering
+  const safePhoto = (p.photo && p.photo.startsWith('data:image/')) ? p.photo : null;
+  const photoHtml = safePhoto
+    ? '<img src="' + esc(safePhoto) + '" class="result-photo-thumb" alt="' + esc(p.name || '?') + '">'
+    : '<div class="result-photo-placeholder">👤</div>';
   const scoreHtml = p.match_score != null
-    ? `<span class="match-score">${Math.round(p.match_score)}%</span>` : '';
+    ? '<span class="match-score">' + esc(String(Math.round(p.match_score))) + '%</span>' : '';
   const badgeHtml = buildStatusBadge(p.status);
   const genderStr = translateGender(p.gender);
   const ageStr = translateAge(p.age_group);
-  const loc = p.found_location || p.last_seen_location || '';
-  return `
-  <div class="result-list-card ${p.status==='reunited'?'':'found'}">
-    <div class="result-header">
-      <div>
-        <div class="result-name">${p.name || (currentLang==='hi'?'अज्ञात':'Unknown')}</div>
-        <div class="result-case">${p.case_id || p.id || ''}</div>
-      </div>
-      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
-        ${photoHtml}
-        ${scoreHtml}
-      </div>
-    </div>
-    <div class="result-meta">
-      ${genderStr ? `<strong>${t('gender')}:</strong> ${genderStr} &nbsp;` : ''}
-      ${ageStr ? `<strong>${t('age')}:</strong> ${ageStr} &nbsp;` : ''}
-      ${p.language ? `<strong>${t('language')}:</strong> ${p.language}` : ''}
-      ${loc ? `<br><strong>${t('foundAt')}:</strong> ${loc}` : ''}
-    </div>
-    ${badgeHtml}
-    <button class="btn btn-outline btn-sm" style="margin-top:10px;" onclick="openContactModal('${p.id||p.case_id||''}')">
-      ${t('thisIsMyPerson')}
-    </button>
-  </div>`;
+  const loc = esc(p.found_location || p.last_seen_location || '');
+  const personId = esc(String(p.id || p.case_id || ''));
+  return '<div class="result-list-card ' + (p.status === 'reunited' ? '' : 'found') + '">'
+    + '<div class="result-header">'
+    + '<div>'
+    + '<div class="result-name">' + esc(p.name || t('nameUnknown')) + '</div>'
+    + '<div class="result-case">' + esc(p.case_id || p.id || '') + '</div>'
+    + '</div>'
+    + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">'
+    + photoHtml
+    + scoreHtml
+    + '</div>'
+    + '</div>'
+    + '<div class="result-meta">'
+    + (genderStr ? '<strong>' + esc(t('gender')) + ':</strong> ' + esc(genderStr) + ' &nbsp;' : '')
+    + (ageStr ? '<strong>' + esc(t('age')) + ':</strong> ' + esc(ageStr) + ' &nbsp;' : '')
+    + (p.language ? '<strong>' + esc(t('language')) + ':</strong> ' + esc(p.language) : '')
+    + (loc ? '<br><strong>' + esc(t('foundAt')) + ':</strong> ' + loc : '')
+    + '</div>'
+    + badgeHtml
+    + '<button class="btn btn-outline btn-sm" style="margin-top:10px;" data-person-id="' + personId + '">'
+    + esc(t('thisIsMyPerson'))
+    + '</button>'
+    + '</div>';
 }
+
+// Wire result card buttons via event delegation
+document.addEventListener('click', function(e) {
+  const btn = e.target.closest('button[data-person-id]');
+  if (btn) openContactModal(btn.dataset.personId);
+});
 
 function buildStatusBadge(status) {
   const map = {
-    'pending': ['badge-pending', 'statusPending'],
+    'pending':   ['badge-pending',   'statusPending'],
     'searching': ['badge-searching', 'statusSearching'],
-    'matched': ['badge-found', 'statusMatched'],
-    'reunited': ['badge-reunited', 'statusReunited'],
+    'matched':   ['badge-found',     'statusMatched'],
+    'reunited':  ['badge-reunited',  'statusReunited'],
   };
   const entry = map[status];
   if (!entry) return '';
-  return `<span class="badge ${entry[0]}">${t(entry[1])}</span>`;
+  return '<span class="badge ' + entry[0] + '">' + esc(t(entry[1])) + '</span>';
 }
 
 function buildTrackCard(c) {
@@ -1821,51 +1511,50 @@ function buildTrackCard(c) {
   const tlSubKeys = ['tlReportedSub','tlSearchingSub','tlMatchSub','tlReunitedSub'];
 
   let tlHtml = '<div class="timeline">';
-  steps.forEach((step, i) => {
+  steps.forEach(function(step, i) {
     const dotClass = i < currentStep ? 'done' : (i === currentStep ? 'active' : '');
     const timeStr = i === 0 && c.created_at ? new Date(c.created_at).toLocaleString('en-IN') : '';
-    tlHtml += `
-      <div class="tl-item">
-        <div class="tl-dot ${dotClass}"></div>
-        <div class="tl-label">${t(tlKeys[i])}</div>
-        <div class="tl-sub">${t(tlSubKeys[i])}</div>
-        ${timeStr ? `<div class="tl-time">${timeStr}</div>` : ''}
-      </div>`;
+    tlHtml += '<div class="tl-item">'
+      + '<div class="tl-dot ' + dotClass + '"></div>'
+      + '<div class="tl-label">' + esc(t(tlKeys[i])) + '</div>'
+      + '<div class="tl-sub">' + esc(t(tlSubKeys[i])) + '</div>'
+      + (timeStr ? '<div class="tl-time">' + esc(timeStr) + '</div>' : '')
+      + '</div>';
   });
   tlHtml += '</div>';
 
   let matchHtml = '';
   if (c.matched_person) {
     const mp = c.matched_person;
-    const imgHtml = mp.photo
-      ? `<img src="${mp.photo}" style="width:72px;height:72px;border-radius:10px;object-fit:cover;border:2px solid var(--success);">`
-      : `<div style="width:72px;height:72px;border-radius:10px;background:#f5f5f5;display:flex;align-items:center;justify-content:center;font-size:32px;">👤</div>`;
-    matchHtml = `
-      <div style="background:#e8f5e9;border-radius:12px;padding:14px;margin-top:10px;display:flex;gap:14px;align-items:center;">
-        ${imgHtml}
-        <div>
-          <div style="font-size:13px;color:var(--success);font-weight:700;">✅ ${t('statusMatched')}</div>
-          <div style="font-size:16px;font-weight:700;margin-top:2px;">${mp.name||'—'}</div>
-          <div style="font-size:12px;color:var(--text-sec);">${mp.found_location||''}</div>
-          <button class="btn btn-call btn-sm" style="margin-top:8px;width:auto;" onclick="openContactModal('${mp.id||''}')">
-            📞 ${t('modalCallBtn')}
-          </button>
-        </div>
-      </div>`;
+    const safePhoto = (mp.photo && mp.photo.startsWith('data:image/')) ? mp.photo : null;
+    const imgHtml = safePhoto
+      ? '<img src="' + esc(safePhoto) + '" style="width:72px;height:72px;border-radius:10px;object-fit:cover;border:2px solid var(--success);" alt="' + esc(mp.name || '?') + '">'
+      : '<div style="width:72px;height:72px;border-radius:10px;background:#f5f5f5;display:flex;align-items:center;justify-content:center;font-size:32px;">👤</div>';
+    const mpId = esc(String(mp.id || ''));
+    matchHtml = '<div style="background:#e8f5e9;border-radius:12px;padding:14px;margin-top:10px;display:flex;gap:14px;align-items:center;">'
+      + imgHtml
+      + '<div>'
+      + '<div style="font-size:13px;color:var(--success);font-weight:700;">✅ ' + esc(t('statusMatched')) + '</div>'
+      + '<div style="font-size:16px;font-weight:700;margin-top:2px;">' + esc(mp.name || '—') + '</div>'
+      + '<div style="font-size:12px;color:var(--text-sec);">' + esc(mp.found_location || '') + '</div>'
+      + '<button class="btn btn-call btn-sm" style="margin-top:8px;width:auto;" data-person-id="' + mpId + '">'
+      + '📞 ' + esc(t('modalCallBtn'))
+      + '</button>'
+      + '</div>'
+      + '</div>';
   }
 
-  return `
-  <div class="card">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
-      <div>
-        <div style="font-size:15px;font-weight:700;">${c.name || (currentLang==='hi'?'लापता व्यक्ति':'Missing Person')}</div>
-        <div class="result-case">${c.case_id || ''}</div>
-      </div>
-      ${buildStatusBadge(c.status)}
-    </div>
-    ${tlHtml}
-    ${matchHtml}
-  </div>`;
+  return '<div class="card">'
+    + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">'
+    + '<div>'
+    + '<div style="font-size:15px;font-weight:700;">' + esc(c.name || t('missingPerson')) + '</div>'
+    + '<div class="result-case">' + esc(c.case_id || '') + '</div>'
+    + '</div>'
+    + buildStatusBadge(c.status)
+    + '</div>'
+    + tlHtml
+    + matchHtml
+    + '</div>';
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1890,13 +1579,8 @@ async function requestCallback() {
     });
   } catch(e) {}
   closeContactModal();
-  alert(t('callbackSent'));
+  showToast(t('callbackSent'), 'success');
 }
-
-// Close modal on overlay click
-document.getElementById('contactModal').addEventListener('click', function(e) {
-  if (e.target === this) closeContactModal();
-});
 
 // ═══════════════════════════════════════════════════════════
 //  HELPERS
@@ -1927,6 +1611,49 @@ function handleHash() {
 }
 
 // ═══════════════════════════════════════════════════════════
+//  AUTH — use shared auth.js
+// ═══════════════════════════════════════════════════════════
+function setGuestMode() {
+  document.getElementById('nav-report').style.display = 'none';
+  document.getElementById('nav-track').style.display = 'none';
+  const actionBtnsAll = document.querySelectorAll('.action-btn');
+  if (actionBtnsAll[0]) actionBtnsAll[0].style.display = 'none'; // Report
+  if (actionBtnsAll[3]) actionBtnsAll[3].style.display = 'none'; // Track
+}
+
+function clearGuestMode() {
+  document.getElementById('nav-report').style.display = '';
+  document.getElementById('nav-track').style.display = '';
+  const actionBtnsAll = document.querySelectorAll('.action-btn');
+  if (actionBtnsAll[0]) actionBtnsAll[0].style.display = '';
+  if (actionBtnsAll[3]) actionBtnsAll[3].style.display = '';
+}
+
+const auth = createAuthModule('family', {
+  overlayId:   'loginOverlay',
+  userInputId: 'loginUsername',
+  passInputId: 'loginPassword',
+  errorElId:   'loginError',
+  logoutBtnId: 'logoutBtn',
+  allowGuest:  true,
+  onSuccess:   function() { clearGuestMode(); },
+  onGuest:     function() { setGuestMode(); },
+});
+
+// Wire login form buttons
+document.getElementById('loginBtn').addEventListener('click', function() { auth.doLogin(); });
+document.getElementById('guestBtn').addEventListener('click', function() { auth.doGuest(); });
+document.getElementById('logoutBtn').addEventListener('click', function() { auth.doLogout(); });
+
+// Allow Enter key in login form
+document.getElementById('loginPassword').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') auth.doLogin();
+});
+document.getElementById('loginUsername').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') auth.doLogin();
+});
+
+// ═══════════════════════════════════════════════════════════
 //  WIRE UP ALL EVENT LISTENERS PROGRAMMATICALLY
 // ═══════════════════════════════════════════════════════════
 function bindBtn(id, fn) {
@@ -1938,30 +1665,29 @@ function bindBtn(id, fn) {
 document.getElementById('langToggleBtn').addEventListener('click', toggleLang);
 
 // Bottom nav
-document.getElementById('nav-home').addEventListener('click', () => switchTab('home'));
-document.getElementById('nav-report').addEventListener('click', () => switchTab('report'));
-document.getElementById('nav-search').addEventListener('click', () => switchTab('search'));
-document.getElementById('nav-track').addEventListener('click', () => switchTab('track'));
+document.getElementById('nav-home').addEventListener('click', function() { switchTab('home'); });
+document.getElementById('nav-report').addEventListener('click', function() { switchTab('report'); });
+document.getElementById('nav-search').addEventListener('click', function() { switchTab('search'); });
+document.getElementById('nav-track').addEventListener('click', function() { switchTab('track'); });
 
-// Home quick actions (action-btn buttons, in order)
-const actionBtns = document.querySelectorAll('.action-btn');
-if (actionBtns[0]) actionBtns[0].addEventListener('click', () => switchTab('report'));
-if (actionBtns[1]) actionBtns[1].addEventListener('click', () => { switchTab('search'); switchSubTab('photo'); });
-if (actionBtns[2]) actionBtns[2].addEventListener('click', () => { switchTab('search'); switchSubTab('details'); });
-if (actionBtns[3]) actionBtns[3].addEventListener('click', () => switchTab('track'));
+// Home quick actions
+document.getElementById('home-act1-btn').addEventListener('click', function() { switchTab('report'); });
+document.getElementById('home-act2-btn').addEventListener('click', function() { switchTab('search'); switchSubTab('photo'); });
+document.getElementById('home-act3-btn').addEventListener('click', function() { switchTab('search'); switchSubTab('details'); });
+document.getElementById('home-act4-btn').addEventListener('click', function() { switchTab('track'); });
 
 // Photo capture buttons (report)
-document.getElementById('reportPhotoPreview').addEventListener('click', () => document.getElementById('photoInputReport').click());
-document.querySelectorAll('.photo-btns .photo-btn')[0]?.addEventListener('click', () => document.getElementById('photoInputReport').click());
+document.getElementById('reportPhotoPreview').addEventListener('click', function() { document.getElementById('photoInputReport').click(); });
+document.getElementById('report-photo-btn').addEventListener('click', function() { document.getElementById('photoInputReport').click(); });
 
 // Sub-tabs (search)
-document.getElementById('stab-photo').addEventListener('click', () => switchSubTab('photo'));
-document.getElementById('stab-details').addEventListener('click', () => switchSubTab('details'));
-document.getElementById('stab-caseid').addEventListener('click', () => switchSubTab('caseid'));
+document.getElementById('stab-photo').addEventListener('click', function() { switchSubTab('photo'); });
+document.getElementById('stab-details').addEventListener('click', function() { switchSubTab('details'); });
+document.getElementById('stab-caseid').addEventListener('click', function() { switchSubTab('caseid'); });
 
-// Search photo preview
-document.getElementById('searchPhotoPreview').addEventListener('click', () => document.getElementById('photoInputSearch').click());
-document.querySelectorAll('.photo-btns .photo-btn')[1]?.addEventListener('click', () => document.getElementById('photoInputSearch').click());
+// Search photo preview — explicit id, not fragile index selector
+document.getElementById('searchPhotoPreview').addEventListener('click', function() { document.getElementById('photoInputSearch').click(); });
+document.getElementById('search-photo-btn').addEventListener('click', function() { document.getElementById('photoInputSearch').click(); });
 
 // Search by details
 bindBtn('btn-search-go', runSearch);
@@ -1976,145 +1702,23 @@ bindBtn('tk-btn', runTrack);
 bindBtn('rp-submit', submitReport);
 bindBtn('succ-new', resetReportForm);
 
-// Contact modal
-bindBtn('modal-callback-btn', requestCallback);
-bindBtn('modal-cancel', closeContactModal);
+// Contact modal — single listener for overlay click
 document.getElementById('contactModal').addEventListener('click', function(e) {
   if (e.target === this) closeContactModal();
 });
-
-// ═══════════════════════════════════════════════════════════
-//  AUTH — LOGIN GATE
-// ═══════════════════════════════════════════════════════════
-let isAuthenticated = false;
-
-function showLoginOverlay() {
-  document.getElementById('loginOverlay').classList.add('show');
-  document.getElementById('logoutBtn').classList.remove('visible');
-}
-
-function hideLoginOverlay() {
-  document.getElementById('loginOverlay').classList.remove('show');
-  document.getElementById('logoutBtn').classList.add('visible');
-  isAuthenticated = true;
-}
-
-function setGuestMode() {
-  // Guest: hide Report and Track tabs, show only Home and Search
-  document.getElementById('nav-report').style.display = 'none';
-  document.getElementById('nav-track').style.display = 'none';
-  // Also hide the report/track quick-action buttons on home
-  const actionBtnsAll = document.querySelectorAll('.action-btn');
-  if (actionBtnsAll[0]) actionBtnsAll[0].style.display = 'none'; // Report
-  if (actionBtnsAll[3]) actionBtnsAll[3].style.display = 'none'; // Track
-}
-
-function clearGuestMode() {
-  document.getElementById('nav-report').style.display = '';
-  document.getElementById('nav-track').style.display = '';
-  const actionBtnsAll = document.querySelectorAll('.action-btn');
-  if (actionBtnsAll[0]) actionBtnsAll[0].style.display = '';
-  if (actionBtnsAll[3]) actionBtnsAll[3].style.display = '';
-}
-
-async function checkAuth() {
-  try {
-    const r = await fetch('/api/me');
-    if (r.ok) {
-      const data = await r.json();
-      if (data.role === 'family') {
-        hideLoginOverlay();
-        clearGuestMode();
-        return;
-      }
-    }
-  } catch(e) {
-    // network error — fall through to show login
-  }
-  showLoginOverlay();
-}
-
-async function doLogin() {
-  const username = document.getElementById('loginUsername').value.trim();
-  const password = document.getElementById('loginPassword').value;
-  const errEl = document.getElementById('loginError');
-  const btn = document.getElementById('loginBtn');
-
-  if (!username || !password) {
-    errEl.textContent = 'Please enter username and password.';
-    errEl.classList.add('show');
-    return;
-  }
-
-  btn.disabled = true;
-  btn.textContent = '⏳ Signing in…';
-  errEl.classList.remove('show');
-
-  try {
-    const r = await fetch('/api/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password, role: 'family' }),
-    });
-    if (r.ok) {
-      const data = await r.json();
-      if (data.role === 'family' || data.success) {
-        hideLoginOverlay();
-        clearGuestMode();
-        document.getElementById('loginUsername').value = '';
-        document.getElementById('loginPassword').value = '';
-      } else {
-        errEl.textContent = 'Access denied. This portal is for families only.';
-        errEl.classList.add('show');
-      }
-    } else {
-      const data = await r.json().catch(() => ({}));
-      errEl.textContent = data.error || data.message || 'Invalid username or password.';
-      errEl.classList.add('show');
-    }
-  } catch(e) {
-    errEl.textContent = 'Network error — please try again.';
-    errEl.classList.add('show');
-  }
-
-  btn.disabled = false;
-  btn.textContent = '🔐 Sign In';
-}
-
-function doGuest() {
-  document.getElementById('loginOverlay').classList.remove('show');
-  setGuestMode();
-  isAuthenticated = false;
-}
-
-async function doLogout() {
-  try {
-    await fetch('/api/logout', { method: 'POST' });
-  } catch(e) {}
-  isAuthenticated = false;
-  clearGuestMode();
-  window.location.href = '/';
-}
-
-// Allow Enter key in login form
-document.getElementById('loginPassword').addEventListener('keydown', function(e) {
-  if (e.key === 'Enter') doLogin();
-});
-document.getElementById('loginUsername').addEventListener('keydown', function(e) {
-  if (e.key === 'Enter') doLogin();
-});
-
-// Wire logout button
-document.getElementById('logoutBtn').addEventListener('click', doLogout);
+bindBtn('modal-call-link', function() { window.location = 'tel:18001801234'; });
+bindBtn('modal-callback-btn', requestCallback);
+bindBtn('modal-cancel', closeContactModal);
 
 // ═══════════════════════════════════════════════════════════
 //  INIT
 // ═══════════════════════════════════════════════════════════
 applyLang();
-loadStats();
+initStats();
 handleHash();
 window.addEventListener('hashchange', handleHash);
-checkAuth();
+auth.checkAuth();
 </script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 </body>
 </html>

@@ -1,0 +1,338 @@
+/* ============================================================
+   base.css — Shared styles for Kumbh Reunite portals
+   Consumed by: landing.html, control.html, volunteer.html, family.html
+   DO NOT modify portal-specific styles here.
+   ============================================================ */
+
+/* ── CSS Custom Properties ──────────────────────────────────── */
+:root {
+  --primary:       #e65100;
+  --primary-light: #ff833a;
+  --primary-dark:  #ac1900;
+  --success:       #2e7d32;
+  --warning:       #f57f17;
+  --danger:        #c62828;
+  --info:          #1565c0;
+
+  --bg:            #f5f5f5;
+  --card:          #ffffff;
+  --text:          #212121;
+  --text-secondary:#666666;
+  --text-sec:      #757575;   /* alias used in volunteer / family */
+  --border:        #e0e0e0;
+  --shadow:        0 2px 8px rgba(0,0,0,0.08);
+  --radius:        10px;
+}
+
+/* ── Universal Reset ────────────────────────────────────────── */
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* ── Body Base ──────────────────────────────────────────────── */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+               'Noto Sans Devanagari', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Toast Notifications ────────────────────────────────────── */
+#toast-container {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  pointer-events: none;
+}
+
+.toast {
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #fff;
+  background: #333;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  pointer-events: none;
+  max-width: 320px;
+  text-align: center;
+  white-space: pre-line;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.toast.success { background: var(--success); }
+.toast.error   { background: var(--danger);  }
+.toast.warning { background: var(--warning); }
+.toast.info    { background: var(--info);    }
+
+/* ── Skeleton Loading ───────────────────────────────────────── */
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+  border-radius: var(--radius);
+}
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── Status Badges ──────────────────────────────────────────── */
+.badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.badge-reunited  { background: #e8f5e9; color: var(--success); }
+.badge-pending   { background: #fff8e1; color: var(--warning); }
+.badge-unresolved{ background: #fce4ec; color: var(--danger);  }
+.badge-hospital  { background: #e3f2fd; color: var(--info);    }
+.badge-matched   { background: #f3e5f5; color: #7b1fa2;        }
+/* family-portal-specific badges */
+.badge-found     { background: #e8f5e9; color: var(--success); }
+.badge-searching { background: #fff3e0; color: var(--primary); }
+
+/* ── Login Overlay (full-screen) ────────────────────────────── */
+.login-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+.login-overlay.show {
+  opacity: 1;
+  pointer-events: all;
+}
+
+/* control.html uses .hidden to toggle instead of .show */
+.login-overlay.hidden {
+  display: none;
+}
+
+/* ── Login Box / Card ───────────────────────────────────────── */
+.login-box,
+.login-card {
+  background: var(--card);
+  border-radius: 16px;
+  padding: 32px 28px;
+  width: 100%;
+  max-width: 360px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.24);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.login-box h2,
+.login-card h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--primary);
+  text-align: center;
+}
+
+.login-box p,
+.login-card p {
+  font-size: 13px;
+  color: var(--text-sec);
+  text-align: center;
+  margin-top: -8px;
+}
+
+.login-box input,
+.login-card input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-size: 15px;
+  color: var(--text);
+  background: var(--bg);
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.login-box input:focus,
+.login-card input:focus {
+  border-color: var(--primary);
+}
+
+.login-box button[type="submit"],
+.login-box .btn-login,
+.login-card button[type="submit"],
+.login-card .btn-login {
+  width: 100%;
+  padding: 12px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.login-box button[type="submit"]:hover,
+.login-box .btn-login:hover,
+.login-card button[type="submit"]:hover,
+.login-card .btn-login:hover {
+  background: var(--primary-dark);
+}
+
+.login-error {
+  color: var(--danger);
+  font-size: 13px;
+  text-align: center;
+  min-height: 18px;
+}
+
+/* ── Logout Button ──────────────────────────────────────────── */
+.logout-btn {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 1.5px solid rgba(255,255,255,0.6);
+  color: #fff;
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+  white-space: nowrap;
+}
+
+.logout-btn:hover {
+  background: rgba(255,255,255,0.15);
+  border-color: #fff;
+}
+
+/* volunteer/family use .visible to show the button */
+.logout-btn.visible {
+  display: flex;
+}
+
+/* control uses a different pattern — show by default after login */
+.logout-btn.shown {
+  display: flex;
+}
+
+/* ── Print Styles ───────────────────────────────────────────── */
+@media print {
+  .login-overlay,
+  #toast-container,
+  .logout-btn,
+  nav,
+  header,
+  .bottom-nav,
+  .offline-bar,
+  .sync-bar,
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  .card,
+  .result-card,
+  .report-card {
+    box-shadow: none !important;
+    border: 1px solid #ccc !important;
+    break-inside: avoid;
+  }
+}
+
+/* ── Responsive Breakpoints ─────────────────────────────────── */
+@media (max-width: 768px) {
+  .login-box,
+  .login-card {
+    margin: 16px;
+    padding: 24px 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  body {
+    font-size: 15px;
+  }
+
+  .badge {
+    font-size: 11px;
+    padding: 2px 8px;
+  }
+}
+
+/* ── Dark Mode ──────────────────────────────────────────────── */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --primary:       #ff7043;
+    --primary-light: #ffab76;
+    --primary-dark:  #c63f17;
+    --success:       #66bb6a;
+    --warning:       #ffca28;
+    --danger:        #ef5350;
+    --info:          #42a5f5;
+
+    --bg:            #121212;
+    --card:          #1e1e1e;
+    --text:          #e0e0e0;
+    --text-secondary:#9e9e9e;
+    --text-sec:      #9e9e9e;
+    --border:        #333333;
+    --shadow:        0 2px 8px rgba(0,0,0,0.4);
+  }
+
+  .skeleton {
+    background: linear-gradient(90deg, #2a2a2a 25%, #333333 50%, #2a2a2a 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s infinite;
+  }
+
+  .badge-reunited  { background: #1b3a1e; color: #66bb6a; }
+  .badge-pending   { background: #3a2f00; color: #ffca28; }
+  .badge-unresolved{ background: #3a1010; color: #ef5350; }
+  .badge-hospital  { background: #0d253a; color: #42a5f5; }
+  .badge-matched   { background: #2a1535; color: #ce93d8; }
+  .badge-found     { background: #1b3a1e; color: #66bb6a; }
+  .badge-searching { background: #2e1a00; color: #ff7043; }
+
+  .login-box input,
+  .login-card input {
+    background: #2a2a2a;
+    color: var(--text);
+    border-color: var(--border);
+  }
+}

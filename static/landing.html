@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Kumbh Reunite — Simhastha 2027</title>
+<link rel="stylesheet" href="/static/base.css">
 <style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
+/* ─── Landing-specific: gradient body ─── */
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background: linear-gradient(135deg, #e65100 0%, #ac1900 50%, #880e4f 100%);
   min-height: 100vh; display: flex; flex-direction: column; align-items: center;
   justify-content: center; padding: 24px;
@@ -23,7 +23,7 @@ body {
 }
 .lang-toggle:hover { background: rgba(255,255,255,0.25); }
 
-/* ─── Auth Badge ─── */
+/* ─── Auth Bar ─── */
 .auth-bar {
   position: fixed; top: 16px; left: 16px; z-index: 200;
   display: flex; align-items: center; gap: 10px;
@@ -36,6 +36,7 @@ body {
 .auth-badge a, .auth-bar a {
   color: white; text-decoration: underline; cursor: pointer;
 }
+/* Override base.css logout-btn for the landing page's gradient bg */
 .logout-btn {
   background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4);
   color: white; border-radius: 6px; padding: 5px 10px;
@@ -181,6 +182,11 @@ body {
 }
 .guest-link a:hover { text-decoration: underline; }
 
+/* ─── Toast container — override base.css bottom offset for landing ─── */
+#toast-container {
+  bottom: 24px;
+}
+
 @media (max-width: 900px) {
   .cards { grid-template-columns: 1fr !important; max-width: 400px !important; }
   .stats-section { gap: 16px; }
@@ -198,19 +204,22 @@ body {
 <body>
 
 <!-- Language Toggle -->
-<button class="lang-toggle" onclick="cycleLang()" id="langToggle">EN</button>
+<button class="lang-toggle" id="langToggle" aria-label="Switch language">EN</button>
 
 <!-- Auth Bar -->
 <div class="auth-bar" id="authBar">
   <div class="auth-badge" id="authBadge">
-    <a href="#" onclick="openLoginModal('family');return false;" id="loginLink" data-i18n="loginLink">Login</a>
+    <a href="#" id="loginLink" data-i18n="loginLink">Login</a>
   </div>
 </div>
+
+<!-- Toast container -->
+<div id="toast-container" aria-live="polite"></div>
 
 <!-- Logo -->
 <div class="logo">
   <h1>Kumbh Reunite <span>| Simhastha 2027</span></h1>
-  <p id="heroDesc" data-i18n="heroDesc">Unified missing persons reunification system for Nashik-Trimbakeshwar Kumbh Mela. Cross-center search, fuzzy matching, and real-time coordination.</p>
+  <p id="heroDesc" data-i18n="heroDesc">Unified missing persons reunification system for Nashik-Trimbakeshwar Kumbh Mela. Cross-center search, smart matching, and real-time coordination.</p>
 </div>
 
 <!-- Live Stats -->
@@ -231,7 +240,7 @@ body {
 
 <!-- Cards -->
 <div class="cards">
-  <div class="card card-family" onclick="handleCardClick('family','/family')">
+  <div class="card card-family" id="card-family" role="button" tabindex="0" aria-label="Family Portal">
     <div class="card-icon">&#x1f46a;</div>
     <h2 data-i18n="familyTitle">Family Portal</h2>
     <p data-i18n="familyDesc">For families — report missing person, search by photo, track your case</p>
@@ -244,21 +253,21 @@ body {
     </ul>
   </div>
 
-  <div class="card card-volunteer" onclick="handleCardClick('volunteer','/volunteer')">
+  <div class="card card-volunteer" id="card-volunteer" role="button" tabindex="0" aria-label="Volunteer Portal">
     <div class="card-icon">&#x1f91d;</div>
     <h2 data-i18n="volunteerTitle">Volunteer App</h2>
     <p data-i18n="volunteerDesc">Mobile-first field interface for volunteers at lost-and-found centers</p>
     <ul class="card-features">
       <li data-i18n="v1">Report a found person</li>
       <li data-i18n="v2">Quick search missing persons</li>
-      <li data-i18n="v3">Instant fuzzy match suggestions</li>
+      <li data-i18n="v3">Instant match suggestions</li>
       <li data-i18n="v4">Offline-ready &amp; QR sharing</li>
       <li data-i18n="v5">Works without smartphone</li>
       <li data-i18n="v6">Trilingual support</li>
     </ul>
   </div>
 
-  <div class="card card-control" onclick="handleCardClick('control','/control')">
+  <div class="card card-control" id="card-control" role="button" tabindex="0" aria-label="Control Centre">
     <div class="card-icon">&#x1f3db;</div>
     <h2 data-i18n="controlTitle">Control Centre</h2>
     <p data-i18n="controlDesc">Command dashboard for coordinators and administrators</p>
@@ -274,227 +283,254 @@ body {
 </div>
 
 <div class="footer" id="footerText">
-  Team Drishti (Team 44) | Claude Impact Lab | Mumbai 2026<br>
+  Claude Impact Lab | Mumbai 2026<br>
   Nashik-Trimbakeshwar Simhastha Kumbh Mela 2027
 </div>
 
 <!-- Login Modal -->
-<div class="modal-backdrop" id="loginModal">
+<div class="modal-backdrop" id="loginModal" role="dialog" aria-modal="true" aria-labelledby="modalHeading">
   <div class="modal">
-    <button class="modal-close" onclick="closeLoginModal()">&#x2715;</button>
-    <h3 data-i18n="modalTitle">Sign In</h3>
+    <button class="modal-close" id="modalCloseBtn" aria-label="Close login dialog">&#x2715;</button>
+    <h3 id="modalHeading" data-i18n="modalTitle">Sign In</h3>
     <p class="modal-sub" data-i18n="modalSub">Please log in to access this portal</p>
     <div class="role-badge" id="roleBadge">Family</div>
-    <div class="modal-error" id="loginError"></div>
+    <div class="modal-error" id="loginError" role="alert"></div>
     <label for="loginUser" data-i18n="labelUser">Username</label>
-    <input type="text" id="loginUser" autocomplete="username" placeholder="Enter username">
+    <input type="text" id="loginUser" autocomplete="username" placeholder="Enter username" aria-label="Username">
     <label for="loginPass" data-i18n="labelPass">Password</label>
-    <input type="password" id="loginPass" autocomplete="current-password" placeholder="Enter password">
-    <button class="modal-login-btn" id="loginBtn" onclick="doLogin()" data-i18n="loginBtn">Login</button>
+    <input type="password" id="loginPass" autocomplete="current-password" placeholder="Enter password" aria-label="Password">
+    <button class="modal-login-btn" id="loginBtn" data-i18n="loginBtn">Login</button>
     <div class="guest-link" id="guestLinkArea" style="display:none">
-      <a onclick="continueAsGuest()" data-i18n="guestLink">Continue as Guest (search only)</a>
+      <a id="guestLink" data-i18n="guestLink">Continue as Guest (search only)</a>
     </div>
+    <button type="button" id="modalLangBtn" onclick="cycleLang()" style="margin-top:12px;background:rgba(0,0,0,0.08);color:var(--text-sec);font-size:13px;padding:6px 16px;border:none;border-radius:16px;cursor:pointer">हिंदी</button>
   </div>
 </div>
 
+<script src="/static/i18n.js"></script>
+<script src="/static/auth.js"></script>
+<script src="/static/ui-utils.js"></script>
 <script>
-// ─── Translations ───────────────────────────────────────────────────────────
-const lang = {
+'use strict';
+
+// ─── i18n: landing uses its own richer translations, so we
+//     override the global t() with a local one that merges them ─────────────
+const _landingExtra = {
   en: {
-    pageTitle:       'Kumbh Reunite — Simhastha 2027',
-    heroDesc:        'Unified missing persons reunification system for Nashik-Trimbakeshwar Kumbh Mela. Cross-center search, fuzzy matching, and real-time coordination.',
-    statTotal:       'Total Reports',
-    statReunited:    'Reunited',
-    statAvgTime:     'Avg Resolution Time',
-    familyTitle:     'Family Portal',
-    familyDesc:      'For families — report missing person, search by photo, track your case',
+    pageTitle:    'Kumbh Reunite — Simhastha 2027',
+    heroDesc:     'Unified missing persons reunification system for Nashik-Trimbakeshwar Kumbh Mela. Cross-center search, smart matching, and real-time coordination.',
+    statAvgTime:  'Avg Resolution Time',
+    familyTitle:  'Family Portal',
+    familyDesc:   'For families — report missing person, search by photo, track your case',
     f1: 'Report a missing loved one',
     f2: 'Search found persons by photo',
     f3: 'Track case status with case ID',
     f4: 'Hindi/English/Marathi trilingual',
     f5: 'Privacy-protected contact',
-    volunteerTitle:  'Volunteer App',
-    volunteerDesc:   'Mobile-first field interface for volunteers at lost-and-found centers',
+    volunteerTitle: 'Volunteer App',
+    volunteerDesc:  'Mobile-first field interface for volunteers at lost-and-found centers',
     v1: 'Report a found person',
     v2: 'Quick search missing persons',
-    v3: 'Instant fuzzy match suggestions',
+    v3: 'Instant match suggestions',
     v4: 'Offline-ready & QR sharing',
     v5: 'Works without smartphone',
     v6: 'Trilingual support',
-    controlTitle:    'Control Centre',
-    controlDesc:     'Command dashboard for coordinators and administrators',
+    controlTitle: 'Control Centre',
+    controlDesc:  'Command dashboard for coordinators and administrators',
     c1: 'Live dashboard & analytics',
     c2: 'Cross-center duplicate detection',
     c3: 'Infrastructure & coverage map',
     c4: 'Hotspot analysis',
     c5: 'Match confirmation & case management',
     c6: 'Role-based access control',
-    footer:          'Team Drishti (Team 44) | Claude Impact Lab | Mumbai 2026<br>Nashik-Trimbakeshwar Simhastha Kumbh Mela 2027',
-    loginLink:       'Login',
-    loggedInAs:      'Logged in as',
-    logoutBtn:       'Logout',
-    modalTitle:      'Sign In',
-    modalSub:        'Please log in to access this portal',
-    labelUser:       'Username',
-    labelPass:       'Password',
-    loginBtn:        'Login',
-    guestLink:       'Continue as Guest (search only)',
-    roleFamily:      'Family',
-    roleVolunteer:   'Volunteer',
-    roleControl:     'Control',
-    hrs:             'hrs',
+    footer:       'Claude Impact Lab | Mumbai 2026<br>Nashik-Trimbakeshwar Simhastha Kumbh Mela 2027',
+    loginLink:    'Login',
+    loggedInAs:   'Logged in as',
+    logoutBtn:    'Logout',
+    modalTitle:   'Sign In',
+    modalSub:     'Please log in to access this portal',
+    labelUser:    'Username',
+    labelPass:    'Password',
+    loginBtn:     'Login',
+    guestLink:    'Continue as Guest (search only)',
+    roleFamily:   'Family',
+    roleVolunteer:'Volunteer',
+    roleControl:  'Control',
+    hrs:          'hrs',
+    enterUsername:  'Enter username',
+    enterPassword:  'Enter password',
+    errEmptyFields: 'Please enter username and password.',
+    errInvalidCreds:'Invalid credentials. Please try again.',
+    errNetwork:     'Network error. Please try again.',
   },
   hi: {
-    pageTitle:       'कुंभ री-यूनाइट — सिंहस्थ 2027',
-    heroDesc:        'नासिक-त्र्यंबकेश्वर कुंभ मेले के लिए एकीकृत लापता व्यक्ति पुनर्मिलन प्रणाली। क्रॉस-सेंटर खोज, फ़ज़ी मिलान और रियल-टाइम समन्वय।',
-    statTotal:       'कुल रिपोर्ट',
-    statReunited:    'पुनर्मिलित',
-    statAvgTime:     'औसत समाधान समय',
-    familyTitle:     'परिवार पोर्टल',
-    familyDesc:      'परिवारों के लिए — लापता व्यक्ति की रिपोर्ट करें, फ़ोटो से खोजें, केस स्थिति ट्रैक करें',
+    pageTitle:    'कुंभ री-यूनाइट — सिंहस्थ 2027',
+    heroDesc:     'नासिक-त्र्यंबकेश्वर कुंभ मेले के लिए एकीकृत लापता व्यक्ति पुनर्मिलन प्रणाली।',
+    statAvgTime:  'औसत समाधान समय',
+    familyTitle:  'परिवार पोर्टल',
+    familyDesc:   'परिवारों के लिए — लापता व्यक्ति की रिपोर्ट करें, फ़ोटो से खोजें, केस स्थिति ट्रैक करें',
     f1: 'लापता प्रियजन की रिपोर्ट करें',
     f2: 'फ़ोटो से मिले व्यक्तियों को खोजें',
     f3: 'केस आईडी से केस की स्थिति ट्रैक करें',
     f4: 'हिंदी/अंग्रेज़ी/मराठी त्रिभाषी',
     f5: 'गोपनीयता-संरक्षित संपर्क',
-    volunteerTitle:  'स्वयंसेवक ऐप',
-    volunteerDesc:   'खोया-पाया केंद्रों पर स्वयंसेवकों के लिए मोबाइल-फर्स्ट फ़ील्ड इंटरफ़ेस',
+    volunteerTitle: 'स्वयंसेवक ऐप',
+    volunteerDesc:  'खोया-पाया केंद्रों पर स्वयंसेवकों के लिए मोबाइल-फर्स्ट फ़ील्ड इंटरफ़ेस',
     v1: 'मिले व्यक्ति की रिपोर्ट करें',
     v2: 'लापता व्यक्तियों को त्वरित खोजें',
-    v3: 'तत्काल फ़ज़ी मिलान सुझाव',
+    v3: 'तत्काल मिलान सुझाव',
     v4: 'ऑफलाइन-रेडी और QR शेयरिंग',
     v5: 'स्मार्टफ़ोन के बिना काम करता है',
     v6: 'त्रिभाषी समर्थन',
-    controlTitle:    'नियंत्रण केंद्र',
-    controlDesc:     'समन्वयकों और प्रशासकों के लिए कमांड डैशबोर्ड',
+    controlTitle: 'नियंत्रण केंद्र',
+    controlDesc:  'समन्वयकों और प्रशासकों के लिए कमांड डैशबोर्ड',
     c1: 'लाइव डैशबोर्ड और एनालिटिक्स',
     c2: 'क्रॉस-सेंटर डुप्लीकेट डिटेक्शन',
     c3: 'इंफ्रास्ट्रक्चर और कवरेज मानचित्र',
     c4: 'हॉटस्पॉट विश्लेषण',
     c5: 'मैच पुष्टि और केस प्रबंधन',
     c6: 'भूमिका-आधारित पहुँच नियंत्रण',
-    footer:          'टीम दृष्टि (टीम 44) | क्लॉड इम्पैक्ट लैब | मुंबई 2026<br>नासिक-त्र्यंबकेश्वर सिंहस्थ कुंभ मेला 2027',
-    loginLink:       'लॉगिन',
-    loggedInAs:      'लॉग इन:',
-    logoutBtn:       'लॉगआउट',
-    modalTitle:      'साइन इन करें',
-    modalSub:        'इस पोर्टल को एक्सेस करने के लिए लॉग इन करें',
-    labelUser:       'उपयोगकर्ता नाम',
-    labelPass:       'पासवर्ड',
-    loginBtn:        'लॉगिन',
-    guestLink:       'अतिथि के रूप में जारी रखें (केवल खोज)',
-    roleFamily:      'परिवार',
-    roleVolunteer:   'स्वयंसेवक',
-    roleControl:     'नियंत्रण',
-    hrs:             'घंटे',
+    footer:       'क्लॉड इम्पैक्ट लैब | मुंबई 2026<br>नासिक-त्र्यंबकेश्वर सिंहस्थ कुंभ मेला 2027',
+    loginLink:    'लॉगिन',
+    loggedInAs:   'लॉग इन:',
+    logoutBtn:    'लॉगआउट',
+    modalTitle:   'साइन इन करें',
+    modalSub:     'इस पोर्टल को एक्सेस करने के लिए लॉग इन करें',
+    labelUser:    'उपयोगकर्ता नाम',
+    labelPass:    'पासवर्ड',
+    loginBtn:     'लॉगिन',
+    guestLink:    'अतिथि के रूप में जारी रखें (केवल खोज)',
+    roleFamily:   'परिवार',
+    roleVolunteer:'स्वयंसेवक',
+    roleControl:  'नियंत्रण',
+    hrs:          'घंटे',
+    enterUsername:  'उपयोगकर्ता नाम दर्ज करें',
+    enterPassword:  'पासवर्ड दर्ज करें',
+    errEmptyFields: 'कृपया उपयोगकर्ता नाम और पासवर्ड दर्ज करें।',
+    errInvalidCreds:'गलत क्रेडेंशियल। पुनः प्रयास करें।',
+    errNetwork:     'नेटवर्क त्रुटि। पुनः प्रयास करें।',
   },
   mr: {
-    pageTitle:       'कुंभ री-युनाईट — सिंहस्थ 2027',
-    heroDesc:        'नाशिक-त्र्यंबकेश्वर कुंभमेळ्यासाठी एकीकृत हरवलेल्या व्यक्तींचे पुनर्मिलन प्रणाली। क्रॉस-सेंटर शोध, फझी जुळणी आणि रिअल-टाइम समन्वय।',
-    statTotal:       'एकूण अहवाल',
-    statReunited:    'पुनर्मिलित',
-    statAvgTime:     'सरासरी निराकरण वेळ',
-    familyTitle:     'कुटुंब पोर्टल',
-    familyDesc:      'कुटुंबांसाठी — हरवलेल्या व्यक्तीची तक्रार करा, फोटोने शोधा, केसची स्थिती ट्रॅक करा',
+    pageTitle:    'कुंभ री-युनाईट — सिंहस्थ 2027',
+    heroDesc:     'नाशिक-त्र्यंबकेश्वर कुंभमेळ्यासाठी एकीकृत हरवलेल्या व्यक्तींचे पुनर्मिलन प्रणाली।',
+    statAvgTime:  'सरासरी निराकरण वेळ',
+    familyTitle:  'कुटुंब पोर्टल',
+    familyDesc:   'कुटुंबांसाठी — हरवलेल्या व्यक्तीची तक्रार करा, फोटोने शोधा, केसची स्थिती ट्रॅक करा',
     f1: 'हरवलेल्या प्रिय व्यक्तीची तक्रार करा',
     f2: 'फोटोद्वारे सापडलेल्या व्यक्तींना शोधा',
     f3: 'केस आयडीने केसची स्थिती ट्रॅक करा',
     f4: 'हिंदी/इंग्रजी/मराठी त्रिभाषिक',
     f5: 'गोपनीयता-संरक्षित संपर्क',
-    volunteerTitle:  'स्वयंसेवक अॅप',
-    volunteerDesc:   'हरवलेल्या-सापडलेल्या केंद्रांवर स्वयंसेवकांसाठी मोबाईल-फर्स्ट फील्ड इंटरफेस',
+    volunteerTitle: 'स्वयंसेवक अॅप',
+    volunteerDesc:  'हरवलेल्या-सापडलेल्या केंद्रांवर स्वयंसेवकांसाठी मोबाईल-फर्स्ट फील्ड इंटरफेस',
     v1: 'सापडलेल्या व्यक्तीची तक्रार करा',
     v2: 'हरवलेल्या व्यक्तींचा त्वरित शोध',
-    v3: 'त्वरित फझी जुळणी सुचना',
+    v3: 'त्वरित जुळणी सुचना',
     v4: 'ऑफलाइन-रेडी आणि QR शेअरिंग',
     v5: 'स्मार्टफोनशिवाय काम करते',
     v6: 'त्रिभाषिक समर्थन',
-    controlTitle:    'नियंत्रण केंद्र',
-    controlDesc:     'समन्वयक आणि प्रशासकांसाठी कमांड डॅशबोर्ड',
+    controlTitle: 'नियंत्रण केंद्र',
+    controlDesc:  'समन्वयक आणि प्रशासकांसाठी कमांड डॅशबोर्ड',
     c1: 'लाइव्ह डॅशबोर्ड आणि अॅनालिटिक्स',
     c2: 'क्रॉस-सेंटर डुप्लिकेट शोध',
     c3: 'पायाभूत सुविधा आणि कव्हरेज नकाशा',
     c4: 'हॉटस्पॉट विश्लेषण',
     c5: 'जुळणी पुष्टी आणि केस व्यवस्थापन',
     c6: 'भूमिका-आधारित प्रवेश नियंत्रण',
-    footer:          'टीम दृष्टी (टीम 44) | क्लॉड इम्पॅक्ट लॅब | मुंबई 2026<br>नाशिक-त्र्यंबकेश्वर सिंहस्थ कुंभमेळा 2027',
-    loginLink:       'लॉगिन',
-    loggedInAs:      'लॉग इन:',
-    logoutBtn:       'लॉगआउट',
-    modalTitle:      'साइन इन करा',
-    modalSub:        'हा पोर्टल ऍक्सेस करण्यासाठी लॉग इन करा',
-    labelUser:       'वापरकर्ता नाव',
-    labelPass:       'पासवर्ड',
-    loginBtn:        'लॉगिन',
-    guestLink:       'अतिथी म्हणून सुरू ठेवा (केवळ शोध)',
-    roleFamily:      'कुटुंब',
-    roleVolunteer:   'स्वयंसेवक',
-    roleControl:     'नियंत्रण',
-    hrs:             'तास',
+    footer:       'क्लॉड इम्पॅक्ट लॅब | मुंबई 2026<br>नाशिक-त्र्यंबकेश्वर सिंहस्थ कुंभमेळा 2027',
+    loginLink:    'लॉगिन',
+    loggedInAs:   'लॉग इन:',
+    logoutBtn:    'लॉगआउट',
+    modalTitle:   'साइन इन करा',
+    modalSub:     'हा पोर्टल ऍक्सेस करण्यासाठी लॉग इन करा',
+    labelUser:    'वापरकर्ता नाव',
+    labelPass:    'पासवर्ड',
+    loginBtn:     'लॉगिन',
+    guestLink:    'अतिथी म्हणून सुरू ठेवा (केवळ शोध)',
+    roleFamily:   'कुटुंब',
+    roleVolunteer:'स्वयंसेवक',
+    roleControl:  'नियंत्रण',
+    hrs:          'तास',
+    enterUsername:  'वापरकर्ता नाव टाका',
+    enterPassword:  'पासवर्ड टाका',
+    errEmptyFields: 'कृपया वापरकर्ता नाव आणि पासवर्ड टाका.',
+    errInvalidCreds:'चुकीचे क्रेडेन्शियल. पुन्हा प्रयत्न करा.',
+    errNetwork:     'नेटवर्क त्रुटी. पुन्हा प्रयत्न करा.',
   }
 };
 
-const LANGS = ['en','hi','mr'];
-let currentLang = localStorage.getItem('kumbh_lang') || 'en';
-let currentUser = null;
-let pendingRedirect = null;
+// Patch the global t() to also check landing-specific strings
+const _globalT = window.t;
+window.t = function(key) {
+  const lang = getLang();
+  const extra = _landingExtra[lang] || _landingExtra.en;
+  if (extra[key] !== undefined) return extra[key];
+  return _globalT(key);
+};
 
-function t(key) {
-  return (lang[currentLang] && lang[currentLang][key]) || lang.en[key] || key;
-}
+// ─── Lang ────────────────────────────────────────────────────────────────────
+const LANGS = ['en','hi','mr'];
 
 function applyLang() {
-  document.documentElement.lang = currentLang;
+  const lang = getLang();
+  document.documentElement.lang = lang;
   document.title = t('pageTitle');
-  document.getElementById('langToggle').textContent = currentLang.toUpperCase();
-  document.querySelectorAll('[data-i18n]').forEach(el => {
+  document.getElementById('langToggle').textContent = lang.toUpperCase();
+  var modalLangBtn = document.getElementById('modalLangBtn');
+  if (modalLangBtn) modalLangBtn.textContent = lang === 'en' ? 'हिंदी' : lang === 'hi' ? 'मराठी' : 'English';
+  document.querySelectorAll('[data-i18n]').forEach(function(el) {
     const key = el.getAttribute('data-i18n');
     if (key === 'footer') { el.innerHTML = t(key); return; }
     el.textContent = t(key);
   });
   document.getElementById('footerText').innerHTML = t('footer');
+  document.getElementById('loginUser').placeholder = t('enterUsername');
+  document.getElementById('loginPass').placeholder = t('enterPassword');
   updateAuthBar();
   updateStatLabels();
   updateModalRole();
 }
 
 function cycleLang() {
-  const idx = LANGS.indexOf(currentLang);
-  currentLang = LANGS[(idx + 1) % LANGS.length];
-  localStorage.setItem('kumbh_lang', currentLang);
+  const cur = getLang();
+  const idx = LANGS.indexOf(cur);
+  setLang(LANGS[(idx + 1) % LANGS.length]);
   applyLang();
 }
 
-// ─── Stats ──────────────────────────────────────────────────────────────────
+// ─── Stats ───────────────────────────────────────────────────────────────────
 function updateStatLabels() {
   document.querySelector('#stat-total .stat-label').textContent    = t('statTotal');
   document.querySelector('#stat-reunited .stat-label').textContent = t('statReunited');
   document.querySelector('#stat-avgtime .stat-label').textContent  = t('statAvgTime');
 }
 
-async function loadStats() {
+async function fetchStats() {
   try {
     const r = await fetch('/api/stats');
     if (!r.ok) throw new Error('stats unavailable');
     const d = await r.json();
-    const total    = d.total ?? '—';
-    const reunited = d.reunited ?? '—';
+    const total    = d.total    != null ? d.total : '—';
+    const reunited = d.reunited != null ? d.reunited : '—';
     const avg      = d.avg_resolution_hours != null
       ? d.avg_resolution_hours.toFixed(1) + ' ' + t('hrs')
       : '—';
     document.querySelector('#stat-total .stat-value').textContent    = total;
     document.querySelector('#stat-reunited .stat-value').textContent = reunited;
     document.querySelector('#stat-avgtime .stat-value').textContent  = avg;
-    ['stat-total','stat-reunited','stat-avgtime'].forEach(id =>
-      document.getElementById(id).classList.remove('loading'));
-  } catch {
-    ['stat-total','stat-reunited','stat-avgtime'].forEach(id => {
+    ['stat-total','stat-reunited','stat-avgtime'].forEach(function(id) {
+      document.getElementById(id).classList.remove('loading');
+    });
+  } catch (e) {
+    ['stat-total','stat-reunited','stat-avgtime'].forEach(function(id) {
       document.querySelector('#' + id + ' .stat-value').textContent = '—';
     });
   }
 }
 
-// ─── Auth ───────────────────────────────────────────────────────────────────
+// ─── Auth ────────────────────────────────────────────────────────────────────
+let currentUser = null;
+
 async function checkAuth() {
   try {
     const r = await fetch('/api/me');
@@ -504,7 +540,7 @@ async function checkAuth() {
     } else {
       currentUser = null;
     }
-  } catch {
+  } catch (e) {
     currentUser = null;
   }
   updateAuthBar();
@@ -515,41 +551,43 @@ function updateAuthBar() {
   if (currentUser) {
     badge.innerHTML =
       '<span style="color:white">' + t('loggedInAs') + ' <strong>' +
-      escHtml(currentUser.username) + '</strong> (' + escHtml(currentUser.role) + ')</span>';
+      esc(currentUser.username) + '</strong> (' + esc(currentUser.role) + ')</span>';
     let logoutEl = document.getElementById('logoutBtn');
     if (!logoutEl) {
       logoutEl = document.createElement('button');
       logoutEl.id = 'logoutBtn';
       logoutEl.className = 'logout-btn';
-      logoutEl.onclick = doLogout;
       document.getElementById('authBar').appendChild(logoutEl);
+      logoutEl.addEventListener('click', doLogout);
     }
     logoutEl.textContent = t('logoutBtn');
   } else {
-    badge.innerHTML = '<a href="#" onclick="openLoginModal(\'family\');return false;" id="loginLink">' +
-      t('loginLink') + '</a>';
+    badge.innerHTML = '<a href="#" id="loginLink">' + esc(t('loginLink')) + '</a>';
+    document.getElementById('loginLink').addEventListener('click', function(e) {
+      e.preventDefault();
+      openLoginModal('family');
+    });
     const lb = document.getElementById('logoutBtn');
     if (lb) lb.remove();
   }
 }
 
 async function doLogout() {
-  try { await fetch('/api/logout', { method: 'POST' }); } catch {}
+  try { await fetch('/api/logout', { method: 'POST' }); } catch (e) { /* ignore */ }
   currentUser = null;
   updateAuthBar();
 }
 
-// ─── Card click ─────────────────────────────────────────────────────────────
+// ─── Card click ───────────────────────────────────────────────────────────────
 function handleCardClick(portal, url) {
   if (currentUser) {
     window.location.href = url;
     return;
   }
-  // Family portal allows guest access; others require login
   openLoginModal(portal);
 }
 
-// ─── Login Modal ─────────────────────────────────────────────────────────────
+// ─── Login Modal ──────────────────────────────────────────────────────────────
 let _pendingPortal = 'family';
 let _pendingUrl    = '/family';
 
@@ -566,7 +604,7 @@ function openLoginModal(portal) {
 
   updateModalRole();
   document.getElementById('loginModal').classList.add('active');
-  setTimeout(() => document.getElementById('loginUser').focus(), 100);
+  setTimeout(function() { document.getElementById('loginUser').focus(); }, 100);
 }
 
 function updateModalRole() {
@@ -580,14 +618,6 @@ function closeLoginModal() {
   document.getElementById('loginModal').classList.remove('active');
 }
 
-document.getElementById('loginModal').addEventListener('click', function(e) {
-  if (e.target === this) closeLoginModal();
-});
-
-document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape') closeLoginModal();
-});
-
 function showError(msg) {
   const el = document.getElementById('loginError');
   el.textContent = msg;
@@ -600,7 +630,10 @@ function hideError() {
 async function doLogin() {
   const username = document.getElementById('loginUser').value.trim();
   const password = document.getElementById('loginPass').value;
-  if (!username || !password) { showError('Please enter username and password.'); return; }
+  if (!username || !password) {
+    showError(t('errEmptyFields'));
+    return;
+  }
 
   const btn = document.getElementById('loginBtn');
   btn.disabled = true;
@@ -608,22 +641,24 @@ async function doLogin() {
   hideError();
 
   try {
-    const r = await fetch('/api/login', {
+    const res = await fetch('/api/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password })
+      credentials: 'include',
+      body: JSON.stringify({ username: username, password: password })
     });
-    const d = await r.json();
-    if (r.ok && d.success !== false) {
+    const d = await res.json();
+    // Fix: require res.ok AND a role in the response (not just d.success !== false)
+    if (res.ok && d.role) {
       currentUser = d;
       updateAuthBar();
       closeLoginModal();
       window.location.href = _pendingUrl;
     } else {
-      showError(d.error || d.detail || 'Invalid credentials. Please try again.');
+      showError(esc(d.error || d.detail || t('errInvalidCreds')));
     }
-  } catch {
-    showError('Network error. Please try again.');
+  } catch (e) {
+    showError(t('errNetwork'));
   } finally {
     btn.disabled = false;
     btn.textContent = t('loginBtn');
@@ -635,7 +670,23 @@ function continueAsGuest() {
   window.location.href = '/family';
 }
 
-// Allow Enter key in modal inputs
+// ─── Event wiring ─────────────────────────────────────────────────────────────
+document.getElementById('loginModal').addEventListener('click', function(e) {
+  if (e.target === this) closeLoginModal();
+});
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeLoginModal();
+});
+
+document.getElementById('modalCloseBtn').addEventListener('click', closeLoginModal);
+document.getElementById('loginBtn').addEventListener('click', doLogin);
+document.getElementById('guestLink').addEventListener('click', function(e) {
+  e.preventDefault();
+  continueAsGuest();
+});
+document.getElementById('langToggle').addEventListener('click', cycleLang);
+
 document.getElementById('loginUser').addEventListener('keydown', function(e) {
   if (e.key === 'Enter') document.getElementById('loginPass').focus();
 });
@@ -643,17 +694,26 @@ document.getElementById('loginPass').addEventListener('keydown', function(e) {
   if (e.key === 'Enter') doLogin();
 });
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-function escHtml(s) {
-  return String(s)
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
+// Card click wiring (no inline handlers)
+document.getElementById('card-family').addEventListener('click',    function() { handleCardClick('family',    '/family'); });
+document.getElementById('card-volunteer').addEventListener('click', function() { handleCardClick('volunteer', '/volunteer'); });
+document.getElementById('card-control').addEventListener('click',   function() { handleCardClick('control',  '/control'); });
+// Keyboard activation for card role="button"
+['card-family','card-volunteer','card-control'].forEach(function(id) {
+  document.getElementById(id).addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.click(); }
+  });
+});
 
-// ─── Init ────────────────────────────────────────────────────────────────────
+document.getElementById('loginLink').addEventListener('click', function(e) {
+  e.preventDefault();
+  openLoginModal('family');
+});
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
 applyLang();
 checkAuth();
-loadStats();
+fetchStats();
 </script>
 </body>
 </html>

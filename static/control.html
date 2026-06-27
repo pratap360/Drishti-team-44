@@ -3,74 +3,55 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kumbh Reunite — Missing Persons Reunification System</title>
+<title>Kumbh Reunite — Control Centre</title>
+<link rel="stylesheet" href="/static/base.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
 <style>
-:root {
-  --primary: #e65100;
-  --primary-light: #ff833a;
-  --primary-dark: #ac1900;
-  --success: #2e7d32;
-  --warning: #f57f17;
-  --danger: #c62828;
-  --info: #1565c0;
-  --bg: #fafafa;
-  --card: #ffffff;
-  --text: #212121;
-  --text-secondary: #666;
-  --border: #e0e0e0;
-  --shadow: 0 2px 8px rgba(0,0,0,0.08);
-  --radius: 10px;
-}
-
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); }
-
-/* ── LOGIN OVERLAY ── */
+/* ── CONTROL-SPECIFIC: LOGIN OVERLAY WITH GRADIENT BG ── */
 #login-overlay {
-  position: fixed; inset: 0; background: linear-gradient(135deg, var(--primary-dark), var(--primary));
-  z-index: 9999; display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, var(--primary-dark), var(--primary));
 }
-#login-overlay.hidden { display: none; }
-.login-box {
-  background: white; border-radius: 16px; padding: 40px; width: 100%; max-width: 400px;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+/* Override base login-box sizing for the taller form */
+#login-overlay .login-box {
+  max-width: 400px;
+  padding: 40px;
 }
-.login-box h2 { font-size: 22px; font-weight: 700; color: var(--primary-dark); margin-bottom: 6px; }
-.login-box p { font-size: 13px; color: var(--text-secondary); margin-bottom: 24px; }
-.login-box .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
-.login-box label { font-size: 13px; font-weight: 600; color: var(--text-secondary); }
-.login-box input {
-  padding: 11px 14px; border: 1px solid var(--border); border-radius: 8px;
-  font-size: 14px; outline: none; transition: border 0.2s;
+#login-overlay .login-box h2 {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--primary-dark);
 }
-.login-box input:focus { border-color: var(--primary); }
-.login-box .btn-login {
-  width: 100%; padding: 12px; background: var(--primary); color: white;
-  border: none; border-radius: 8px; font-size: 15px; font-weight: 600;
-  cursor: pointer; margin-top: 8px; transition: background 0.2s;
-}
-.login-box .btn-login:hover { background: var(--primary-dark); }
+.login-box .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 4px; }
+.login-box .form-group label { font-size: 13px; font-weight: 600; color: var(--text-secondary); }
 #login-error {
   color: var(--danger); font-size: 13px; margin-top: 10px;
   display: none; padding: 8px 12px; background: #ffebee; border-radius: 6px;
 }
 
-/* ── TOAST NOTIFICATIONS ── */
+/* ── CONTROL-SPECIFIC TOAST: top-right, with icons ── */
 #toast-container {
-  position: fixed; top: 16px; right: 16px; z-index: 10000;
-  display: flex; flex-direction: column; gap: 8px; pointer-events: none;
+  /* Override base.css positioning — control uses top-right */
+  bottom: unset;
+  top: 16px;
+  right: 16px;
+  left: unset;
+  transform: none;
+  align-items: flex-end;
 }
 .toast {
-  padding: 12px 20px; border-radius: 8px; font-size: 14px; font-weight: 500;
-  color: white; max-width: 340px; box-shadow: 0 4px 16px rgba(0,0,0,0.15);
-  pointer-events: auto; opacity: 0; transform: translateX(40px);
-  transition: opacity 0.25s, transform 0.25s;
-  display: flex; align-items: center; gap: 10px;
+  /* Override base.css transitions — control slides in from right */
+  transform: translateX(40px);
+  border-radius: 8px;
+  max-width: 340px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
 }
-.toast.show { opacity: 1; transform: translateX(0); }
+.toast.show { transform: translateX(0); }
+/* Control uses toast-* modifier classes */
 .toast.toast-success { background: var(--success); }
 .toast.toast-error   { background: var(--danger); }
 .toast.toast-info    { background: var(--info); }
@@ -90,24 +71,19 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .confirm-box .confirm-btns { display: flex; gap: 10px; justify-content: flex-end; }
 
 /* ── SKELETON LOADING ── */
-@keyframes shimmer {
+@keyframes ctrlShimmer {
   0% { background-position: -600px 0; }
   100% { background-position: 600px 0; }
 }
-.skeleton {
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-  background-size: 600px 100%;
-  animation: shimmer 1.4s ease-in-out infinite;
-  border-radius: 6px;
-}
 .skeleton-card {
   background: var(--card); border-radius: var(--radius); padding: 20px;
-  box-shadow: var(--shadow); text-align: center; border-top: 4px solid #e0e0e0;
+  box-shadow: var(--shadow); text-align: center; border-top: 4px solid var(--border);
 }
 .skeleton-value { height: 36px; width: 70%; margin: 0 auto 10px; }
 .skeleton-label { height: 14px; width: 55%; margin: 0 auto; }
 .skeleton-bar { height: 24px; margin-bottom: 8px; }
 
+/* ── HEADER ── */
 header {
   background: linear-gradient(135deg, var(--primary), var(--primary-dark));
   color: white; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between;
@@ -125,10 +101,10 @@ header h1 span { font-weight: 300; opacity: 0.9; }
 .lang-toggle {
   background: rgba(255,255,255,0.2); border: none; color: white;
   font-size: 13px; font-weight: 700; padding: 6px 13px; border-radius: 20px;
-  cursor: pointer; letter-spacing: 0.5px; flex-shrink: 0;
-  transition: background 0.2s;
+  cursor: pointer; letter-spacing: 0.5px; flex-shrink: 0; transition: background 0.2s;
 }
 .lang-toggle:hover { background: rgba(255,255,255,0.35); }
+/* Override base.css .logout-btn for the control header context */
 .btn-logout {
   background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3);
   color: white; font-size: 12px; font-weight: 600; padding: 5px 12px;
@@ -137,6 +113,7 @@ header h1 span { font-weight: 300; opacity: 0.9; }
 .btn-logout:hover { background: rgba(255,255,255,0.3); }
 .btn-logout.visible { display: block; }
 
+/* ── NAV ── */
 nav {
   background: var(--card); border-bottom: 1px solid var(--border);
   display: flex; gap: 0; overflow-x: auto; box-shadow: var(--shadow);
@@ -149,9 +126,11 @@ nav button {
 nav button:hover { color: var(--primary); background: #fff5f0; }
 nav button.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
 
+/* ── PAGES ── */
 .page { display: none; padding: 20px; max-width: 1400px; margin: 0 auto; }
 .page.active { display: block; }
 
+/* ── STATS ── */
 .stats-grid {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 16px; margin-bottom: 24px;
@@ -161,19 +140,21 @@ nav button.active { color: var(--primary); border-bottom-color: var(--primary); 
   box-shadow: var(--shadow); text-align: center; border-top: 4px solid var(--border);
 }
 .stat-card.orange { border-top-color: var(--primary); }
-.stat-card.green { border-top-color: var(--success); }
-.stat-card.red { border-top-color: var(--danger); }
-.stat-card.blue { border-top-color: var(--info); }
+.stat-card.green  { border-top-color: var(--success); }
+.stat-card.red    { border-top-color: var(--danger);  }
+.stat-card.blue   { border-top-color: var(--info);    }
 .stat-card.yellow { border-top-color: var(--warning); }
 .stat-value { font-size: 32px; font-weight: 700; }
 .stat-label { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
 
+/* ── CARD ── */
 .card {
   background: var(--card); border-radius: var(--radius);
   padding: 20px; box-shadow: var(--shadow); margin-bottom: 20px;
 }
 .card h3 { margin-bottom: 16px; font-size: 16px; color: var(--primary-dark); }
 
+/* ── SEARCH BAR ── */
 .search-bar {
   display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap;
 }
@@ -184,21 +165,17 @@ nav button.active { color: var(--primary); border-bottom-color: var(--primary); 
 .search-bar input:focus, .search-bar select:focus { border-color: var(--primary); }
 .search-bar input[type="text"] { flex: 1; min-width: 200px; }
 
-.btn {
-  padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer;
-  font-size: 14px; font-weight: 600; transition: all 0.2s;
-}
-.btn-primary { background: var(--primary); color: white; }
+/* ── BUTTONS ── */
+.btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.2s; }
+.btn-primary   { background: var(--primary);  color: white; }
 .btn-primary:hover { background: var(--primary-dark); }
-.btn-success { background: var(--success); color: white; }
+.btn-success   { background: var(--success);  color: white; }
 .btn-success:hover { background: #1b5e20; }
-.btn-outline { background: transparent; border: 1px solid var(--primary); color: var(--primary); }
+.btn-outline   { background: transparent; border: 1px solid var(--primary); color: var(--primary); }
 .btn-outline:hover { background: #fff5f0; }
 .btn-secondary { background: #f5f5f5; color: var(--text); border: 1px solid var(--border); }
 .btn-secondary:hover { background: #eeeeee; }
 .btn-sm { padding: 6px 12px; font-size: 12px; }
-
-/* GPS button */
 .btn-gps {
   padding: 10px 14px; background: var(--info); color: white; border: none;
   border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;
@@ -206,8 +183,6 @@ nav button.active { color: var(--primary); border-bottom-color: var(--primary); 
 }
 .btn-gps:hover { background: #0d47a1; }
 .btn-gps:disabled { background: #90a4ae; cursor: not-allowed; }
-
-/* Print button */
 .btn-print {
   padding: 8px 16px; background: rgba(255,255,255,0.15); color: var(--primary-dark);
   border: 1px solid var(--border); border-radius: 8px; font-size: 13px;
@@ -215,29 +190,19 @@ nav button.active { color: var(--primary); border-bottom-color: var(--primary); 
 }
 .btn-print:hover { background: #fff5f0; }
 
-table {
-  width: 100%; border-collapse: collapse; font-size: 13px;
-}
+/* ── TABLE ── */
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
 th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); }
 th { font-weight: 600; color: var(--text-secondary); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; background: #f5f5f5; position: sticky; top: 0; }
 tr:hover { background: #fff8f0; }
-
-.badge {
-  display: inline-block; padding: 3px 10px; border-radius: 12px;
-  font-size: 11px; font-weight: 600;
-}
-.badge-reunited { background: #e8f5e9; color: var(--success); }
-.badge-pending { background: #fff3e0; color: var(--warning); }
-.badge-unresolved { background: #ffebee; color: var(--danger); }
-.badge-hospital { background: #e3f2fd; color: var(--info); }
-.badge-matched { background: #e8f5e9; color: var(--success); }
-.badge-score { background: #e8eaf6; color: #283593; }
-
 .table-wrap { overflow-x: auto; max-height: 500px; overflow-y: auto; }
 
-.form-grid {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
-}
+/* Override base.css .badge for control's table context */
+.badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+.badge-score { background: #e8eaf6; color: #283593; }
+
+/* ── FORMS ── */
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .form-group { display: flex; flex-direction: column; gap: 6px; }
 .form-group label { font-size: 13px; font-weight: 600; color: var(--text-secondary); }
 .form-group input, .form-group select, .form-group textarea {
@@ -248,6 +213,7 @@ tr:hover { background: #fff8f0; }
 .input-with-btn { display: flex; gap: 8px; align-items: stretch; }
 .input-with-btn input { flex: 1; }
 
+/* ── MATCH CARDS ── */
 .match-card {
   border: 1px solid var(--border); border-radius: 8px; padding: 16px;
   margin-bottom: 12px; transition: all 0.2s;
@@ -259,93 +225,68 @@ tr:hover { background: #fff8f0; }
 .match-reasons { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
 .match-reason { background: #e8eaf6; color: #283593; padding: 2px 8px; border-radius: 10px; font-size: 11px; }
 
+/* ── DUPLICATES ── */
 .dup-group {
   border: 1px solid var(--warning); border-radius: 8px; padding: 16px;
   margin-bottom: 16px; background: #fffde7;
 }
 .dup-group h4 { color: var(--warning); margin-bottom: 10px; font-size: 14px; }
 
+/* ── CHARTS ── */
 .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 .chart-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
 .chart-bar-label { font-size: 12px; width: 120px; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .chart-bar-fill { height: 24px; background: linear-gradient(90deg, var(--primary), var(--primary-light)); border-radius: 4px; min-width: 2px; transition: width 0.5s; }
 .chart-bar-value { font-size: 12px; font-weight: 600; min-width: 30px; }
 
+/* ── MAP ── */
 #map { height: 500px; border-radius: var(--radius); }
-
 .legend { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 12px; font-size: 12px; }
 .legend-item { display: flex; align-items: center; gap: 6px; }
 .legend-dot { width: 12px; height: 12px; border-radius: 50%; }
 
+/* ── MISC ── */
 .empty-state { text-align: center; padding: 40px; color: var(--text-secondary); }
 .empty-state p { font-size: 16px; }
-
 .offline-banner {
   display: none; background: var(--warning); color: white;
   text-align: center; padding: 8px; font-size: 13px; font-weight: 600;
 }
 .offline-banner.show { display: block; }
-
 .dashboard-page-header {
   display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;
 }
 .dashboard-page-header h2 { font-size: 18px; font-weight: 600; color: var(--primary-dark); }
 
+/* ── RESPONSIVE ── */
 @media (max-width: 768px) {
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
-  .form-grid { grid-template-columns: 1fr; }
+  .form-grid  { grid-template-columns: 1fr; }
   .charts-grid { grid-template-columns: 1fr; }
-  nav button { padding: 10px 14px; font-size: 13px; }
-  header h1 { font-size: 18px; }
+  nav button  { padding: 10px 14px; font-size: 13px; }
+  header h1   { font-size: 18px; }
 }
 
 /* ── PRINT STYLES ── */
 @media print {
   #login-overlay, #toast-container, #confirm-modal { display: none !important; }
   header { display: none !important; }
-  nav { display: none !important; }
+  nav    { display: none !important; }
   #offline-banner { display: none !important; }
   .btn-print, .btn-logout, .btn-gps { display: none !important; }
-
   .page { display: none !important; padding: 0; }
   .page.active { display: block !important; }
-
   body { background: white; }
-
-  .stats-grid {
-    display: grid !important;
-    grid-template-columns: repeat(4, 1fr) !important;
-    gap: 12px !important;
-    margin-bottom: 20px !important;
-  }
-
-  .stat-card {
-    border: 1px solid #ccc !important;
-    box-shadow: none !important;
-    page-break-inside: avoid;
-  }
-
-  .card {
-    box-shadow: none !important;
-    border: 1px solid #ccc !important;
-    page-break-inside: avoid;
-  }
-
+  .stats-grid { display: grid !important; grid-template-columns: repeat(4,1fr) !important; gap: 12px !important; margin-bottom: 20px !important; }
+  .stat-card  { border: 1px solid #ccc !important; box-shadow: none !important; page-break-inside: avoid; }
+  .card { box-shadow: none !important; border: 1px solid #ccc !important; page-break-inside: avoid; }
   .charts-grid { grid-template-columns: 1fr 1fr !important; }
-
-  .table-wrap { max-height: none !important; overflow: visible !important; }
-
+  .table-wrap  { max-height: none !important; overflow: visible !important; }
   #map { display: none !important; }
-
   body::before {
     content: "Kumbh Reunite — Control Centre Report";
-    display: block;
-    font-size: 22px;
-    font-weight: 700;
-    color: #ac1900;
-    border-bottom: 2px solid #e65100;
-    padding-bottom: 10px;
-    margin-bottom: 20px;
+    display: block; font-size: 22px; font-weight: 700; color: #ac1900;
+    border-bottom: 2px solid #e65100; padding-bottom: 10px; margin-bottom: 20px;
   }
 }
 </style>
@@ -353,33 +294,33 @@ tr:hover { background: #fff8f0; }
 <body>
 
 <!-- LOGIN OVERLAY -->
-<div id="login-overlay">
+<div id="login-overlay" class="login-overlay" role="dialog" aria-modal="true" aria-labelledby="login-heading">
   <div class="login-box">
-    <h2>Kumbh Reunite</h2>
-    <p>Control Centre — Admin Login Required</p>
+    <h2 id="login-heading">Kumbh Reunite</h2>
+    <p id="login-subtitle">Control Centre — Admin Login Required</p>
     <div class="form-group">
-      <label for="login-username">Username</label>
-      <input type="text" id="login-username" placeholder="admin" autocomplete="username">
+      <label for="login-username" id="lbl-login-user">Username</label>
+      <input type="text" id="login-username" placeholder="admin" autocomplete="username" aria-label="Username">
     </div>
     <div class="form-group">
-      <label for="login-password">Password</label>
-      <input type="password" id="login-password" placeholder="Password" autocomplete="current-password">
+      <label for="login-password" id="lbl-login-pass">Password</label>
+      <input type="password" id="login-password" placeholder="Password" autocomplete="current-password" aria-label="Password">
     </div>
-    <button class="btn-login" onclick="doLogin()">Sign In</button>
-    <div id="login-error">Invalid username or password. Please try again.</div>
+    <button class="btn-login" id="login-btn">Sign In</button>
+    <div id="login-error" role="alert"></div>
   </div>
 </div>
 
 <!-- TOAST CONTAINER -->
-<div id="toast-container"></div>
+<div id="toast-container" aria-live="polite"></div>
 
 <!-- CONFIRM MODAL -->
-<div id="confirm-modal">
+<div id="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="confirm-msg">
   <div class="confirm-box">
     <p id="confirm-msg"></p>
     <div class="confirm-btns">
-      <button class="btn btn-secondary" onclick="resolveConfirm(false)">Cancel</button>
-      <button class="btn btn-primary" id="confirm-ok-btn" onclick="resolveConfirm(true)">Confirm</button>
+      <button class="btn btn-secondary" id="confirm-cancel-btn">Cancel</button>
+      <button class="btn btn-primary" id="confirm-ok-btn">Confirm</button>
     </div>
   </div>
 </div>
@@ -392,29 +333,28 @@ tr:hover { background: #fff8f0; }
     <div class="header-user" id="header-user-info">
       <span id="header-username"></span>
     </div>
-    <button class="lang-toggle" id="langToggleBtn" onclick="toggleLang()">हिं</button>
+    <button class="lang-toggle" id="langToggleBtn">हिं</button>
     <div class="header-badge" id="live-clock"></div>
-    <button class="btn-logout" id="btn-logout" onclick="doLogout()">Sign Out</button>
+    <button class="btn-logout" id="btn-logout">Sign Out</button>
   </div>
 </header>
 
 <nav>
-  <button class="active" id="nav-dashboard" onclick="showPage('dashboard', this)">Dashboard</button>
-  <button id="nav-search" onclick="showPage('search', this)">Search Missing</button>
-  <button id="nav-report" onclick="showPage('report', this)">Report Found</button>
-  <button id="nav-duplicates" onclick="showPage('duplicates', this)">Detect Duplicates</button>
-  <button id="nav-map" onclick="showPage('map', this)">Map View</button>
-  <button id="nav-hotspots" onclick="showPage('hotspots', this)">Hotspot Analysis</button>
+  <button class="active" id="nav-dashboard">Dashboard</button>
+  <button id="nav-search">Search Missing</button>
+  <button id="nav-report">Report Found</button>
+  <button id="nav-duplicates">Detect Duplicates</button>
+  <button id="nav-map">Map View</button>
+  <button id="nav-hotspots">Hotspot Analysis</button>
 </nav>
 
 <!-- DASHBOARD -->
 <div id="page-dashboard" class="page active">
   <div class="dashboard-page-header">
     <h2 id="chart-age-title-header">Dashboard Overview</h2>
-    <button class="btn-print" onclick="window.print()">&#128438; Print Report</button>
+    <button class="btn-print" id="print-btn">&#128438; Print Report</button>
   </div>
   <div class="stats-grid" id="stats-cards">
-    <!-- skeleton placeholders -->
     <div class="skeleton-card"><div class="skeleton skeleton-value"></div><div class="skeleton skeleton-label"></div></div>
     <div class="skeleton-card"><div class="skeleton skeleton-value"></div><div class="skeleton skeleton-label"></div></div>
     <div class="skeleton-card"><div class="skeleton skeleton-value"></div><div class="skeleton skeleton-label"></div></div>
@@ -453,23 +393,23 @@ tr:hover { background: #fff8f0; }
   <div class="card">
     <h3 id="search-title">Cross-Center Unified Search</h3>
     <p id="search-desc" style="font-size:13px;color:var(--text-secondary);margin-bottom:16px">
-      Search across ALL reporting centers simultaneously. Fuzzy matching on name, description, location, phone, and case ID.
+      Search across ALL reporting centers simultaneously. Smart matching on name, description, location, phone, and case ID.
     </p>
     <div class="search-bar">
-      <input type="text" id="search-q" placeholder="Name, description, location, phone, or case ID...">
-      <select id="search-gender"><option value="" id="sg-any">Any Gender</option></select>
-      <select id="search-age"><option value="" id="sa-any">Any Age</option></select>
-      <select id="search-state"><option value="" id="ss-any">Any State</option></select>
-      <select id="search-language"><option value="" id="sl-any">Any Language</option></select>
-      <select id="search-center"><option value="" id="sc-any">All Centers</option></select>
-      <select id="search-status">
+      <input type="text" id="search-q" placeholder="Name, description, location, phone, or case ID..." aria-label="Search query">
+      <select id="search-gender" aria-label="Filter by gender"><option value="" id="sg-any">Any Gender</option></select>
+      <select id="search-age"    aria-label="Filter by age"><option value="" id="sa-any">Any Age</option></select>
+      <select id="search-state"  aria-label="Filter by state"><option value="" id="ss-any">Any State</option></select>
+      <select id="search-language" aria-label="Filter by language"><option value="" id="sl-any">Any Language</option></select>
+      <select id="search-center" aria-label="Filter by center"><option value="" id="sc-any">All Centers</option></select>
+      <select id="search-status" aria-label="Filter by status">
         <option value="" id="sst-any">Any Status</option>
         <option value="Pending" id="sst-pending">Pending</option>
         <option value="Reunited" id="sst-reunited">Reunited</option>
         <option value="Unresolved" id="sst-unresolved">Unresolved</option>
         <option value="Transferred to hospital" id="sst-hospital">Hospital</option>
       </select>
-      <button class="btn btn-primary" id="search-btn" onclick="doSearch()">Search</button>
+      <button class="btn btn-primary" id="search-btn">Search</button>
     </div>
     <div id="search-count" style="font-size:13px;color:var(--text-secondary);margin-bottom:10px"></div>
     <div class="table-wrap">
@@ -492,15 +432,15 @@ tr:hover { background: #fff8f0; }
   <div class="card">
     <h3 id="rp-title">Register a Found Person</h3>
     <p id="rp-desc" style="font-size:13px;color:var(--text-secondary);margin-bottom:16px">
-      Enter details of the found person. The system will instantly run fuzzy matching against all missing reports across every center.
+      Enter details of the found person. The system will instantly run smart matching against all missing reports across every center.
     </p>
     <div class="form-grid" id="found-form">
       <div class="form-group">
-        <label id="lbl-f-name">Person's Name (if known)</label>
+        <label for="f-name" id="lbl-f-name">Person's Name (if known)</label>
         <input type="text" id="f-name" placeholder="May be unknown">
       </div>
       <div class="form-group">
-        <label id="lbl-f-gender">Gender</label>
+        <label for="f-gender" id="lbl-f-gender">Gender</label>
         <select id="f-gender">
           <option value="Unknown" id="fg-unknown">Unknown</option>
           <option value="Male" id="fg-male">Male</option>
@@ -508,7 +448,7 @@ tr:hover { background: #fff8f0; }
         </select>
       </div>
       <div class="form-group">
-        <label id="lbl-f-age">Approximate Age Band</label>
+        <label for="f-age" id="lbl-f-age">Approximate Age Band</label>
         <select id="f-age">
           <option value="" id="fa-unknown">Unknown</option>
           <option value="0-12">0-12</option>
@@ -521,49 +461,49 @@ tr:hover { background: #fff8f0; }
         </select>
       </div>
       <div class="form-group">
-        <label id="lbl-f-state">State of Origin</label>
+        <label for="f-state" id="lbl-f-state">State of Origin</label>
         <input type="text" id="f-state" placeholder="e.g. Maharashtra, Bihar">
       </div>
       <div class="form-group">
-        <label id="lbl-f-language">Language Spoken</label>
+        <label for="f-language" id="lbl-f-language">Language Spoken</label>
         <input type="text" id="f-language" placeholder="e.g. Hindi, Marathi">
       </div>
       <div class="form-group">
-        <label id="lbl-f-location">Found Location</label>
+        <label for="f-location" id="lbl-f-location">Found Location</label>
         <div class="input-with-btn">
           <input type="text" id="f-location" placeholder="Where was the person found?">
-          <button class="btn-gps" id="gps-btn" onclick="useGPS()" title="Use current GPS location">&#128205; Use GPS</button>
+          <button class="btn-gps" id="gps-btn" title="Use current GPS location">&#128205; Use GPS</button>
         </div>
       </div>
       <div class="form-group">
-        <label id="lbl-f-center">Reporting Center</label>
+        <label for="f-center" id="lbl-f-center">Reporting Center</label>
         <input type="text" id="f-center" placeholder="Your center name">
       </div>
       <div class="form-group">
-        <label id="lbl-f-mobile">Contact Mobile</label>
+        <label for="f-mobile" id="lbl-f-mobile">Contact Mobile</label>
         <input type="text" id="f-mobile" placeholder="+91...">
       </div>
       <div class="form-group full">
-        <label id="lbl-f-photo">Photo</label>
+        <label for="ctrl-photo-input" id="lbl-f-photo">Photo</label>
         <div style="display:flex;gap:10px;align-items:center">
-          <img id="ctrl-photo-preview" src="" style="width:80px;height:80px;border-radius:10px;object-fit:cover;display:none;border:2px solid #e0e0e0">
+          <img id="ctrl-photo-preview" src="" style="width:80px;height:80px;border-radius:10px;object-fit:cover;display:none;border:2px solid #e0e0e0" alt="Photo preview">
           <div>
-            <input type="file" id="ctrl-photo-input" accept="image/*" onchange="previewCtrlPhoto(this)" style="font-size:13px">
+            <input type="file" id="ctrl-photo-input" accept="image/*" style="font-size:13px">
             <div id="photo-hint" style="font-size:11px;color:#666;margin-top:4px">Max 200KB after compression</div>
           </div>
         </div>
       </div>
       <div class="form-group full">
-        <label id="lbl-f-desc">Physical Description</label>
+        <label for="f-desc" id="lbl-f-desc">Physical Description</label>
         <textarea id="f-desc" placeholder="Clothing, identifying marks, physical features, items carried..."></textarea>
       </div>
       <div class="form-group full">
-        <label id="lbl-f-remarks">Remarks</label>
+        <label for="f-remarks" id="lbl-f-remarks">Remarks</label>
         <textarea id="f-remarks" placeholder="Any additional notes..."></textarea>
       </div>
     </div>
     <div style="margin-top:16px; display:flex; gap:10px;">
-      <button class="btn btn-primary" id="rp-submit-btn" onclick="submitFound()">Register &amp; Find Matches</button>
+      <button class="btn btn-primary" id="rp-submit-btn">Register &amp; Find Matches</button>
     </div>
   </div>
 
@@ -579,9 +519,9 @@ tr:hover { background: #fff8f0; }
     <h3 id="dup-title">Cross-Center Duplicate Detection</h3>
     <p id="dup-desc" style="font-size:13px;color:var(--text-secondary);margin-bottom:16px">
       Automatically detects when the same person may have been reported at multiple centers.
-      Matching uses fuzzy name comparison + gender + age band.
+      Matching uses smart name comparison + gender + age band.
     </p>
-    <button class="btn btn-primary" id="dup-scan-btn" onclick="findDuplicates()">Scan for Duplicates</button>
+    <button class="btn btn-primary" id="dup-scan-btn">Scan for Duplicates</button>
     <div id="dup-results" style="margin-top:20px"></div>
   </div>
 </div>
@@ -620,543 +560,371 @@ tr:hover { background: #fff8f0; }
   </div>
 </div>
 
+<script src="/static/i18n.js"></script>
+<script src="/static/auth.js"></script>
+<script src="/static/ui-utils.js"></script>
 <script>
+'use strict';
+
 // ═══════════════════════════════════════════════════════════
-//  LANGUAGE STRINGS
+//  LANGUAGE STRINGS (control-specific keys not in i18n.js)
 // ═══════════════════════════════════════════════════════════
-const lang = {
+const _ctrlLang = {
   en: {
     langToggle: 'हिं',
     hdrSub: '| Control Centre',
-
-    // nav
-    navDashboard: 'Dashboard',
-    navSearch: 'Search Missing',
-    navReport: 'Report Found',
-    navDuplicates: 'Detect Duplicates',
-    navMap: 'Map View',
-    navHotspots: 'Hotspot Analysis',
-
-    // offline
+    navDashboard: 'Dashboard', navSearch: 'Search Missing',
+    navReport: 'Report Found', navDuplicates: 'Detect Duplicates',
+    navMap: 'Map View', navHotspots: 'Hotspot Analysis',
     offlineMsg: 'Offline Mode — Data cached locally, sync when connected',
-
-    // dashboard
-    statTotal: 'Total Reports',
-    statPending: 'Pending',
-    statReunited: 'Reunited',
-    statUnresolved: 'Unresolved',
-    statHospital: 'In Hospital',
-    statDuplicates: 'Cross-Center Duplicates',
-    statAvgRes: 'Avg Resolution Time',
+    statTotal: 'Total Reports', statPending: 'Pending', statReunited: 'Reunited',
+    statUnresolved: 'Unresolved', statHospital: 'In Hospital',
+    statDuplicates: 'Cross-Center Duplicates', statAvgRes: 'Avg Resolution Time',
     statFoundTotal: 'Found Persons Logged',
-    chartAgeTitle: 'Cases by Age Group',
-    chartCenterTitle: 'Cases by Reporting Center',
-    chartDailyTitle: 'Daily Case Volume',
-
-    // search page
+    chartAgeTitle: 'Cases by Age Group', chartCenterTitle: 'Cases by Reporting Center', chartDailyTitle: 'Daily Case Volume',
     searchTitle: 'Cross-Center Unified Search',
-    searchDesc: 'Search across ALL reporting centers simultaneously. Fuzzy matching on name, description, location, phone, and case ID.',
+    searchDesc: 'Search across ALL reporting centers simultaneously. Smart matching on name, description, location, phone, and case ID.',
     searchPlaceholder: 'Name, description, location, phone, or case ID...',
-    sgAny: 'Any Gender',
-    saAny: 'Any Age',
-    ssAny: 'Any State',
-    slAny: 'Any Language',
-    scAny: 'All Centers',
-    sstAny: 'Any Status',
-    sstPending: 'Pending',
-    sstReunited: 'Reunited',
-    sstUnresolved: 'Unresolved',
-    sstHospital: 'Hospital',
-    searchBtn: 'Search',
-    resultsFound: 'results found',
-    thScore: 'Score',
-    thCaseId: 'Case ID',
-    thReported: 'Reported',
-    thName: 'Name',
-    thGender: 'Gender',
-    thAge: 'Age',
-    thState: 'State',
-    thLanguage: 'Language',
-    thLastSeen: 'Last Seen',
-    thCenter: 'Center',
-    thDescription: 'Description',
-    thStatus: 'Status',
-
-    // report found page
+    sgAny: 'Any Gender', saAny: 'Any Age', ssAny: 'Any State', slAny: 'Any Language', scAny: 'All Centers',
+    sstAny: 'Any Status', sstPending: 'Pending', sstReunited: 'Reunited', sstUnresolved: 'Unresolved', sstHospital: 'Hospital',
+    searchBtn: 'Search', resultsFound: 'results found',
+    thScore: 'Score', thCaseId: 'Case ID', thReported: 'Reported', thName: 'Name', thGender: 'Gender',
+    thAge: 'Age', thState: 'State', thLanguage: 'Language', thLastSeen: 'Last Seen', thCenter: 'Center',
+    thDescription: 'Description', thStatus: 'Status',
     rpTitle: 'Register a Found Person',
-    rpDesc: 'Enter details of the found person. The system will instantly run fuzzy matching against all missing reports across every center.',
-    lblFName: "Person's Name (if known)",
-    lblFGender: 'Gender',
+    rpDesc: 'Enter details of the found person. The system will instantly run smart matching against all missing reports across every center.',
+    lblFName: "Person's Name (if known)", lblFGender: 'Gender',
     fgUnknown: 'Unknown', fgMale: 'Male', fgFemale: 'Female',
-    lblFAge: 'Approximate Age Band',
-    faUnknown: 'Unknown',
-    lblFState: 'State of Origin',
-    lblFLanguage: 'Language Spoken',
-    lblFLocation: 'Found Location',
-    lblFCenter: 'Reporting Center',
-    lblFMobile: 'Contact Mobile',
-    lblFPhoto: 'Photo',
-    photoHint: 'Max 200KB after compression',
-    lblFDesc: 'Physical Description',
-    lblFRemarks: 'Remarks',
-    rpSubmitBtn: 'Register & Find Matches',
-    matchResultsTitle: 'Potential Matches Found',
+    lblFAge: 'Approximate Age Band', faUnknown: 'Unknown',
+    lblFState: 'State of Origin', lblFLanguage: 'Language Spoken', lblFLocation: 'Found Location',
+    lblFCenter: 'Reporting Center', lblFMobile: 'Contact Mobile', lblFPhoto: 'Photo',
+    photoHint: 'Max 200KB after compression', lblFDesc: 'Physical Description', lblFRemarks: 'Remarks',
+    rpSubmitBtn: 'Register & Find Matches', matchResultsTitle: 'Potential Matches Found',
     noMatchMsg: 'No potential matches found. The person has been registered and will appear in future searches.',
     confirmMatchPrompt: 'Confirm reunification for {caseId}? This will mark both records as reunited.',
     confirmMatchSuccess: 'Reunification confirmed! Both records updated.',
     confirmMatchBtn: 'Confirm Match — Reunite',
-    matchGender: 'Gender', matchAge: 'Age', matchState: 'State',
-    matchLanguage: 'Language', matchLastSeen: 'Last Seen',
-    matchDescription: 'Description', matchMobile: 'Reporter Mobile',
-
-    // duplicates page
+    matchGender: 'Gender', matchAge: 'Age', matchState: 'State', matchLanguage: 'Language',
+    matchLastSeen: 'Last Seen', matchDescription: 'Description', matchMobile: 'Reporter Mobile',
     dupTitle: 'Cross-Center Duplicate Detection',
-    dupDesc: 'Automatically detects when the same person may have been reported at multiple centers. Matching uses fuzzy name comparison + gender + age band.',
-    dupScanBtn: 'Scan for Duplicates',
-    dupScanning: 'Scanning across all centers...',
+    dupDesc: 'Automatically detects when the same person may have been reported at multiple centers. Matching uses smart name comparison + gender + age band.',
+    dupScanBtn: 'Scan for Duplicates', dupScanning: 'Scanning across all centers...',
     dupNone: 'No duplicate reports detected among pending cases.',
-    dupFound: 'potential duplicate groups found',
-    dupGroup: 'Group',
-    dupReports: 'reports',
+    dupFound: 'potential duplicate groups found', dupGroup: 'Group', dupReports: 'reports',
     dupThCaseId: 'Case ID', dupThReported: 'Reported', dupThName: 'Name',
     dupThCenter: 'Center', dupThLastSeen: 'Last Seen', dupThStatus: 'Status',
-
-    // map page
     mapTitle: 'Infrastructure & Coverage Map',
-    mapLblCctv: 'CCTV',
-    mapLblPolice: 'Police Stations',
-    mapLblChokepoints: 'Chokepoints',
-    mapLblZones: 'Zones',
-    mapLblHeatmap: 'Heatmap',
-    legCctv: 'CCTV Camera',
-    legPolice: 'Police Station',
-    legChokepoint: 'Traffic Chokepoint',
-    legParking: 'Parking/Transfer',
-    legZone: 'Zone Boundary',
-    legHeatmap: 'Missing Person Density',
-
-    // hotspots page
+    mapLblCctv: 'CCTV', mapLblPolice: 'Police Stations', mapLblChokepoints: 'Chokepoints',
+    mapLblZones: 'Zones', mapLblHeatmap: 'Heatmap',
+    legCctv: 'CCTV Camera', legPolice: 'Police Station', legChokepoint: 'Traffic Chokepoint',
+    legParking: 'Parking/Transfer', legZone: 'Zone Boundary', legHeatmap: 'Missing Person Density',
     hsTitle: 'Missing Person Hotspot Analysis',
     hsDesc: 'Top locations where people go missing — prioritize volunteer deployment and help desk placement here.',
-    hsTotalCases: 'total cases',
-    hsActive: 'still active',
-
-    // GPS
-    gpsAcquiring: 'Acquiring GPS...',
-    gpsError: 'GPS unavailable — please type location manually.',
-
-    // login
+    hsTotalCases: 'total cases', hsActive: 'still active',
+    gpsAcquiring: 'Acquiring GPS...', gpsError: 'GPS unavailable — please type location manually.',
     loginTitle: 'Control Centre — Admin Login Required',
-    loginUser: 'Username',
-    loginPass: 'Password',
-    loginBtn: 'Sign In',
-    loginError: 'Invalid username or password. Please try again.',
-    logoutBtn: 'Sign Out',
+    loginUser: 'Username', loginPass: 'Password',
+    loginBtn: 'Sign In', loginError: 'Invalid username or password. Please try again.', logoutBtn: 'Sign Out',
+    phName: 'May be unknown', phState: 'e.g. Maharashtra, Bihar', phLanguage: 'e.g. Hindi, Marathi',
+    phLocation: 'Where was the person found?', phCenter: 'Your center name',
+    phMobile: '+91...', phDesc: 'Clothing, identifying marks, physical features, items carried…',
+    phRemarks: 'Any additional notes…',
+    phAdminUser: 'admin', phLoginPass: 'Password',
+    searchPlaceholderCtrl: 'Name, description, location, phone, or case ID...',
   },
   hi: {
-    langToggle: 'मरा',
-    hdrSub: '| नियंत्रण केंद्र',
-
-    // nav
-    navDashboard: 'डैशबोर्ड',
-    navSearch: 'लापता खोजें',
-    navReport: 'मिला व्यक्ति दर्ज करें',
-    navDuplicates: 'डुप्लीकेट पहचानें',
-    navMap: 'मानचित्र',
-    navHotspots: 'हॉटस्पॉट विश्लेषण',
-
-    // offline
+    langToggle: 'मरा', hdrSub: '| नियंत्रण केंद्र',
+    navDashboard: 'डैशबोर्ड', navSearch: 'लापता खोजें', navReport: 'मिला व्यक्ति दर्ज करें',
+    navDuplicates: 'डुप्लीकेट पहचानें', navMap: 'मानचित्र', navHotspots: 'हॉटस्पॉट विश्लेषण',
     offlineMsg: 'ऑफलाइन मोड — डेटा स्थानीय रूप से सहेजा गया, कनेक्ट होने पर सिंक होगा',
-
-    // dashboard
-    statTotal: 'कुल रिपोर्ट',
-    statPending: 'लंबित',
-    statReunited: 'पुनर्मिलन',
-    statUnresolved: 'अनसुलझे',
-    statHospital: 'अस्पताल में',
-    statDuplicates: 'क्रॉस-सेंटर डुप्लीकेट',
-    statAvgRes: 'औसत समाधान समय',
-    statFoundTotal: 'मिले व्यक्ति दर्ज',
-    chartAgeTitle: 'आयु वर्ग अनुसार केस',
-    chartCenterTitle: 'रिपोर्टिंग केंद्र अनुसार केस',
-    chartDailyTitle: 'दैनिक केस संख्या',
-
-    // search page
+    statTotal: 'कुल रिपोर्ट', statPending: 'लंबित', statReunited: 'पुनर्मिलन',
+    statUnresolved: 'अनसुलझे', statHospital: 'अस्पताल में',
+    statDuplicates: 'क्रॉस-सेंटर डुप्लीकेट', statAvgRes: 'औसत समाधान समय', statFoundTotal: 'मिले व्यक्ति दर्ज',
+    chartAgeTitle: 'आयु वर्ग अनुसार केस', chartCenterTitle: 'रिपोर्टिंग केंद्र अनुसार केस', chartDailyTitle: 'दैनिक केस संख्या',
     searchTitle: 'सभी केंद्रों में एकीकृत खोज',
     searchDesc: 'सभी रिपोर्टिंग केंद्रों में एक साथ खोजें। नाम, विवरण, स्थान, फोन और केस आईडी पर फज़ी मिलान।',
     searchPlaceholder: 'नाम, विवरण, स्थान, फोन या केस आईडी...',
-    sgAny: 'कोई भी लिंग',
-    saAny: 'कोई भी आयु',
-    ssAny: 'कोई भी राज्य',
-    slAny: 'कोई भी भाषा',
-    scAny: 'सभी केंद्र',
-    sstAny: 'कोई भी स्थिति',
-    sstPending: 'लंबित',
-    sstReunited: 'पुनर्मिलन',
-    sstUnresolved: 'अनसुलझा',
-    sstHospital: 'अस्पताल',
-    searchBtn: 'खोजें',
-    resultsFound: 'परिणाम मिले',
-    thScore: 'स्कोर',
-    thCaseId: 'केस आईडी',
-    thReported: 'रिपोर्ट तारीख',
-    thName: 'नाम',
-    thGender: 'लिंग',
-    thAge: 'आयु',
-    thState: 'राज्य',
-    thLanguage: 'भाषा',
-    thLastSeen: 'अंतिम स्थान',
-    thCenter: 'केंद्र',
-    thDescription: 'विवरण',
-    thStatus: 'स्थिति',
-
-    // report found page
+    sgAny: 'कोई भी लिंग', saAny: 'कोई भी आयु', ssAny: 'कोई भी राज्य', slAny: 'कोई भी भाषा', scAny: 'सभी केंद्र',
+    sstAny: 'कोई भी स्थिति', sstPending: 'लंबित', sstReunited: 'पुनर्मिलन', sstUnresolved: 'अनसुलझा', sstHospital: 'अस्पताल',
+    searchBtn: 'खोजें', resultsFound: 'परिणाम मिले',
+    thScore: 'स्कोर', thCaseId: 'केस आईडी', thReported: 'रिपोर्ट तारीख', thName: 'नाम', thGender: 'लिंग',
+    thAge: 'आयु', thState: 'राज्य', thLanguage: 'भाषा', thLastSeen: 'अंतिम स्थान', thCenter: 'केंद्र',
+    thDescription: 'विवरण', thStatus: 'स्थिति',
     rpTitle: 'मिले व्यक्ति को दर्ज करें',
     rpDesc: 'मिले व्यक्ति का विवरण भरें। सिस्टम तुरंत सभी केंद्रों की लापता रिपोर्ट से फज़ी मिलान करेगा।',
-    lblFName: 'व्यक्ति का नाम (यदि ज्ञात हो)',
-    lblFGender: 'लिंग',
+    lblFName: 'व्यक्ति का नाम (यदि ज्ञात हो)', lblFGender: 'लिंग',
     fgUnknown: 'अज्ञात', fgMale: 'पुरुष', fgFemale: 'महिला',
-    lblFAge: 'अनुमानित आयु वर्ग',
-    faUnknown: 'अज्ञात',
-    lblFState: 'मूल राज्य',
-    lblFLanguage: 'बोली जाने वाली भाषा',
-    lblFLocation: 'मिलने का स्थान',
-    lblFCenter: 'रिपोर्टिंग केंद्र',
-    lblFMobile: 'संपर्क मोबाइल',
-    lblFPhoto: 'फोटो',
-    photoHint: 'संपीड़न के बाद अधिकतम 200KB',
-    lblFDesc: 'शारीरिक विवरण',
-    lblFRemarks: 'टिप्पणी',
-    rpSubmitBtn: 'दर्ज करें और मिलान खोजें',
-    matchResultsTitle: 'संभावित मिलान मिले',
+    lblFAge: 'अनुमानित आयु वर्ग', faUnknown: 'अज्ञात',
+    lblFState: 'मूल राज्य', lblFLanguage: 'बोली जाने वाली भाषा', lblFLocation: 'मिलने का स्थान',
+    lblFCenter: 'रिपोर्टिंग केंद्र', lblFMobile: 'संपर्क मोबाइल', lblFPhoto: 'फोटो',
+    photoHint: 'संपीड़न के बाद अधिकतम 200KB', lblFDesc: 'शारीरिक विवरण', lblFRemarks: 'टिप्पणी',
+    rpSubmitBtn: 'दर्ज करें और मिलान खोजें', matchResultsTitle: 'संभावित मिलान मिले',
     noMatchMsg: 'कोई संभावित मिलान नहीं मिला। व्यक्ति दर्ज हो गया है और भविष्य की खोज में दिखेगा।',
     confirmMatchPrompt: '{caseId} के लिए पुनर्मिलन की पुष्टि करें? दोनों रिकॉर्ड पुनर्मिलित चिह्नित होंगे।',
     confirmMatchSuccess: 'पुनर्मिलन की पुष्टि हुई! दोनों रिकॉर्ड अपडेट हो गए।',
     confirmMatchBtn: 'मिलान की पुष्टि करें — पुनर्मिलन',
-    matchGender: 'लिंग', matchAge: 'आयु', matchState: 'राज्य',
-    matchLanguage: 'भाषा', matchLastSeen: 'अंतिम स्थान',
-    matchDescription: 'विवरण', matchMobile: 'रिपोर्टर मोबाइल',
-
-    // duplicates page
+    matchGender: 'लिंग', matchAge: 'आयु', matchState: 'राज्य', matchLanguage: 'भाषा',
+    matchLastSeen: 'अंतिम स्थान', matchDescription: 'विवरण', matchMobile: 'रिपोर्टर मोबाइल',
     dupTitle: 'क्रॉस-सेंटर डुप्लीकेट पहचान',
-    dupDesc: 'स्वचालित रूप से पहचानता है जब एक ही व्यक्ति को कई केंद्रों पर रिपोर्ट किया गया हो। फज़ी नाम + लिंग + आयु वर्ग मिलान।',
-    dupScanBtn: 'डुप्लीकेट स्कैन करें',
-    dupScanning: 'सभी केंद्रों में स्कैन हो रहा है...',
+    dupDesc: 'स्वचालित रूप से पहचानता है जब एक ही व्यक्ति को कई केंद्रों पर रिपोर्ट किया गया हो।',
+    dupScanBtn: 'डुप्लीकेट स्कैन करें', dupScanning: 'सभी केंद्रों में स्कैन हो रहा है...',
     dupNone: 'लंबित केसों में कोई डुप्लीकेट रिपोर्ट नहीं मिली।',
-    dupFound: 'संभावित डुप्लीकेट समूह मिले',
-    dupGroup: 'समूह',
-    dupReports: 'रिपोर्ट',
+    dupFound: 'संभावित डुप्लीकेट समूह मिले', dupGroup: 'समूह', dupReports: 'रिपोर्ट',
     dupThCaseId: 'केस आईडी', dupThReported: 'रिपोर्ट तारीख', dupThName: 'नाम',
     dupThCenter: 'केंद्र', dupThLastSeen: 'अंतिम स्थान', dupThStatus: 'स्थिति',
-
-    // map page
     mapTitle: 'बुनियादी ढांचा और कवरेज मानचित्र',
-    mapLblCctv: 'सीसीटीवी',
-    mapLblPolice: 'पुलिस स्टेशन',
-    mapLblChokepoints: 'चोकपॉइंट',
-    mapLblZones: 'क्षेत्र',
-    mapLblHeatmap: 'हीटमैप',
-    legCctv: 'सीसीटीवी कैमरा',
-    legPolice: 'पुलिस स्टेशन',
-    legChokepoint: 'ट्रैफिक चोकपॉइंट',
-    legParking: 'पार्किंग/ट्रांसफर',
-    legZone: 'क्षेत्र सीमा',
-    legHeatmap: 'लापता व्यक्ति घनत्व',
-
-    // hotspots page
+    mapLblCctv: 'सीसीटीवी', mapLblPolice: 'पुलिस स्टेशन', mapLblChokepoints: 'चोकपॉइंट',
+    mapLblZones: 'क्षेत्र', mapLblHeatmap: 'हीटमैप',
+    legCctv: 'सीसीटीवी कैमरा', legPolice: 'पुलिस स्टेशन', legChokepoint: 'ट्रैफिक चोकपॉइंट',
+    legParking: 'पार्किंग/ट्रांसफर', legZone: 'क्षेत्र सीमा', legHeatmap: 'लापता व्यक्ति घनत्व',
     hsTitle: 'लापता व्यक्ति हॉटस्पॉट विश्लेषण',
     hsDesc: 'शीर्ष स्थान जहां लोग अक्सर खो जाते हैं — यहां स्वयंसेवकों और सहायता केंद्रों को प्राथमिकता दें।',
-    hsTotalCases: 'कुल केस',
-    hsActive: 'अभी सक्रिय',
-
-    // GPS
-    gpsAcquiring: 'GPS प्राप्त हो रहा है...',
-    gpsError: 'GPS उपलब्ध नहीं — कृपया स्थान मैन्युअल रूप से टाइप करें।',
-
-    // login
+    hsTotalCases: 'कुल केस', hsActive: 'अभी सक्रिय',
+    gpsAcquiring: 'GPS प्राप्त हो रहा है...', gpsError: 'GPS उपलब्ध नहीं — कृपया स्थान मैन्युअल रूप से टाइप करें।',
     loginTitle: 'नियंत्रण केंद्र — व्यवस्थापक लॉगिन आवश्यक',
-    loginUser: 'उपयोगकर्ता नाम',
-    loginPass: 'पासवर्ड',
-    loginBtn: 'साइन इन करें',
-    loginError: 'अमान्य उपयोगकर्ता नाम या पासवर्ड।',
-    logoutBtn: 'साइन आउट',
+    loginUser: 'उपयोगकर्ता नाम', loginPass: 'पासवर्ड',
+    loginBtn: 'साइन इन करें', loginError: 'अमान्य उपयोगकर्ता नाम या पासवर्ड।', logoutBtn: 'साइन आउट',
+    phName: 'हो सकता है अज्ञात हो', phState: 'जैसे महाराष्ट्र, बिहार', phLanguage: 'जैसे हिंदी, मराठी',
+    phLocation: 'व्यक्ति कहाँ मिला?', phCenter: 'आपके केंद्र का नाम',
+    phMobile: '+91...', phDesc: 'कपड़े, पहचान चिह्न, शारीरिक विशेषताएं, साथ रखी वस्तुएं…',
+    phRemarks: 'कोई अतिरिक्त टिप्पणी…',
+    phAdminUser: 'admin', phLoginPass: 'पासवर्ड',
+    searchPlaceholderCtrl: 'नाम, विवरण, स्थान, फोन या केस ID...',
   },
   mr: {
-    langToggle: 'EN',
-    hdrSub: '| नियंत्रण केंद्र',
-
-    // nav
-    navDashboard: 'डॅशबोर्ड',
-    navSearch: 'हरवलेले शोधा',
-    navReport: 'सापडलेली व्यक्ती नोंदवा',
-    navDuplicates: 'डुप्लिकेट शोधा',
-    navMap: 'नकाशा',
-    navHotspots: 'हॉटस्पॉट विश्लेषण',
-
-    // offline
+    langToggle: 'EN', hdrSub: '| नियंत्रण केंद्र',
+    navDashboard: 'डॅशबोर्ड', navSearch: 'हरवलेले शोधा', navReport: 'सापडलेली व्यक्ती नोंदवा',
+    navDuplicates: 'डुप्लिकेट शोधा', navMap: 'नकाशा', navHotspots: 'हॉटस्पॉट विश्लेषण',
     offlineMsg: 'ऑफलाइन मोड — डेटा स्थानिक पातळीवर साठवला आहे, कनेक्ट झाल्यावर समक्रमित होईल',
-
-    // dashboard
-    statTotal: 'एकूण तक्रारी',
-    statPending: 'प्रलंबित',
-    statReunited: 'पुनर्मिलन',
-    statUnresolved: 'अनिर्णित',
-    statHospital: 'रुग्णालयात',
-    statDuplicates: 'क्रॉस-सेंटर डुप्लिकेट',
-    statAvgRes: 'सरासरी निराकरण वेळ',
-    statFoundTotal: 'सापडलेल्या व्यक्ती नोंदवल्या',
-    chartAgeTitle: 'वयोगटानुसार केसेस',
-    chartCenterTitle: 'नोंदणी केंद्रानुसार केसेस',
-    chartDailyTitle: 'दैनंदिन केस संख्या',
-
-    // search page
+    statTotal: 'एकूण तक्रारी', statPending: 'प्रलंबित', statReunited: 'पुनर्मिलन',
+    statUnresolved: 'अनिर्णित', statHospital: 'रुग्णालयात',
+    statDuplicates: 'क्रॉस-सेंटर डुप्लिकेट', statAvgRes: 'सरासरी निराकरण वेळ', statFoundTotal: 'सापडलेल्या व्यक्ती नोंदवल्या',
+    chartAgeTitle: 'वयोगटानुसार केसेस', chartCenterTitle: 'नोंदणी केंद्रानुसार केसेस', chartDailyTitle: 'दैनंदिन केस संख्या',
     searchTitle: 'सर्व केंद्रांमध्ये एकत्रित शोध',
-    searchDesc: 'सर्व नोंदणी केंद्रांमध्ये एकत्रितपणे शोधा। नाव, वर्णन, ठिकाण, फोन आणि केस आयडीवर फझी जुळणी.',
+    searchDesc: 'सर्व नोंदणी केंद्रांमध्ये एकत्रितपणे शोधा. नाव, वर्णन, ठिकाण, फोन आणि केस आयडीवर फझी जुळणी.',
     searchPlaceholder: 'नाव, वर्णन, ठिकाण, फोन किंवा केस आयडी...',
-    sgAny: 'कोणतेही लिंग',
-    saAny: 'कोणतेही वय',
-    ssAny: 'कोणतेही राज्य',
-    slAny: 'कोणतीही भाषा',
-    scAny: 'सर्व केंद्रे',
-    sstAny: 'कोणतीही स्थिती',
-    sstPending: 'प्रलंबित',
-    sstReunited: 'पुनर्मिलन',
-    sstUnresolved: 'अनिर्णित',
-    sstHospital: 'रुग्णालय',
-    searchBtn: 'शोधा',
-    resultsFound: 'निकाल सापडले',
-    thScore: 'गुण',
-    thCaseId: 'केस आयडी',
-    thReported: 'नोंदणी तारीख',
-    thName: 'नाव',
-    thGender: 'लिंग',
-    thAge: 'वय',
-    thState: 'राज्य',
-    thLanguage: 'भाषा',
-    thLastSeen: 'शेवटी दिसले',
-    thCenter: 'केंद्र',
-    thDescription: 'वर्णन',
-    thStatus: 'स्थिती',
-
-    // report found page
+    sgAny: 'कोणतेही लिंग', saAny: 'कोणतेही वय', ssAny: 'कोणतेही राज्य', slAny: 'कोणतीही भाषा', scAny: 'सर्व केंद्रे',
+    sstAny: 'कोणतीही स्थिती', sstPending: 'प्रलंबित', sstReunited: 'पुनर्मिलन', sstUnresolved: 'अनिर्णित', sstHospital: 'रुग्णालय',
+    searchBtn: 'शोधा', resultsFound: 'निकाल सापडले',
+    thScore: 'गुण', thCaseId: 'केस आयडी', thReported: 'नोंदणी तारीख', thName: 'नाव', thGender: 'लिंग',
+    thAge: 'वय', thState: 'राज्य', thLanguage: 'भाषा', thLastSeen: 'शेवटी दिसले', thCenter: 'केंद्र',
+    thDescription: 'वर्णन', thStatus: 'स्थिती',
     rpTitle: 'सापडलेली व्यक्ती नोंदवा',
     rpDesc: 'सापडलेल्या व्यक्तीचा तपशील भरा. प्रणाली तत्काळ सर्व केंद्रांच्या हरवलेल्या तक्रारींशी फझी जुळणी करेल.',
-    lblFName: 'व्यक्तीचे नाव (माहीत असल्यास)',
-    lblFGender: 'लिंग',
+    lblFName: 'व्यक्तीचे नाव (माहीत असल्यास)', lblFGender: 'लिंग',
     fgUnknown: 'अज्ञात', fgMale: 'पुरुष', fgFemale: 'स्त्री',
-    lblFAge: 'अंदाजे वयोगट',
-    faUnknown: 'अज्ञात',
-    lblFState: 'मूळ राज्य',
-    lblFLanguage: 'बोलली जाणारी भाषा',
-    lblFLocation: 'सापडलेले ठिकाण',
-    lblFCenter: 'नोंदणी केंद्र',
-    lblFMobile: 'संपर्क मोबाइल',
-    lblFPhoto: 'फोटो',
-    photoHint: 'संकुचित केल्यानंतर कमाल 200KB',
-    lblFDesc: 'शारीरिक वर्णन',
-    lblFRemarks: 'शेरा',
-    rpSubmitBtn: 'नोंदवा आणि जुळणी शोधा',
-    matchResultsTitle: 'संभाव्य जुळणी सापडल्या',
+    lblFAge: 'अंदाजे वयोगट', faUnknown: 'अज्ञात',
+    lblFState: 'मूळ राज्य', lblFLanguage: 'बोलली जाणारी भाषा', lblFLocation: 'सापडलेले ठिकाण',
+    lblFCenter: 'नोंदणी केंद्र', lblFMobile: 'संपर्क मोबाइल', lblFPhoto: 'फोटो',
+    photoHint: 'संकुचित केल्यानंतर कमाल 200KB', lblFDesc: 'शारीरिक वर्णन', lblFRemarks: 'शेरा',
+    rpSubmitBtn: 'नोंदवा आणि जुळणी शोधा', matchResultsTitle: 'संभाव्य जुळणी सापडल्या',
     noMatchMsg: 'कोणतीही संभाव्य जुळणी सापडली नाही. व्यक्ती नोंदवली गेली आहे आणि भविष्यातील शोधात दिसेल.',
     confirmMatchPrompt: '{caseId} साठी पुनर्मिलनाची पुष्टी करायची? दोन्ही नोंदी पुनर्मिलित म्हणून चिन्हांकित होतील.',
     confirmMatchSuccess: 'पुनर्मिलन पुष्टी झाली! दोन्ही नोंदी अद्यतनित झाल्या.',
     confirmMatchBtn: 'जुळणी निश्चित करा — पुनर्मिलन',
-    matchGender: 'लिंग', matchAge: 'वय', matchState: 'राज्य',
-    matchLanguage: 'भाषा', matchLastSeen: 'शेवटी दिसले',
-    matchDescription: 'वर्णन', matchMobile: 'तक्रारदार मोबाइल',
-
-    // duplicates page
+    matchGender: 'लिंग', matchAge: 'वय', matchState: 'राज्य', matchLanguage: 'भाषा',
+    matchLastSeen: 'शेवटी दिसले', matchDescription: 'वर्णन', matchMobile: 'तक्रारदार मोबाइल',
     dupTitle: 'क्रॉस-सेंटर डुप्लिकेट शोध',
-    dupDesc: 'एकाच व्यक्तीची अनेक केंद्रांवर तक्रार नोंदवली असल्यास आपोआप शोधते. फझी नाव + लिंग + वयोगट जुळणी.',
-    dupScanBtn: 'डुप्लिकेट स्कॅन करा',
-    dupScanning: 'सर्व केंद्रांमध्ये स्कॅन होत आहे...',
+    dupDesc: 'एकाच व्यक्तीची अनेक केंद्रांवर तक्रार नोंदवली असल्यास आपोआप शोधते.',
+    dupScanBtn: 'डुप्लिकेट स्कॅन करा', dupScanning: 'सर्व केंद्रांमध्ये स्कॅन होत आहे...',
     dupNone: 'प्रलंबित केसांमध्ये कोणत्याही डुप्लिकेट तक्रारी आढळल्या नाहीत.',
-    dupFound: 'संभाव्य डुप्लिकेट गट सापडले',
-    dupGroup: 'गट',
-    dupReports: 'तक्रारी',
+    dupFound: 'संभाव्य डुप्लिकेट गट सापडले', dupGroup: 'गट', dupReports: 'तक्रारी',
     dupThCaseId: 'केस आयडी', dupThReported: 'नोंदणी तारीख', dupThName: 'नाव',
     dupThCenter: 'केंद्र', dupThLastSeen: 'शेवटी दिसले', dupThStatus: 'स्थिती',
-
-    // map page
     mapTitle: 'पायाभूत सुविधा आणि कव्हरेज नकाशा',
-    mapLblCctv: 'सीसीटीव्ही',
-    mapLblPolice: 'पोलीस ठाणी',
-    mapLblChokepoints: 'चोकपॉइंट',
-    mapLblZones: 'क्षेत्रे',
-    mapLblHeatmap: 'हीटमॅप',
-    legCctv: 'सीसीटीव्ही कॅमेरा',
-    legPolice: 'पोलीस ठाणे',
-    legChokepoint: 'वाहतूक चोकपॉइंट',
-    legParking: 'पार्किंग/हस्तांतरण',
-    legZone: 'क्षेत्र सीमा',
-    legHeatmap: 'हरवलेल्या व्यक्तींची घनता',
-
-    // hotspots page
+    mapLblCctv: 'सीसीटीव्ही', mapLblPolice: 'पोलीस ठाणी', mapLblChokepoints: 'चोकपॉइंट',
+    mapLblZones: 'क्षेत्रे', mapLblHeatmap: 'हीटमॅप',
+    legCctv: 'सीसीटीव्ही कॅमेरा', legPolice: 'पोलीस ठाणे', legChokepoint: 'वाहतूक चोकपॉइंट',
+    legParking: 'पार्किंग/हस्तांतरण', legZone: 'क्षेत्र सीमा', legHeatmap: 'हरवलेल्या व्यक्तींची घनता',
     hsTitle: 'हरवलेल्या व्यक्तींचे हॉटस्पॉट विश्लेषण',
     hsDesc: 'जिथे लोक जास्त हरवतात अशी शीर्ष ठिकाणे — तेथे स्वयंसेवक आणि मदत केंद्र तैनात करण्यास प्राधान्य द्या.',
-    hsTotalCases: 'एकूण केसेस',
-    hsActive: 'अजून सक्रिय',
-
-    // GPS
-    gpsAcquiring: 'GPS मिळवत आहे...',
-    gpsError: 'GPS उपलब्ध नाही — कृपया ठिकाण स्वतः टाइप करा.',
-
-    // login
+    hsTotalCases: 'एकूण केसेस', hsActive: 'अजून सक्रिय',
+    gpsAcquiring: 'GPS मिळवत आहे...', gpsError: 'GPS उपलब्ध नाही — कृपया ठिकाण स्वतः टाइप करा.',
     loginTitle: 'नियंत्रण केंद्र — प्रशासक लॉगिन आवश्यक',
-    loginUser: 'वापरकर्ता नाव',
-    loginPass: 'पासवर्ड',
-    loginBtn: 'साइन इन करा',
-    loginError: 'अवैध वापरकर्ता नाव किंवा पासवर्ड.',
-    logoutBtn: 'साइन आउट',
+    loginUser: 'वापरकर्ता नाव', loginPass: 'पासवर्ड',
+    loginBtn: 'साइन इन करा', loginError: 'अवैध वापरकर्ता नाव किंवा पासवर्ड.', logoutBtn: 'साइन आउट',
+    phName: 'कदाचित अज्ञात असेल', phState: 'उदा. महाराष्ट्र, बिहार', phLanguage: 'उदा. हिंदी, मराठी',
+    phLocation: 'व्यक्ती कुठे सापडला?', phCenter: 'तुमच्या केंद्राचे नाव',
+    phMobile: '+91...', phDesc: 'कपडे, ओळख चिन्हे, शारीरिक वैशिष्ट्ये, सोबत असलेल्या वस्तू…',
+    phRemarks: 'कोणत्याही अतिरिक्त नोंदी…',
+    phAdminUser: 'admin', phLoginPass: 'पासवर्ड',
+    searchPlaceholderCtrl: 'नाव, वर्णन, ठिकाण, फोन किंवा केस ID...',
   }
 };
 
-// ═══════════════════════════════════════════════════════════
-//  LANG STATE & HELPERS
-// ═══════════════════════════════════════════════════════════
-let currentLang = localStorage.getItem('kumbh_lang') || 'en';
-
+// Local t() that checks _ctrlLang first, falls back to global i18n.js t()
+const _globalT = window.t;
 function t(key) {
-  return lang[currentLang][key] || lang['en'][key] || key;
+  const lang = getLang();
+  const L = _ctrlLang[lang] || _ctrlLang.en;
+  if (L[key] !== undefined) return L[key];
+  return _globalT ? _globalT(key) : key;
 }
 
+// ═══════════════════════════════════════════════════════════
+//  LANG STATE & APPLY
+// ═══════════════════════════════════════════════════════════
 function toggleLang() {
   const cycle = { en: 'hi', hi: 'mr', mr: 'en' };
-  currentLang = cycle[currentLang] || 'en';
-  localStorage.setItem('kumbh_lang', currentLang);
+  setLang(cycle[getLang()] || 'en');
   applyLang();
 }
 
 function applyLang() {
-  const L = lang[currentLang];
-  const s = id => document.getElementById(id);
-  const set = (id, val) => { const el = s(id); if (el) el.textContent = val; };
+  const s = function(elId) { return document.getElementById(elId); };
+  const set = function(elId, val) { const el = s(elId); if (el) el.textContent = val; };
 
   // header
-  set('langToggleBtn', L.langToggle);
-  set('hdr-sub', L.hdrSub);
-  set('btn-logout', L.logoutBtn);
+  set('langToggleBtn', t('langToggle'));
+  set('hdr-sub', t('hdrSub'));
+  set('btn-logout', t('logoutBtn'));
 
   // offline
-  set('offline-msg', L.offlineMsg);
+  set('offline-msg', t('offlineMsg'));
 
   // nav
-  set('nav-dashboard', L.navDashboard);
-  set('nav-search', L.navSearch);
-  set('nav-report', L.navReport);
-  set('nav-duplicates', L.navDuplicates);
-  set('nav-map', L.navMap);
-  set('nav-hotspots', L.navHotspots);
+  set('nav-dashboard', t('navDashboard'));
+  set('nav-search',    t('navSearch'));
+  set('nav-report',    t('navReport'));
+  set('nav-duplicates',t('navDuplicates'));
+  set('nav-map',       t('navMap'));
+  set('nav-hotspots',  t('navHotspots'));
 
   // dashboard chart titles
-  set('chart-age-title', L.chartAgeTitle);
-  set('chart-center-title', L.chartCenterTitle);
-  set('chart-daily-title', L.chartDailyTitle);
+  set('chart-age-title',    t('chartAgeTitle'));
+  set('chart-center-title', t('chartCenterTitle'));
+  set('chart-daily-title',  t('chartDailyTitle'));
 
   // search page
-  set('search-title', L.searchTitle);
-  set('search-desc', L.searchDesc);
-  const sq = s('search-q'); if (sq) sq.placeholder = L.searchPlaceholder;
-  // re-translate dynamic filter selects (populated by loadFilters)
-  ['search-gender','search-age','search-state','search-language','search-center'].forEach(elemId => {
+  set('search-title', t('searchTitle'));
+  set('search-desc',  t('searchDesc'));
+  const sq = s('search-q'); if (sq) sq.placeholder = t('searchPlaceholder');
+  // re-translate dynamic filter selects
+  ['search-gender','search-age','search-state','search-language','search-center'].forEach(function(elemId) {
     const sel = document.getElementById(elemId);
     if (sel && sel.dataset.placeholderKey && sel.options.length > 0) {
       sel.options[0].textContent = t(sel.dataset.placeholderKey);
     }
   });
-  set('sst-any', L.sstAny);
-  set('sst-pending', L.sstPending);
-  set('sst-reunited', L.sstReunited);
-  set('sst-unresolved', L.sstUnresolved);
-  set('sst-hospital', L.sstHospital);
-  set('search-btn', L.searchBtn);
-  set('th-score', L.thScore);
-  set('th-caseid', L.thCaseId);
-  set('th-reported', L.thReported);
-  set('th-name', L.thName);
-  set('th-gender', L.thGender);
-  set('th-age', L.thAge);
-  set('th-state', L.thState);
-  set('th-language', L.thLanguage);
-  set('th-lastseen', L.thLastSeen);
-  set('th-center', L.thCenter);
-  set('th-description', L.thDescription);
-  set('th-status', L.thStatus);
+  set('sst-any',       t('sstAny'));
+  set('sst-pending',   t('sstPending'));
+  set('sst-reunited',  t('sstReunited'));
+  set('sst-unresolved',t('sstUnresolved'));
+  set('sst-hospital',  t('sstHospital'));
+  set('search-btn',    t('searchBtn'));
+  set('th-score',      t('thScore'));
+  set('th-caseid',     t('thCaseId'));
+  set('th-reported',   t('thReported'));
+  set('th-name',       t('thName'));
+  set('th-gender',     t('thGender'));
+  set('th-age',        t('thAge'));
+  set('th-state',      t('thState'));
+  set('th-language',   t('thLanguage'));
+  set('th-lastseen',   t('thLastSeen'));
+  set('th-center',     t('thCenter'));
+  set('th-description',t('thDescription'));
+  set('th-status',     t('thStatus'));
 
   // report found page
-  set('rp-title', L.rpTitle);
-  set('rp-desc', L.rpDesc);
-  set('lbl-f-name', L.lblFName);
-  set('lbl-f-gender', L.lblFGender);
-  set('fg-unknown', L.fgUnknown);
-  set('fg-male', L.fgMale);
-  set('fg-female', L.fgFemale);
-  set('lbl-f-age', L.lblFAge);
-  set('fa-unknown', L.faUnknown);
-  set('lbl-f-state', L.lblFState);
-  set('lbl-f-language', L.lblFLanguage);
-  set('lbl-f-location', L.lblFLocation);
-  set('lbl-f-center', L.lblFCenter);
-  set('lbl-f-mobile', L.lblFMobile);
-  set('lbl-f-photo', L.lblFPhoto);
-  set('photo-hint', L.photoHint);
-  set('lbl-f-desc', L.lblFDesc);
-  set('lbl-f-remarks', L.lblFRemarks);
-  set('rp-submit-btn', L.rpSubmitBtn);
-  set('match-results-title', L.matchResultsTitle);
+  set('rp-title',           t('rpTitle'));
+  set('rp-desc',            t('rpDesc'));
+  set('lbl-f-name',         t('lblFName'));
+  set('lbl-f-gender',       t('lblFGender'));
+  set('fg-unknown',         t('fgUnknown'));
+  set('fg-male',            t('fgMale'));
+  set('fg-female',          t('fgFemale'));
+  set('lbl-f-age',          t('lblFAge'));
+  set('fa-unknown',         t('faUnknown'));
+  set('lbl-f-state',        t('lblFState'));
+  set('lbl-f-language',     t('lblFLanguage'));
+  set('lbl-f-location',     t('lblFLocation'));
+  set('lbl-f-center',       t('lblFCenter'));
+  set('lbl-f-mobile',       t('lblFMobile'));
+  set('lbl-f-photo',        t('lblFPhoto'));
+  set('photo-hint',         t('photoHint'));
+  set('lbl-f-desc',         t('lblFDesc'));
+  set('lbl-f-remarks',      t('lblFRemarks'));
+  set('rp-submit-btn',      t('rpSubmitBtn'));
+  set('match-results-title',t('matchResultsTitle'));
+  // report form placeholders
+  const ph = function(id, key) { const el = s(id); if (el) el.placeholder = t(key); };
+  ph('f-name',     'phName');
+  ph('f-state',    'phState');
+  ph('f-language', 'phLanguage');
+  ph('f-location', 'phLocation');
+  ph('f-center',   'phCenter');
+  ph('f-mobile',   'phMobile');
+  ph('f-desc',     'phDesc');
+  ph('f-remarks',  'phRemarks');
+
+  // login overlay
+  set('login-subtitle', t('loginTitle'));
+  set('lbl-login-user', t('loginUser'));
+  set('lbl-login-pass', t('loginPass'));
+  set('login-btn',      t('loginBtn'));
+  set('login-error',    t('loginError'));
+  ph('login-username',  'phAdminUser');
+  ph('login-password',  'phLoginPass');
 
   // duplicates page
-  set('dup-title', L.dupTitle);
-  set('dup-desc', L.dupDesc);
-  set('dup-scan-btn', L.dupScanBtn);
+  set('dup-title',    t('dupTitle'));
+  set('dup-desc',     t('dupDesc'));
+  set('dup-scan-btn', t('dupScanBtn'));
 
   // map page
-  set('map-title', L.mapTitle);
-  set('map-lbl-cctv', L.mapLblCctv);
-  set('map-lbl-police', L.mapLblPolice);
-  set('map-lbl-chokepoints', L.mapLblChokepoints);
-  set('map-lbl-zones', L.mapLblZones);
-  set('map-lbl-heatmap', L.mapLblHeatmap);
-  set('leg-cctv', L.legCctv);
-  set('leg-police', L.legPolice);
-  set('leg-chokepoint', L.legChokepoint);
-  set('leg-parking', L.legParking);
-  set('leg-zone', L.legZone);
-  set('leg-heatmap', L.legHeatmap);
+  set('map-title',          t('mapTitle'));
+  set('map-lbl-cctv',       t('mapLblCctv'));
+  set('map-lbl-police',     t('mapLblPolice'));
+  set('map-lbl-chokepoints',t('mapLblChokepoints'));
+  set('map-lbl-zones',      t('mapLblZones'));
+  set('map-lbl-heatmap',    t('mapLblHeatmap'));
+  set('leg-cctv',           t('legCctv'));
+  set('leg-police',         t('legPolice'));
+  set('leg-chokepoint',     t('legChokepoint'));
+  set('leg-parking',        t('legParking'));
+  set('leg-zone',           t('legZone'));
+  set('leg-heatmap',        t('legHeatmap'));
 
   // hotspots page
-  set('hs-title', L.hsTitle);
-  set('hs-desc', L.hsDesc);
+  set('hs-title', t('hsTitle'));
+  set('hs-desc',  t('hsDesc'));
+
+  // confirm modal buttons
+  set('confirm-cancel-btn', t('confirmCancel'));
+  set('confirm-ok-btn',     t('confirmOk'));
+
+  // print button
+  set('print-btn', t('printBtn'));
+
+  // gps button (only reset if not mid-acquisition)
+  const gpsBtn = s('gps-btn');
+  if (gpsBtn && !gpsBtn.disabled) gpsBtn.textContent = t('gpsUseBtn');
 
   // update search result count text if already rendered
   const countEl = s('search-count');
   if (countEl && countEl.dataset.count) {
-    countEl.textContent = countEl.dataset.count + ' ' + L.resultsFound;
+    countEl.textContent = countEl.dataset.count + ' ' + t('resultsFound');
   }
 }
 
-function id(elementId) { return document.getElementById(elementId); }
-
-let map, layers = {}, heatLayer = null;
-let filtersData = {};
-
 // ═══════════════════════════════════════════════════════════
-//  TOAST NOTIFICATION SYSTEM
+//  TOAST (control-specific: top-right with icons)
 // ═══════════════════════════════════════════════════════════
-function showToast(message, type = 'info') {
+function showToast(message, type) {
+  type = type || 'info';
   const container = document.getElementById('toast-container');
   const toast = document.createElement('div');
   const icons = { success: '✓', error: '✕', info: 'ℹ' };
-  toast.className = `toast toast-${type}`;
-  toast.innerHTML = `<span class="toast-icon">${icons[type] || icons.info}</span><span>${message}</span>`;
+  toast.className = 'toast toast-' + type;
+  toast.innerHTML = '<span class="toast-icon">' + (icons[type] || icons.info) + '</span>' +
+    '<span>' + esc(message) + '</span>';
   container.appendChild(toast);
-  // trigger transition
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => toast.classList.add('show'));
+  requestAnimationFrame(function() {
+    requestAnimationFrame(function() { toast.classList.add('show'); });
   });
-  setTimeout(() => {
+  setTimeout(function() {
     toast.classList.remove('show');
-    setTimeout(() => toast.remove(), 300);
+    setTimeout(function() { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 300);
   }, 3000);
 }
 
@@ -1166,7 +934,7 @@ function showToast(message, type = 'info') {
 let _confirmResolve = null;
 
 function showConfirm(message, okLabel) {
-  return new Promise(resolve => {
+  return new Promise(function(resolve) {
     _confirmResolve = resolve;
     document.getElementById('confirm-msg').textContent = message;
     if (okLabel) document.getElementById('confirm-ok-btn').textContent = okLabel;
@@ -1176,7 +944,7 @@ function showConfirm(message, okLabel) {
 
 function resolveConfirm(result) {
   document.getElementById('confirm-modal').classList.remove('show');
-  document.getElementById('confirm-ok-btn').textContent = 'Confirm';
+  document.getElementById('confirm-ok-btn').textContent = t('confirmOk');
   if (_confirmResolve) { _confirmResolve(result); _confirmResolve = null; }
 }
 
@@ -1213,25 +981,24 @@ function onLoginSuccess(username) {
 async function doLogin() {
   const username = document.getElementById('login-username').value.trim();
   const password = document.getElementById('login-password').value;
-  const errEl = document.getElementById('login-error');
+  const errEl    = document.getElementById('login-error');
   errEl.style.display = 'none';
 
   try {
     const res = await fetch('/api/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password, role: 'admin' })
+      body: JSON.stringify({ username: username, password: password, role: 'admin' })
     });
     if (res.ok) {
       const data = await res.json();
       if (data.role === 'admin' || data.success) {
         onLoginSuccess(username);
-        showToast('Signed in as ' + username, 'success');
+        showToast(t('signedInAs') + ' ' + username, 'success');
         return;
       }
     }
   } catch (e) { /* fall through */ }
-
   errEl.style.display = 'block';
 }
 
@@ -1242,22 +1009,14 @@ async function doLogout() {
   document.getElementById('btn-logout').classList.remove('visible');
   document.getElementById('login-password').value = '';
   document.getElementById('login-overlay').classList.remove('hidden');
-  showToast('Signed out successfully.', 'info');
+  showToast(t('signedOut'), 'info');
 }
-
-// allow pressing Enter in login form
-document.getElementById('login-password').addEventListener('keydown', e => {
-  if (e.key === 'Enter') doLogin();
-});
-document.getElementById('login-username').addEventListener('keydown', e => {
-  if (e.key === 'Enter') document.getElementById('login-password').focus();
-});
 
 // ═══════════════════════════════════════════════════════════
 //  GPS GEOLOCATION
 // ═══════════════════════════════════════════════════════════
 function useGPS() {
-  const btn = document.getElementById('gps-btn');
+  const btn   = document.getElementById('gps-btn');
   const input = document.getElementById('f-location');
   if (!navigator.geolocation) {
     showToast(t('gpsError'), 'error');
@@ -1266,17 +1025,17 @@ function useGPS() {
   btn.disabled = true;
   btn.textContent = t('gpsAcquiring');
   navigator.geolocation.getCurrentPosition(
-    pos => {
+    function(pos) {
       const lat = pos.coords.latitude.toFixed(6);
       const lng = pos.coords.longitude.toFixed(6);
-      input.value = `${lat}, ${lng}`;
+      input.value = lat + ', ' + lng;
       btn.disabled = false;
-      btn.textContent = '📍 Use GPS';
-      showToast(`GPS: ${lat}, ${lng}`, 'success');
+      btn.textContent = t('gpsUseBtn');
+      showToast('GPS: ' + lat + ', ' + lng, 'success');
     },
-    err => {
+    function() {
       btn.disabled = false;
-      btn.textContent = '📍 Use GPS';
+      btn.textContent = t('gpsUseBtn');
       showToast(t('gpsError'), 'error');
     },
     { timeout: 10000, maximumAge: 30000 }
@@ -1284,62 +1043,31 @@ function useGPS() {
 }
 
 // ═══════════════════════════════════════════════════════════
-//  PHOTO PREVIEW
+//  PHOTO PREVIEW (scoped variable, not window._ctrlPhotoData)
 // ═══════════════════════════════════════════════════════════
-function photoThumb(photo, size) {
-  if (photo) {
-    return `<img src="${photo}" style="width:${size}px;height:${size}px;border-radius:6px;object-fit:cover;border:1px solid #e0e0e0;flex-shrink:0" alt="photo">`;
-  }
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 40 40" style="flex-shrink:0;border-radius:6px;border:1px solid #e0e0e0;background:#f5f5f5">
-    <circle cx="20" cy="15" r="7" fill="#bdbdbd"/>
-    <path d="M6 36c0-7.7 6.3-14 14-14s14 6.3 14 14" fill="#bdbdbd"/>
-  </svg>`;
-}
+let _ctrlPhotoData = null;
 
 function previewCtrlPhoto(input) {
   const file = input.files[0];
   if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    const img = new Image();
-    img.onload = function() {
-      const maxSide = 400;
-      let w = img.width, h = img.height;
-      if (w > h) { if (w > maxSide) { h = Math.round(h * maxSide / w); w = maxSide; } }
-      else { if (h > maxSide) { w = Math.round(w * maxSide / h); h = maxSide; } }
-      const canvas = document.createElement('canvas');
-      canvas.width = w; canvas.height = h;
-      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
-      window._ctrlPhotoData = dataUrl;
-      const preview = document.getElementById('ctrl-photo-preview');
-      preview.src = dataUrl;
-      preview.style.display = 'block';
-    };
-    img.src = e.target.result;
-  };
-  reader.readAsDataURL(file);
+  compressImage(file, 400, 0.6, function(dataUrl) {
+    _ctrlPhotoData = dataUrl;
+    const preview = document.getElementById('ctrl-photo-preview');
+    preview.src = dataUrl;
+    preview.style.display = 'block';
+  });
 }
 
 // ═══════════════════════════════════════════════════════════
 //  PAGE NAVIGATION
 // ═══════════════════════════════════════════════════════════
 function showPage(name, btn) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
+  document.querySelectorAll('nav button').forEach(function(b) { b.classList.remove('active'); });
   document.getElementById('page-' + name).classList.add('active');
   btn.classList.add('active');
   if (name === 'map') setTimeout(initMap, 100);
   if (name === 'hotspots') loadHotspots();
-}
-
-function statusBadge(status) {
-  const cls = {
-    'Reunited': 'badge-reunited', 'Pending': 'badge-pending',
-    'Unresolved': 'badge-unresolved', 'Transferred to hospital': 'badge-hospital',
-    'Matched': 'badge-matched'
-  }[status] || 'badge-pending';
-  return `<span class="badge ${cls}">${status}</span>`;
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1350,52 +1078,52 @@ async function loadDashboard() {
     const res = await fetch('/api/stats');
     const d = await res.json();
 
-    document.getElementById('stats-cards').innerHTML = `
-      <div class="stat-card orange"><div class="stat-value">${d.total}</div><div class="stat-label">${t('statTotal')}</div></div>
-      <div class="stat-card yellow"><div class="stat-value">${d.pending}</div><div class="stat-label">${t('statPending')}</div></div>
-      <div class="stat-card green"><div class="stat-value">${d.reunited}</div><div class="stat-label">${t('statReunited')}</div></div>
-      <div class="stat-card red"><div class="stat-value">${d.unresolved}</div><div class="stat-label">${t('statUnresolved')}</div></div>
-      <div class="stat-card blue"><div class="stat-value">${d.hospital}</div><div class="stat-label">${t('statHospital')}</div></div>
-      <div class="stat-card yellow"><div class="stat-value">${d.duplicates}</div><div class="stat-label">${t('statDuplicates')}</div></div>
-      <div class="stat-card green"><div class="stat-value">${d.avg_resolution_hours}h</div><div class="stat-label">${t('statAvgRes')}</div></div>
-      <div class="stat-card blue"><div class="stat-value">${d.found_total}</div><div class="stat-label">${t('statFoundTotal')}</div></div>
-    `;
+    document.getElementById('stats-cards').innerHTML =
+      '<div class="stat-card orange"><div class="stat-value">' + d.total + '</div><div class="stat-label">' + t('statTotal') + '</div></div>' +
+      '<div class="stat-card yellow"><div class="stat-value">' + d.pending + '</div><div class="stat-label">' + t('statPending') + '</div></div>' +
+      '<div class="stat-card green"><div class="stat-value">'  + d.reunited + '</div><div class="stat-label">' + t('statReunited') + '</div></div>' +
+      '<div class="stat-card red"><div class="stat-value">'    + d.unresolved + '</div><div class="stat-label">' + t('statUnresolved') + '</div></div>' +
+      '<div class="stat-card blue"><div class="stat-value">'   + d.hospital + '</div><div class="stat-label">' + t('statHospital') + '</div></div>' +
+      '<div class="stat-card yellow"><div class="stat-value">' + d.duplicates + '</div><div class="stat-label">' + t('statDuplicates') + '</div></div>' +
+      '<div class="stat-card green"><div class="stat-value">'  + d.avg_resolution_hours + 'h</div><div class="stat-label">' + t('statAvgRes') + '</div></div>' +
+      '<div class="stat-card blue"><div class="stat-value">'   + d.found_total + '</div><div class="stat-label">' + t('statFoundTotal') + '</div></div>';
 
-    const maxAge = Math.max(...d.by_age.map(a => a.count));
-    document.getElementById('chart-age').innerHTML = d.by_age.map(a => `
-      <div class="chart-bar">
-        <div class="chart-bar-label">${a.age_band}</div>
-        <div class="chart-bar-fill" style="width:${(a.count/maxAge)*100}%"></div>
-        <div class="chart-bar-value">${a.count}</div>
-      </div>
-    `).join('');
+    // Guard against empty arrays — Math.max(...[]) = -Infinity and crashes
+    const maxAge = d.by_age.length ? Math.max.apply(null, d.by_age.map(function(a) { return a.count; })) : 1;
+    document.getElementById('chart-age').innerHTML = d.by_age.map(function(a) {
+      return '<div class="chart-bar">' +
+        '<div class="chart-bar-label">' + esc(a.age_band) + '</div>' +
+        '<div class="chart-bar-fill" style="width:' + ((a.count / maxAge) * 100) + '%"></div>' +
+        '<div class="chart-bar-value">' + a.count + '</div>' +
+        '</div>';
+    }).join('');
 
-    const maxCenter = Math.max(...d.by_center.map(c => c.count));
-    document.getElementById('chart-center').innerHTML = d.by_center.slice(0, 10).map(c => `
-      <div class="chart-bar">
-        <div class="chart-bar-label" title="${c.center}">${c.center.replace(' Kho-Ya-Paya Kendra', '').replace(' Kho-Ya-Paya', '').substring(0, 18)}</div>
-        <div class="chart-bar-fill" style="width:${(c.count/maxCenter)*100}%"></div>
-        <div class="chart-bar-value">${c.count}</div>
-      </div>
-    `).join('');
+    const maxCenter = d.by_center.length ? Math.max.apply(null, d.by_center.map(function(c) { return c.count; })) : 1;
+    document.getElementById('chart-center').innerHTML = d.by_center.slice(0, 10).map(function(c) {
+      const label = esc(c.center.replace(' Kho-Ya-Paya Kendra', '').replace(' Kho-Ya-Paya', '').substring(0, 18));
+      return '<div class="chart-bar">' +
+        '<div class="chart-bar-label" title="' + esc(c.center) + '">' + label + '</div>' +
+        '<div class="chart-bar-fill" style="width:' + ((c.count / maxCenter) * 100) + '%"></div>' +
+        '<div class="chart-bar-value">' + c.count + '</div>' +
+        '</div>';
+    }).join('');
 
     if (d.by_date.length > 0) {
-      const maxDay = Math.max(...d.by_date.map(x => x.count));
-      document.getElementById('chart-daily').innerHTML = `
-        <div style="display:flex;align-items:flex-end;gap:3px;height:180px;padding-top:20px">
-          ${d.by_date.map(x => `
-            <div style="flex:1;display:flex;flex-direction:column;align-items:center;min-width:20px">
-              <div style="font-size:10px;margin-bottom:4px">${x.count}</div>
-              <div style="width:100%;background:linear-gradient(to top,var(--primary),var(--primary-light));
-                   border-radius:4px 4px 0 0;height:${(x.count/maxDay)*140}px;min-height:4px"></div>
-              <div style="font-size:9px;margin-top:4px;transform:rotate(-45deg);white-space:nowrap">${x.date.slice(5)}</div>
-            </div>
-          `).join('')}
-        </div>
-      `;
+      const maxDay = Math.max.apply(null, d.by_date.map(function(x) { return x.count; }));
+      document.getElementById('chart-daily').innerHTML =
+        '<div style="display:flex;align-items:flex-end;gap:3px;height:180px;padding-top:20px">' +
+        d.by_date.map(function(x) {
+          return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;min-width:20px">' +
+            '<div style="font-size:10px;margin-bottom:4px">' + x.count + '</div>' +
+            '<div style="width:100%;background:linear-gradient(to top,var(--primary),var(--primary-light));' +
+            'border-radius:4px 4px 0 0;height:' + ((x.count / maxDay) * 140) + 'px;min-height:4px"></div>' +
+            '<div style="font-size:9px;margin-top:4px;transform:rotate(-45deg);white-space:nowrap">' + esc(x.date.slice(5)) + '</div>' +
+            '</div>';
+        }).join('') +
+        '</div>';
     }
   } catch (e) {
-    showToast('Failed to load dashboard data.', 'error');
+    showToast(t('dashboardLoadFailed'), 'error');
   }
 }
 
@@ -1405,59 +1133,61 @@ async function loadDashboard() {
 async function loadFilters() {
   try {
     const res = await fetch('/api/filters');
-    filtersData = await res.json();
-    populateSelect('search-gender', filtersData.genders, 'sgAny');
-    populateSelect('search-age', filtersData.ages, 'saAny');
-    populateSelect('search-state', filtersData.states, 'ssAny');
+    const filtersData = await res.json();
+    populateSelect('search-gender', filtersData.genders,   'sgAny');
+    populateSelect('search-age',    filtersData.ages,      'saAny');
+    populateSelect('search-state',  filtersData.states,    'ssAny');
     populateSelect('search-language', filtersData.languages, 'slAny');
-    populateSelect('search-center', filtersData.centers, 'scAny');
+    populateSelect('search-center', filtersData.centers,   'scAny');
   } catch (e) {
-    showToast('Failed to load filter data.', 'error');
+    showToast(t('filtersLoadFailed'), 'error');
   }
 }
 
 function populateSelect(elemId, items, placeholderKey) {
   const sel = document.getElementById(elemId);
-  sel.innerHTML = `<option value="">${t(placeholderKey)}</option>` +
-    items.map(i => `<option value="${i}">${i}</option>`).join('');
+  sel.innerHTML = '<option value="">' + esc(t(placeholderKey)) + '</option>' +
+    items.map(function(i) { return '<option value="' + esc(i) + '">' + esc(i) + '</option>'; }).join('');
   sel.dataset.placeholderKey = placeholderKey;
 }
 
 async function doSearch() {
   const params = new URLSearchParams({
-    q: document.getElementById('search-q').value,
-    gender: document.getElementById('search-gender').value,
-    age_band: document.getElementById('search-age').value,
-    state: document.getElementById('search-state').value,
-    language: document.getElementById('search-language').value,
-    center: document.getElementById('search-center').value,
-    status: document.getElementById('search-status').value,
+    q:         document.getElementById('search-q').value,
+    gender:    document.getElementById('search-gender').value,
+    age_band:  document.getElementById('search-age').value,
+    state:     document.getElementById('search-state').value,
+    language:  document.getElementById('search-language').value,
+    center:    document.getElementById('search-center').value,
+    status:    document.getElementById('search-status').value,
   });
   try {
     const res = await fetch('/api/search?' + params);
     const d = await res.json();
     const countEl = document.getElementById('search-count');
     countEl.dataset.count = d.count;
-    countEl.textContent = `${d.count} ${t('resultsFound')}`;
-    document.getElementById('search-results').innerHTML = d.results.map(r => `
-      <tr>
-        <td>${r.match_score ? `<span class="badge badge-score">${Math.round(r.match_score)}%</span>` : '—'}</td>
-        <td style="font-family:monospace;font-size:11px">${r.case_id}</td>
-        <td style="white-space:nowrap">${r.reported_at}</td>
-        <td><div style="display:flex;align-items:center;gap:8px">${photoThumb(r.photo, 40)}<strong>${r.missing_person_name || '<em style="color:#999">Unknown</em>'}</strong></div></td>
-        <td>${r.gender}</td>
-        <td>${r.age_band}</td>
-        <td>${r.state || '—'}</td>
-        <td>${r.language || '—'}</td>
-        <td>${r.last_seen_location || '—'}</td>
-        <td style="font-size:11px">${r.reporting_center}</td>
-        <td style="font-size:11px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
-            title="${(r.physical_description||'').replace(/"/g,'&quot;')}">${r.physical_description || '—'}</td>
-        <td>${statusBadge(r.status)}</td>
-      </tr>
-    `).join('');
+    countEl.textContent = d.count + ' ' + t('resultsFound');
+    document.getElementById('search-results').innerHTML = d.results.map(function(r) {
+      const descEscaped = esc(r.physical_description || '');
+      return '<tr>' +
+        '<td>' + (r.match_score ? '<span class="badge badge-score">' + Math.round(r.match_score) + '%</span>' : '—') + '</td>' +
+        '<td style="font-family:monospace;font-size:11px">' + esc(r.case_id) + '</td>' +
+        '<td style="white-space:nowrap">' + esc(r.reported_at) + '</td>' +
+        '<td><div style="display:flex;align-items:center;gap:8px">' + photoThumb(r.photo, 40) +
+          '<strong>' + (r.missing_person_name ? esc(r.missing_person_name) : '<em style="color:#999">' + esc(t('nameUnknownCtrl')) + '</em>') + '</strong></div></td>' +
+        '<td>' + esc(r.gender) + '</td>' +
+        '<td>' + esc(r.age_band) + '</td>' +
+        '<td>' + (r.state ? esc(r.state) : '—') + '</td>' +
+        '<td>' + (r.language ? esc(r.language) : '—') + '</td>' +
+        '<td>' + (r.last_seen_location ? esc(r.last_seen_location) : '—') + '</td>' +
+        '<td style="font-size:11px">' + esc(r.reporting_center) + '</td>' +
+        '<td style="font-size:11px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"' +
+          ' title="' + descEscaped + '">' + (r.physical_description ? descEscaped : '—') + '</td>' +
+        '<td>' + statusBadge(r.status) + '</td>' +
+        '</tr>';
+    }).join('');
   } catch (e) {
-    showToast('Search failed. Please try again.', 'error');
+    showToast(t('searchFailed'), 'error');
   }
 }
 
@@ -1466,73 +1196,87 @@ async function doSearch() {
 // ═══════════════════════════════════════════════════════════
 async function submitFound() {
   const data = {
-    person_name: document.getElementById('f-name').value,
-    gender: document.getElementById('f-gender').value,
-    age_band: document.getElementById('f-age').value,
-    state: document.getElementById('f-state').value,
-    language: document.getElementById('f-language').value,
-    found_location: document.getElementById('f-location').value,
-    reporting_center: document.getElementById('f-center').value,
-    contact_mobile: document.getElementById('f-mobile').value,
+    person_name:          document.getElementById('f-name').value,
+    gender:               document.getElementById('f-gender').value,
+    age_band:             document.getElementById('f-age').value,
+    state:                document.getElementById('f-state').value,
+    language:             document.getElementById('f-language').value,
+    found_location:       document.getElementById('f-location').value,
+    reporting_center:     document.getElementById('f-center').value,
+    contact_mobile:       document.getElementById('f-mobile').value,
     physical_description: document.getElementById('f-desc').value,
-    remarks: document.getElementById('f-remarks').value,
-    photo: window._ctrlPhotoData || '',
+    remarks:              document.getElementById('f-remarks').value,
+    photo: _ctrlPhotoData || '',
   };
 
   try {
     const [regRes, matchRes] = await Promise.all([
-      fetch('/api/report-found', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) }),
-      fetch('/api/fuzzy-match', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({
+      fetch('/api/report-found',  { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) }),
+      fetch('/api/fuzzy-match',   { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({
         name: data.person_name, gender: data.gender, age_band: data.age_band,
         state: data.state, language: data.language, description: data.physical_description
       })})
     ]);
 
-    const reg = await regRes.json();
+    const reg     = await regRes.json();
     const matches = await matchRes.json();
 
-    const card = document.getElementById('match-results-card');
+    const card      = document.getElementById('match-results-card');
     const container = document.getElementById('match-results');
 
     if (matches.matches.length === 0) {
       card.style.display = 'block';
-      container.innerHTML = `<div class="empty-state"><p>${t('noMatchMsg')}</p></div>`;
-      showToast('Person registered. No immediate matches found.', 'info');
+      container.innerHTML = '<div class="empty-state"><p>' + esc(t('noMatchMsg')) + '</p></div>';
+      showToast(t('noMatchMsg'), 'info');
       return;
     }
 
     card.style.display = 'block';
-    container.innerHTML = matches.matches.map(m => `
-      <div class="match-card">
-        <div class="match-header">
-          <div style="display:flex;align-items:center;gap:12px">
-            ${photoThumb(m.photo, 48)}
-            <div>
-              <strong>${m.case_id}</strong> — ${m.missing_person_name || 'Name Unknown'}
-              <div style="font-size:12px;color:var(--text-secondary)">${m.reporting_center}</div>
-            </div>
-          </div>
-          <div class="match-score">${m.match_score}%</div>
-        </div>
-        <div class="match-details">
-          <strong>${t('matchGender')}:</strong> ${m.gender} | <strong>${t('matchAge')}:</strong> ${m.age_band} |
-          <strong>${t('matchState')}:</strong> ${m.state || '—'} | <strong>${t('matchLanguage')}:</strong> ${m.language || '—'}<br>
-          <strong>${t('matchLastSeen')}:</strong> ${m.last_seen_location || '—'}<br>
-          <strong>${t('matchDescription')}:</strong> ${m.physical_description || '—'}<br>
-          <strong>${t('matchMobile')}:</strong> ${m.reporter_mobile || '—'}
-        </div>
-        <div class="match-reasons">
-          ${m.match_reasons.map(r => `<span class="match-reason">${r}</span>`).join('')}
-        </div>
-        <div style="margin-top:10px">
-          <button class="btn btn-success btn-sm" onclick="confirmMatch(${reg.id}, '${m.case_id}')">${t('confirmMatchBtn')}</button>
-        </div>
-      </div>
-    `).join('');
+    // Build cards and wire up confirm buttons via data attributes (avoids XSS from case_id in onclick)
+    container.innerHTML = matches.matches.map(function(m) {
+      return '<div class="match-card">' +
+        '<div class="match-header">' +
+          '<div style="display:flex;align-items:center;gap:12px">' +
+            photoThumb(m.photo, 48) +
+            '<div>' +
+              '<strong>' + esc(m.case_id) + '</strong> — ' + (m.missing_person_name ? esc(m.missing_person_name) : 'Name Unknown') +
+              '<div style="font-size:12px;color:var(--text-secondary)">' + esc(m.reporting_center) + '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="match-score">' + m.match_score + '%</div>' +
+        '</div>' +
+        '<div class="match-details">' +
+          '<strong>' + t('matchGender')     + ':</strong> ' + esc(m.gender)             + ' | ' +
+          '<strong>' + t('matchAge')        + ':</strong> ' + esc(m.age_band)           + ' | ' +
+          '<strong>' + t('matchState')      + ':</strong> ' + (m.state ? esc(m.state) : '—') + ' | ' +
+          '<strong>' + t('matchLanguage')   + ':</strong> ' + (m.language ? esc(m.language) : '—') + '<br>' +
+          '<strong>' + t('matchLastSeen')   + ':</strong> ' + (m.last_seen_location ? esc(m.last_seen_location) : '—') + '<br>' +
+          '<strong>' + t('matchDescription')+ ':</strong> ' + (m.physical_description ? esc(m.physical_description) : '—') + '<br>' +
+          '<strong>' + t('matchMobile')     + ':</strong> ' + (m.reporter_mobile ? esc(m.reporter_mobile) : '—') +
+        '</div>' +
+        '<div class="match-reasons">' +
+          m.match_reasons.map(function(r) { return '<span class="match-reason">' + esc(r) + '</span>'; }).join('') +
+        '</div>' +
+        '<div style="margin-top:10px">' +
+          '<button class="btn btn-success btn-sm confirm-match-btn"' +
+            ' data-found-id="' + reg.id + '"' +
+            ' data-case-id="' + esc(m.case_id) + '">' +
+            esc(t('confirmMatchBtn')) +
+          '</button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
 
-    showToast(`${matches.matches.length} potential match(es) found!`, 'success');
+    // Wire up confirm buttons with addEventListener (no inline onclick)
+    container.querySelectorAll('.confirm-match-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        confirmMatch(parseInt(this.dataset.foundId, 10), this.dataset.caseId);
+      });
+    });
+
+    showToast(matches.matches.length + ' ' + t('matchFound'), 'success');
   } catch (e) {
-    showToast('Submission failed. Please try again.', 'error');
+    showToast(t('submitFailed'), 'error');
   }
 }
 
@@ -1550,7 +1294,7 @@ async function confirmMatch(foundId, caseId) {
     showToast(t('confirmMatchSuccess'), 'success');
     loadDashboard();
   } catch (e) {
-    showToast('Failed to confirm match. Please try again.', 'error');
+    showToast(t('confirmMatchFailed'), 'error');
   }
 }
 
@@ -1559,50 +1303,57 @@ async function confirmMatch(foundId, caseId) {
 // ═══════════════════════════════════════════════════════════
 async function findDuplicates() {
   const container = document.getElementById('dup-results');
-  container.innerHTML = `<p style="color:var(--text-secondary)">${t('dupScanning')}</p>`;
+  container.innerHTML = '<p style="color:var(--text-secondary)">' + esc(t('dupScanning')) + '</p>';
   try {
     const res = await fetch('/api/duplicates');
     const d = await res.json();
 
     if (d.count === 0) {
-      container.innerHTML = `<div class="empty-state"><p>${t('dupNone')}</p></div>`;
+      container.innerHTML = '<div class="empty-state"><p>' + esc(t('dupNone')) + '</p></div>';
       return;
     }
 
-    container.innerHTML = `<p style="margin-bottom:16px;font-weight:600">${d.count} ${t('dupFound')}</p>` +
-      d.duplicate_groups.map((group, i) => `
-        <div class="dup-group">
-          <h4>${t('dupGroup')} ${i+1}: ${group[0].missing_person_name || 'Unknown'} (${group.length} ${t('dupReports')})</h4>
-          <table>
-            <thead><tr><th>${t('dupThCaseId')}</th><th>${t('dupThReported')}</th><th>${t('dupThName')}</th><th>${t('dupThCenter')}</th><th>${t('dupThLastSeen')}</th><th>${t('dupThStatus')}</th></tr></thead>
-            <tbody>
-              ${group.map(r => `
-                <tr>
-                  <td style="font-family:monospace;font-size:11px">${r.case_id}</td>
-                  <td>${r.reported_at}</td>
-                  <td><div style="display:flex;align-items:center;gap:8px">${photoThumb(r.photo, 40)}${r.missing_person_name || '—'}</div></td>
-                  <td>${r.reporting_center}</td>
-                  <td>${r.last_seen_location || '—'}</td>
-                  <td>${statusBadge(r.status)}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        </div>
-      `).join('');
+    container.innerHTML = '<p style="margin-bottom:16px;font-weight:600">' + d.count + ' ' + esc(t('dupFound')) + '</p>' +
+      d.duplicate_groups.map(function(group, i) {
+        return '<div class="dup-group">' +
+          '<h4>' + esc(t('dupGroup')) + ' ' + (i+1) + ': ' +
+            esc(group[0].missing_person_name || t('nameUnknownCtrl')) +
+            ' (' + group.length + ' ' + esc(t('dupReports')) + ')</h4>' +
+          '<table><thead><tr>' +
+            '<th>' + esc(t('dupThCaseId')) + '</th>' +
+            '<th>' + esc(t('dupThReported')) + '</th>' +
+            '<th>' + esc(t('dupThName')) + '</th>' +
+            '<th>' + esc(t('dupThCenter')) + '</th>' +
+            '<th>' + esc(t('dupThLastSeen')) + '</th>' +
+            '<th>' + esc(t('dupThStatus')) + '</th>' +
+          '</tr></thead><tbody>' +
+          group.map(function(r) {
+            return '<tr>' +
+              '<td style="font-family:monospace;font-size:11px">' + esc(r.case_id) + '</td>' +
+              '<td>' + esc(r.reported_at) + '</td>' +
+              '<td><div style="display:flex;align-items:center;gap:8px">' + photoThumb(r.photo, 40) + esc(r.missing_person_name || '—') + '</div></td>' +
+              '<td>' + esc(r.reporting_center) + '</td>' +
+              '<td>' + (r.last_seen_location ? esc(r.last_seen_location) : '—') + '</td>' +
+              '<td>' + statusBadge(r.status) + '</td>' +
+              '</tr>';
+          }).join('') +
+          '</tbody></table></div>';
+      }).join('');
   } catch (e) {
-    showToast('Failed to scan for duplicates.', 'error');
+    showToast(t('dupScanFailed'), 'error');
   }
 }
 
 // ═══════════════════════════════════════════════════════════
 //  MAP & HEATMAP
 // ═══════════════════════════════════════════════════════════
-let mapInitialized = false;
+let map, layers = {}, heatLayer = null, mapInitialized = false;
+
 async function initMap() {
   if (mapInitialized) { map.invalidateSize(); return; }
   mapInitialized = true;
 
+  // Nashik-Trimbakeshwar coordinates
   map = L.map('map').setView([20.0, 73.78], 12);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap', maxZoom: 18
@@ -1612,64 +1363,63 @@ async function initMap() {
   const geo = await res.json();
 
   layers.cctv = L.layerGroup();
-  geo.cctv.forEach(c => {
+  geo.cctv.forEach(function(c) {
     L.circleMarker([c.latitude, c.longitude], {
       radius: 4, fillColor: '#1565c0', color: '#1565c0', weight: 1, fillOpacity: 0.6
-    }).bindPopup(`<b>CCTV:</b> ${c.camera_id}`).addTo(layers.cctv);
+    }).bindPopup('<b>CCTV:</b> ' + c.camera_id).addTo(layers.cctv);
   });
   layers.cctv.addTo(map);
 
   layers.police = L.layerGroup();
-  geo.police_stations.forEach(p => {
+  geo.police_stations.forEach(function(p) {
     L.circleMarker([p.latitude, p.longitude], {
       radius: 10, fillColor: '#2e7d32', color: '#1b5e20', weight: 2, fillOpacity: 0.8
-    }).bindPopup(`<b>Police:</b> ${p.station_name}`).addTo(layers.police);
+    }).bindPopup('<b>Police:</b> ' + p.station_name).addTo(layers.police);
   });
   layers.police.addTo(map);
 
   layers.chokepoints = L.layerGroup();
-  geo.chokepoints.forEach(c => {
-    const color = c.category.includes('choke') || c.category.includes('pressure') ? '#c62828' : '#f57f17';
+  geo.chokepoints.forEach(function(c) {
+    const color = (c.category.includes('choke') || c.category.includes('pressure')) ? '#c62828' : '#f57f17';
     L.circleMarker([c.latitude, c.longitude], {
       radius: 7, fillColor: color, color: color, weight: 1, fillOpacity: 0.7
-    }).bindPopup(`<b>${c.location_name}</b><br>${c.category}`).addTo(layers.chokepoints);
+    }).bindPopup('<b>' + c.location_name + '</b><br>' + c.category).addTo(layers.chokepoints);
   });
   layers.chokepoints.addTo(map);
 
   layers.zones = L.layerGroup();
-  geo.zones.forEach(z => {
+  geo.zones.forEach(function(z) {
     L.circle([z.centroid_lat, z.centroid_lng], {
       radius: 800, fillColor: '#e65100', color: '#e65100', weight: 1, fillOpacity: 0.08
-    }).bindPopup(`<b>${z.zone_name}</b>`).addTo(layers.zones);
+    }).bindPopup('<b>' + z.zone_name + '</b>').addTo(layers.zones);
   });
   layers.zones.addTo(map);
 
-  ['cctv','police','chokepoints','zones'].forEach(key => {
+  ['cctv','police','chokepoints','zones'].forEach(function(key) {
     document.getElementById('show-' + key).addEventListener('change', function() {
       this.checked ? map.addLayer(layers[key]) : map.removeLayer(layers[key]);
     });
   });
 
-  // ── HEATMAP from /api/hotspots ──
+  // Heatmap from /api/hotspots
   try {
-    const hotRes = await fetch('/api/hotspots');
+    const hotRes  = await fetch('/api/hotspots');
     const hotData = await hotRes.json();
     const heatPoints = (hotData.hotspots || [])
-      .filter(h => h.lat != null && h.lng != null)
-      .map(h => [h.lat, h.lng, (h.geo_confidence || 1) * (h.cnt || 1)]);
+      .filter(function(h) { return h.lat != null && h.lng != null; })
+      .map(function(h) { return [h.lat, h.lng, (h.geo_confidence || 1) * (h.cnt || 1)]; });
 
     if (heatPoints.length > 0 && typeof L.heatLayer === 'function') {
       heatLayer = L.heatLayer(heatPoints, {
         radius: 35, blur: 25, maxZoom: 16,
         gradient: { 0.2: '#0000ff', 0.5: '#ffff00', 0.8: '#ff8800', 1.0: '#ff0000' }
       });
-      // off by default — toggled by checkbox
     }
   } catch (e) { /* hotspot heatmap optional */ }
 
   document.getElementById('show-heatmap').addEventListener('change', function() {
     if (!heatLayer) {
-      showToast('No geo-coded hotspot data available for heatmap.', 'info');
+      showToast(t('heatmapNoData'), 'info');
       this.checked = false;
       return;
     }
@@ -1677,10 +1427,10 @@ async function initMap() {
   });
 
   const allPoints = [
-    ...geo.cctv.map(c => [c.latitude, c.longitude]),
-    ...geo.police_stations.map(p => [p.latitude, p.longitude]),
-    ...geo.chokepoints.map(c => [c.latitude, c.longitude]),
-    ...geo.zones.map(z => [z.centroid_lat, z.centroid_lng])
+    ...geo.cctv.map(function(c) { return [c.latitude, c.longitude]; }),
+    ...geo.police_stations.map(function(p) { return [p.latitude, p.longitude]; }),
+    ...geo.chokepoints.map(function(c) { return [c.latitude, c.longitude]; }),
+    ...geo.zones.map(function(z) { return [z.centroid_lat, z.centroid_lng]; })
   ];
   if (allPoints.length > 0) map.fitBounds(allPoints);
 }
@@ -1692,36 +1442,69 @@ async function loadHotspots() {
   try {
     const res = await fetch('/api/hotspots');
     const d = await res.json();
-    const maxCount = Math.max(...d.hotspots.map(h => h.cnt));
-    document.getElementById('hotspot-list').innerHTML = d.hotspots.map((h, i) => `
-      <div style="display:flex;align-items:center;gap:16px;padding:12px 0;border-bottom:1px solid var(--border)">
-        <div style="font-size:24px;font-weight:700;color:var(--primary);min-width:40px;text-align:right">#${i+1}</div>
-        <div style="flex:1">
-          <div style="font-weight:600">${h.last_seen_location}</div>
-          <div style="display:flex;gap:16px;margin-top:6px">
-            <div class="chart-bar-fill" style="width:${(h.cnt/maxCount)*200}px;height:8px"></div>
-            <span style="font-size:13px">${h.cnt} ${t('hsTotalCases')}</span>
-            <span style="font-size:13px;color:var(--danger)">${h.active} ${t('hsActive')}</span>
-          </div>
-        </div>
-      </div>
-    `).join('');
+    // Guard empty array crash
+    const maxCount = d.hotspots.length ? Math.max.apply(null, d.hotspots.map(function(h) { return h.cnt; })) : 1;
+    document.getElementById('hotspot-list').innerHTML = d.hotspots.map(function(h, i) {
+      return '<div style="display:flex;align-items:center;gap:16px;padding:12px 0;border-bottom:1px solid var(--border)">' +
+        '<div style="font-size:24px;font-weight:700;color:var(--primary);min-width:40px;text-align:right">#' + (i+1) + '</div>' +
+        '<div style="flex:1">' +
+          '<div style="font-weight:600">' + esc(h.last_seen_location) + '</div>' +
+          '<div style="display:flex;gap:16px;margin-top:6px">' +
+            '<div class="chart-bar-fill" style="width:' + ((h.cnt / maxCount) * 200) + 'px;height:8px"></div>' +
+            '<span style="font-size:13px">' + h.cnt + ' ' + esc(t('hsTotalCases')) + '</span>' +
+            '<span style="font-size:13px;color:var(--danger)">' + h.active + ' ' + esc(t('hsActive')) + '</span>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    }).join('');
   } catch (e) {
-    showToast('Failed to load hotspot data.', 'error');
+    showToast(t('hotspotLoadFailed'), 'error');
   }
 }
 
 // ═══════════════════════════════════════════════════════════
-//  CLOCK & OFFLINE DETECTION
+//  CLOCK & OFFLINE
 // ═══════════════════════════════════════════════════════════
 function updateClock() {
-  document.getElementById('live-clock').textContent = new Date().toLocaleTimeString('en-IN', {hour:'2-digit',minute:'2-digit'});
+  document.getElementById('live-clock').textContent =
+    new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
 }
 
-document.getElementById('search-q').addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
+window.addEventListener('online',  function() { document.getElementById('offline-banner').classList.remove('show'); });
+window.addEventListener('offline', function() { document.getElementById('offline-banner').classList.add('show'); });
 
-window.addEventListener('online', () => document.getElementById('offline-banner').classList.remove('show'));
-window.addEventListener('offline', () => document.getElementById('offline-banner').classList.add('show'));
+// ═══════════════════════════════════════════════════════════
+//  EVENT WIRING (all via addEventListener — no inline onclick)
+// ═══════════════════════════════════════════════════════════
+document.getElementById('login-btn').addEventListener('click', doLogin);
+document.getElementById('login-password').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') doLogin();
+});
+document.getElementById('login-username').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') document.getElementById('login-password').focus();
+});
+
+document.getElementById('btn-logout').addEventListener('click', doLogout);
+document.getElementById('langToggleBtn').addEventListener('click', toggleLang);
+document.getElementById('print-btn').addEventListener('click', function() { window.print(); });
+
+document.getElementById('nav-dashboard').addEventListener('click',  function() { showPage('dashboard',  this); });
+document.getElementById('nav-search').addEventListener('click',     function() { showPage('search',     this); });
+document.getElementById('nav-report').addEventListener('click',     function() { showPage('report',     this); });
+document.getElementById('nav-duplicates').addEventListener('click', function() { showPage('duplicates', this); });
+document.getElementById('nav-map').addEventListener('click',        function() { showPage('map',        this); });
+document.getElementById('nav-hotspots').addEventListener('click',   function() { showPage('hotspots',  this); });
+
+document.getElementById('search-btn').addEventListener('click',  doSearch);
+document.getElementById('search-q').addEventListener('keydown',  function(e) { if (e.key === 'Enter') doSearch(); });
+document.getElementById('rp-submit-btn').addEventListener('click', submitFound);
+document.getElementById('dup-scan-btn').addEventListener('click', findDuplicates);
+document.getElementById('gps-btn').addEventListener('click', useGPS);
+
+document.getElementById('ctrl-photo-input').addEventListener('change', function() { previewCtrlPhoto(this); });
+
+document.getElementById('confirm-ok-btn').addEventListener('click',     function() { resolveConfirm(true); });
+document.getElementById('confirm-cancel-btn').addEventListener('click', function() { resolveConfirm(false); });
 
 // ═══════════════════════════════════════════════════════════
 //  INIT
@@ -1730,8 +1513,7 @@ applyLang();
 updateClock();
 setInterval(updateClock, 30000);
 
-// Auth gate — this drives the startup sequence:
-// checkAuth -> onLoginSuccess -> loadDashboard + loadFilters
+// Auth gate: checkAuth → onLoginSuccess → loadDashboard + loadFilters
 checkAuth();
 </script>
 </body>
